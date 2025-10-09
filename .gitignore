@@ -10,5 +10,5 @@ default.profraw
 
 # Vim temporary files
 .*.swp
-
+todo.txt
 sql
