@@ -55,7 +55,7 @@
 
 ---
 
-## 🛠️ Architecture & Technology
+## 🧠 Architecture & Technology
 
 ### **Architectural Benefits**
 * **Reduced Database Load:** Smart caching can **cut direct DB queries by up to 90%**.
@@ -235,3 +235,19 @@ These implementations define how each backend retrieves, caches, or updates data
 ### Manual Implementations
 * Cache logic → `Cache/Redis/Query.hpp`
 * Database logic → `Database/PostgreSQL/Query.hpp` (or other DB backend)
+
+---
+
+## 🛠️ Build & Compile
+
+### Release
+
+```bash
+mkdir -p build/Release
+
+cd build/Release
+
+cmake -DCMAKE_BUILD_TYPE:STRING=Release -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=ON ../../
+
+cmake --build .
+```
