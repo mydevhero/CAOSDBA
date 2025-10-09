@@ -1,0 +1,8 @@
+# Example:
+# std::optional<std::string> IQuery_Test_echoString(std::string str)
+
+####################################################################################################
+# return_type                   | method_name               | full_params           | call_params  #
+####################################################################################################
+
+std::optional<std::string>      | IQuery_Test_echoString    | std::string str       | str

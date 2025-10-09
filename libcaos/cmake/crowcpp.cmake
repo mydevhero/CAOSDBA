@@ -1,0 +1,16 @@
+target_compile_definitions(${PROJECT_NAME} PUBLIC CAOS_USE_CROWCPP)
+
+include(cmake/CPM.cmake)
+
+CPMAddPackage(
+  Crow
+  VERSION 1.2.1.2
+  GITHUB_REPOSITORY CrowCpp/Crow
+  OPTIONS
+    "CROW_BUILD_EXAMPLES Off"
+    "CROW_BUILD_TOOLS Off"
+    "CROW_BUILD_TESTS Off"
+    "CROW_BUILD_DOCS Off"
+    "CROW_ENABLE_COMPRESSION On"
+    "CROW_ENABLE_SSL Off"
+)
