@@ -14,7 +14,7 @@ configure_file(
 
 file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/libcaos")
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_BINARY_DIR}/${PROJECT_NAME}/config.hpp)
+# configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_BINARY_DIR}/${PROJECT_NAME}/config.hpp)
 
 if(CAOS_DB_BACKEND STREQUAL "POSTGRESQL")
   list(APPEND POSTGRESQL_SOURCES
@@ -67,8 +67,6 @@ endif()
 add_library(${PROJECT_NAME} STATIC ${PROJECT_NAME}.cpp
   terminal_options.cpp
   include/terminal_options.hpp
-  environment.cpp
-  include/environment.hpp
   Middleware/Repository/Exception.hpp
   Middleware/Repository/IRepository.hpp
   Middleware/Repository.hpp
@@ -82,11 +80,48 @@ add_library(${PROJECT_NAME} STATIC ${PROJECT_NAME}.cpp
   ${CROWCPP_SOURCES}
   ${CACHE_SOURCES}
   ${REDIS_SOURCES}
+  config_validation.hpp
+  logo.hpp
 )
 include(cmake/compiler.cmake)
 include(cmake/query_code_generation.cmake)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")
+
+if(CMAKE_BUILD_TYPE STREQUAL "debug")
+  target_compile_definitions(${PROJECT_NAME} PUBLIC CAOS_ENV_DEBUG)
+elseif(CMAKE_BUILD_TYPE STREQUAL "test")
+  target_compile_definitions(${PROJECT_NAME} PUBLIC CAOS_ENV_TEST)
+elseif(CMAKE_BUILD_TYPE STREQUAL "release")
+  target_compile_definitions(${PROJECT_NAME} PUBLIC CAOS_ENV_RELEASE)
+else()
+  message(FATAL_ERROR "CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} must be equal to: debug, test or release")
+endif()
+
+if(CMAKE_BUILD_TYPE STREQUAL "debug" OR CMAKE_BUILD_TYPE STREQUAL "test")
+  target_compile_definitions(${PROJECT_NAME} PUBLIC CAOS_ENV_ALT)                                   # Alternative Environment for debug and test
+endif()
+
+target_compile_definitions(${PROJECT_NAME} PUBLIC CAOS_ENV="${CMAKE_BUILD_TYPE}")
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_BINARY_DIR}/${PROJECT_NAME}/config.hpp)
+
+# Option CAOS_CHECK_COVERAGE +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# if(CAOS_CHECK_COVERAGE)
+#   include(cmake/coverage.cmake)
+# endif()
+# Option CAOS_CHECK_COVERAGE -----------------------------------------------------------------------
+
+
+
+
+
+# Option CAOS_BUILD_TEST +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+if(CAOS_ENV_TEST OR CMAKE_BUILD_TYPE STREQUAL "test")
+  add_subdirectory(test)
+endif()
+# Option CAOS_BUILD_TEST ---------------------------------------------------------------------------
+
 
 
 add_custom_target(generate_version DEPENDS ${VERSION_HEADER_OUT})
@@ -117,6 +152,7 @@ endif()
 # --------------------------------------------------------------------------------------------------
 if(CAOS_USE_CACHE)
   target_compile_definitions(${PROJECT_NAME} PUBLIC CAOS_USE_CACHE)
+  target_compile_definitions(${PROJECT_NAME} PUBLIC CAOS_CACHE_BACKEND)
   target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Middleware/Repository/Cache)
 
   # Redis

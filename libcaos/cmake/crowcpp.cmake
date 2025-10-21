@@ -4,7 +4,7 @@ include(cmake/CPM.cmake)
 
 CPMAddPackage(
   Crow
-  VERSION 1.2.1.2
+  VERSION 1.3.0
   GITHUB_REPOSITORY CrowCpp/Crow
   OPTIONS
     "CROW_BUILD_EXAMPLES Off"

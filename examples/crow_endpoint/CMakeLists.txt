@@ -7,7 +7,7 @@ set_target_properties(crow_endpoint PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/examples/bin/
 )
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+if(CMAKE_BUILD_TYPE STREQUAL "debug")
   message(STATUS "Sanitizer on build Debug")
 
   target_compile_options(crow_endpoint PRIVATE

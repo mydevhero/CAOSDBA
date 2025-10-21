@@ -86,14 +86,16 @@ inline void Caos::Log::init()
 
   try
   {
-    SPDLOG_TRACE("Init logs");
+    // SPDLOG_TRACE("Init logs");
 
-    auto default_logger = spdlog::default_logger();
+    // auto default_logger = spdlog::default_logger();
 
-    if (default_logger) {
-      SPDLOG_TRACE("Logger already initialized");
-      return;
-    }
+    // if (default_logger) {
+    //   SPDLOG_TRACE("Logger already initialized");
+    //   return;
+    // }
+
+    //  spdlog::shutdown();
 
     spdlog::init_thread_pool(CAOS_LOG_QUEUE, CAOS_LOG_THREAD_COUNT);
 
@@ -131,11 +133,11 @@ inline void Caos::Log::init()
 
     spdlog::flush_every(std::chrono::seconds(3));
 
-    SPDLOG_TRACE("Combined sink created and set it as default");
+spdlog::trace("Combined sink created and set it as default");
   }
   catch (const spdlog::spdlog_ex &ex)
   {
-    SPDLOG_CRITICAL("Errore nell'inizializzazione del log: {}", ex.what());
+    SPDLOG_CRITICAL("Error while log init: {}", ex.what());
     std::exit(1);
   }
 }
@@ -155,7 +157,7 @@ Caos::Log::Log()
 
 
 
-void Caos::Log::setSeverity()                                                                       // Set Log Severity & Severity Name
+void Caos::Log::setSeverity()
 {
   SPDLOG_TRACE("Setting log severity");
 
@@ -163,32 +165,13 @@ void Caos::Log::setSeverity()                                                   
 
   try
   {
-    const char* severity_name = std::getenv(CAOS_ENV_LOG_SEVERITY_NAME);
-
-    if (TerminalOptions::get_instance().has(CAOS_OPT_LOG_SEVERITY_NAME))
-    {
-      this->logger.combined.severity.name = TerminalOptions::get_instance().get<std::string>(CAOS_OPT_LOG_SEVERITY_NAME);
-    }
-    else if (severity_name!=nullptr)
+    if (const char* severity_name = std::getenv(CAOS_ENV_LOG_SEVERITY_NAME))
     {
       this->logger.combined.severity.name = severity_name;
     }
-
-    // Set by default based on environment
-    if (this->logger.terminal.severity.name.empty() || this->logger.syslog.severity.name.empty())
+    else
     {
-      if (Environment::get_instance().getEnv() == Environment::ENV::dev)
-      {
-        this->logger.combined.severity.name = CAOS_LOG_SEVERITY_ON_DEV_VALUE;
-      }
-      else if (Environment::get_instance().getEnv() == Environment::ENV::test)
-      {
-        this->logger.combined.severity.name = CAOS_LOG_SEVERITY_ON_TEST_VALUE;
-      }
-      else if (Environment::get_instance().getEnv() == Environment::ENV::production)
-      {
-        this->logger.combined.severity.name = CAOS_LOG_SEVERITY_ON_PRODUCTION_VALUE;
-      }
+      this->logger.combined.severity.name = TerminalOptions::get_instance().get<std::string>(CAOS_OPT_LOG_SEVERITY_NAME);
     }
 
     SPDLOG_TRACE("Log severity is \"{}\"",this->logger.combined.severity.name);
@@ -218,17 +201,17 @@ void Caos::Log::setSeverity()                                                   
 /* +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  * class implementazione caos
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-void Caos::PRINT_LOGO()                 noexcept
+void Caos::PRINT_LOGO() noexcept
 {
-  std::cout << _logo << "\n";
+  std::cout << _logo << "\n\n\n";
 }
 
-void Caos::PRINT_VERSION()          noexcept
+void Caos::PRINT_VERSION() noexcept
 {
   std::cout << "CAOS Version: " << CAOS_VERSION << "\n";
 }
 
-void Caos::PRINT_HEADER()               noexcept
+void Caos::PRINT_HEADER() noexcept
 {
   Caos::PRINT_VERSION();
   std::cout << "\n\n";
@@ -250,9 +233,7 @@ Caos::~Caos()
 }
 
 Caos::Caos(int argc, char* argv[], initFlags flags)
-:
-  terminalPtr(&TerminalOptions::get_instance(argc, argv)),
-  environmentRef(Environment::get_instance())
+: terminalPtr(&TerminalOptions::get_instance(argc, argv))
 {
 
   if (static_cast<std::uint8_t>(flags) & static_cast<std::uint8_t>(initFlags::Repository))
@@ -260,13 +241,12 @@ Caos::Caos(int argc, char* argv[], initFlags flags)
     this->repository = std::make_unique<Cache>(std::make_unique<Database>());
   }
 
-  if (static_cast<std::uint8_t>(flags) & static_cast<std::uint8_t>(initFlags::CrowCpp)) {
 #ifdef CAOS_USE_CROWCPP
+  if (static_cast<std::uint8_t>(flags) & static_cast<std::uint8_t>(initFlags::CrowCpp))
+  {
     this->crowcpp = std::make_unique<CrowCpp>();
-#else
-    spdlog::warn("Init of CrowCpp failed because CAOS_USE_CROWCPP is Off");
-#endif
   }
+#endif
 
   Caos::PRINT_HEADER();
 }

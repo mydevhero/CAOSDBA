@@ -58,12 +58,7 @@ Database::Pool::Pool()
 {
   if (this->terminalPtr==nullptr)
   {
-    this->terminalPtr     = &TerminalOptions::get_instance();
-  }
-
-  if (this->environmentRef==nullptr)
-  {
-    this->environmentRef  = &Environment::get_instance();
+    this->terminalPtr = &TerminalOptions::get_instance();
   }
 
   setUser()                 ;
@@ -81,23 +76,21 @@ Database::Pool::Pool()
 
   setPoolWait()             ;
   setPoolTimeout()          ;
-  #ifdef CAOS_USE_DB_POSTGRESQL
-  setKeepAlives()           ;
-  setKeepAlivesIdle()       ;
-  setKeepAlivesInterval()   ;
-  setKeepAlivesCount()      ;
-  #endif
   setConnectTimeout()       ;
   setMaxWait()              ;
   setHealthCheckInterval()  ;
 
-  #ifdef CAOS_USE_DB_POSTGRESQL
+#ifdef CAOS_USE_DB_POSTGRESQL
+  setKeepAlives()           ;
+  setKeepAlivesIdle()       ;
+  setKeepAlivesInterval()   ;
+  setKeepAlivesCount()      ;
   setConnectStr()           ;
-  #endif
+#endif
 
-  #if (defined(CAOS_USE_DB_MYSQL)||defined(CAOS_USE_DB_MARIADB))
+#if (defined(CAOS_USE_DB_MYSQL)||defined(CAOS_USE_DB_MARIADB))
   setConnectOpt()           ;
-  #endif
+#endif
 
   this->healthCheckThread_ = std::thread([this]() {
     this->healthCheckLoop();
@@ -157,78 +150,25 @@ void Database::Pool::setUser()
 {
   static constexpr const char* fName = "Database::Pool::setUser";
 
-  try
-  {
-    // Set primary database user for production environment ----------------------------------------
-    if (this->terminalPtr->has(CAOS_OPT_DBUSER_NAME))
-    {
-      this->config.user = this->terminalPtr->get<std::string>(CAOS_OPT_DBUSER_NAME);
-    }
-    else if (const char* env_addr = std::getenv(CAOS_ENV_DBUSER_NAME))
-    {
-      this->config.user = env_addr;
-    }
-    else
-    {
-#if defined(CAOS_DEFAULT_DBUSER)
-      this->config.user = CAOS_DEFAULT_DBUSER;
-#endif
-    }
-    // ---------------------------------------------------------------------------------------------
 
+  Policy::StringIsPresent validator("DBUSER");
 
-
-    // Set alternative database user for test or dev environment -----------------------------------
-    if (this->isDevOrTestEnv())
-    {
-#if defined(CAOS_DEFAULT_DBUSER_ON_DEV_OR_TEST)
-      this->config.user = "" CAOS_DEFAULT_DBUSER_ON_DEV_OR_TEST;
-#endif
-    }
-    // ---------------------------------------------------------------------------------------------
-
-
-
-    // Deadly check --------------------------------------------------------------------------------
-    if (this->config.user.empty())
-    {
-      throw std::invalid_argument("DBUSER empty!");
-    }
-    // ---------------------------------------------------------------------------------------------
-
-  }
-  catch(const std::invalid_argument& e)
-  {
-    spdlog::critical("[{}] : {}",fName,e.what());
-    std::exit(1);
-  }
-  catch (const std::exception& e)
-  {
-    spdlog::critical("[{}] : {}",fName,e.what());
-    std::exit(1);
-  }
-
-
-
-
-  // Final -----------------------------------------------------------------------------------------
-  spdlog::info(defaultFinal,
-               fName,
-               "user",
-               this->config.user,
-               this->environmentRef->getName());
+  configureValue<std::string>(
+    this->config.user,                              // configField
+    &TerminalOptions::get_instance(),               // terminalPtr
+    CAOS_DBUSER_ENV_NAME,                           // envName
+    CAOS_DBUSER_OPT_NAME,                           // optName
+    "dbuser",                                       // fieldName
+    fName,                                          // callerName
+    validator,                                      // validator in namespace Policy
+    defaultFinal,
+    false                                           // exitOnError
+  );
 }
 // -------------------------------------------------------------------------------------------------
 // End of Database::Pool::setUser()
 // -------------------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------------------
-
-
-
-
-
-
-
 
 
 
@@ -239,76 +179,24 @@ void Database::Pool::setPass()
 {
   static constexpr const char* fName = "Database::Pool::setPass";
 
-  try
-  {
-    // Set primary database password for production environment ------------------------------------
-    if (this->terminalPtr->has(CAOS_OPT_DBPASS_NAME))
-    {
-      this->config.pass = this->terminalPtr->get<std::string>(CAOS_OPT_DBPASS_NAME);
-    }
-    else if (const char* env_addr = std::getenv(CAOS_ENV_DBPASS_NAME))
-    {
-      this->config.pass = env_addr;
-    }
-    else
-    {
-#if defined(CAOS_DEFAULT_DBPASS)
-      this->config.pass = CAOS_DEFAULT_DBPASS;
-#endif
-    }
-    // ---------------------------------------------------------------------------------------------
+  Policy::StringIsPresent validator("DBPASS");
 
-
-
-    // Set alternative database password for test or dev environment -------------------------------
-    if (this->isDevOrTestEnv())
-    {
-#if defined(CAOS_DEFAULT_DBPASS_ON_DEV_OR_TEST)
-      this->config.pass = "" CAOS_DEFAULT_DBPASS_ON_DEV_OR_TEST;
-#endif
-    }
-    // ---------------------------------------------------------------------------------------------
-
-
-
-    // Deadly check --------------------------------------------------------------------------------
-    if (this->config.pass.empty())
-    {
-      throw std::invalid_argument("DBPASS empty!");
-    }
-    // ---------------------------------------------------------------------------------------------
-  }
-  catch(const std::invalid_argument& e)
-  {
-    spdlog::critical("[{}] : {}",fName,e.what());
-    std::exit(1);
-  }
-  catch (const std::exception& e)
-  {
-    spdlog::critical("[{}] : {}",fName,e.what());
-    std::exit(1);
-  }
-
-
-
-  // Final -----------------------------------------------------------------------------------------
-  spdlog::info(defaultFinal,
-                  fName,
-                  "password",
-                  "*******",
-                  this->environmentRef->getName());
+  configureValue<std::string>(
+    this->config.pass,                              // configField
+    &TerminalOptions::get_instance(),               // terminalPtr
+    CAOS_DBPASS_ENV_NAME,                           // envName
+    CAOS_DBPASS_OPT_NAME,                           // optName
+    "dbpass",                                       // fieldName
+    fName,                                          // callerName
+    validator,                                      // validator in namespace Policy
+    defaultFinal,
+    false                                           // exitOnError
+  );
 }
 // -------------------------------------------------------------------------------------------------
 // End of Database::Pool::setPass()
 // -------------------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------------------
-
-
-
-
-
-
-
 
 
 
@@ -319,69 +207,19 @@ void Database::Pool::setHost()
 {
   static constexpr const char* fName = "Database::Pool::setHost";
 
-  try
-  {
-    // Set primary database host for production environment ----------------------------------------
-    if (this->terminalPtr->has(CAOS_OPT_DBHOST_NAME))
-    {
-      this->config.host = this->terminalPtr->get<std::string>(CAOS_OPT_DBHOST_NAME);
-    }
-    else if (const char* env_addr = std::getenv(CAOS_ENV_DBHOST_NAME))
-    {
-      this->config.host = env_addr;
-    }
-    else
-    {
-#if defined(CAOS_DEFAULT_DBHOST)
-      this->config.host = CAOS_DEFAULT_DBHOST;
-#endif
-    }
-    // ---------------------------------------------------------------------------------------------
+  Policy::HostValidator validator("DBHOST");
 
-
-
-    // Set alternative database host for test or dev environment -----------------------------------
-    if (this->isDevOrTestEnv())
-    {
-
-#if defined(CAOS_DEFAULT_DBHOST_ON_DEV_OR_TEST)
-      this->config.host = "" CAOS_DEFAULT_DBHOST_ON_DEV_OR_TEST;
-#endif
-    }
-    // ---------------------------------------------------------------------------------------------
-
-
-
-    // Validation ----------------------------------------------------------------------------------
-    struct sockaddr_in sa4={};
-    struct sockaddr_in6 sa6={};
-
-    if (inet_pton(AF_INET, this->config.host.c_str(), &(sa4.sin_addr)) == 0
-        && inet_pton(AF_INET6, this->config.host.c_str(), &(sa6.sin6_addr)) == 0)
-    {
-      throw std::invalid_argument("Invalid Address: " + this->config.host);
-    }
-    // ---------------------------------------------------------------------------------------------
-  }
-  catch(const std::invalid_argument& e)
-  {
-    spdlog::critical("[{}] : {}",fName,e.what());
-    std::exit(1);
-  }
-  catch (const std::exception& e)
-  {
-    spdlog::critical("[{}] : {}",fName,e.what());
-    std::exit(1);
-  }
-
-
-
-  // Final -----------------------------------------------------------------------------------------
-  spdlog::info(defaultFinal,
-               fName,
-               "host",
-               this->config.host,
-               this->environmentRef->getName());
+  configureValue<std::string>(
+    this->config.host,                              // configField
+    &TerminalOptions::get_instance(),               // terminalPtr
+    CAOS_DBHOST_ENV_NAME,                           // envName
+    CAOS_DBHOST_OPT_NAME,                           // optName
+    "host",                                         // fieldName
+    fName,                                          // callerName
+    validator,                                      // validator in namespace Policy
+    defaultFinal,
+    false                                           // exitOnError
+  );
 }
 // -------------------------------------------------------------------------------------------------
 // End of Database::Pool::setHost()
@@ -404,64 +242,19 @@ void Database::Pool::setPort()
 {
   static constexpr const char* fName = "Database::Pool::setPort";
 
-  try
-  {
-    // Set primary database port for production environment ----------------------------------------
-    if (this->terminalPtr->has(CAOS_OPT_DBPORT_NAME))
-    {
-      this->config.port = this->terminalPtr->get<std::uint16_t>(CAOS_OPT_DBPORT_NAME);
-    }
-    else if (const char* port_str = std::getenv(CAOS_ENV_DBPORT_NAME))
-    {
-      this->config.port = static_cast<std::uint16_t>(std::stoi(port_str));
-    }
-    else
-    {
-#if defined(CAOS_DEFAULT_DBPORT) && (CAOS_DEFAULT_DBPORT + 0) > 0
-      this->config.port = static_cast<std::uint16_t>(CAOS_DEFAULT_DBPORT);
-#endif
-    }
-    // ---------------------------------------------------------------------------------------------
+  Policy::PortValidator validator;
 
-
-
-    // Set alternative database port for test or dev environment -----------------------------------
-    if (this->isDevOrTestEnv())
-    {
-#if defined(CAOS_DEFAULT_DBPORT_ON_DEV_OR_TEST) && (CAOS_DEFAULT_DBPORT_ON_DEV_OR_TEST + 0) > 0
-      this->config.port = static_cast<std::uint16_t>(CAOS_DEFAULT_DBPORT_ON_DEV_OR_TEST);
-#endif
-    }
-    // ---------------------------------------------------------------------------------------------
-
-
-
-    // Validation ----------------------------------------------------------------------------------
-    if(this->config.port < unprivileged_port_min || this->config.port > unprivileged_port_max)
-    {
-      throw std::out_of_range("TCP Port out of range: " + std::to_string(this->config.port));
-    }
-    // ---------------------------------------------------------------------------------------------
-  }
-  catch(const std::out_of_range& e)
-  {
-    spdlog::critical("[{}] : [TCP Port range from {} to {}] : {}",fName, unprivileged_port_min, unprivileged_port_max, e.what());
-    throw;
-  }
-  catch (const std::exception& e)
-  {
-    spdlog::critical("[{}] : {}",fName,e.what());
-    throw;
-  }
-
-
-
-  // Final -----------------------------------------------------------------------------------------
-  spdlog::info(defaultFinal,
-               fName,
-               "port",
-               this->config.port,
-               this->environmentRef->getName());
+  configureValue<std::uint16_t>(
+    this->config.port,                              // configField
+    &TerminalOptions::get_instance(),               // terminalPtr
+    CAOS_DBPORT_ENV_NAME,                           // envName
+    CAOS_DBPORT_OPT_NAME,                           // optName
+    "dbport",                                       // fieldName
+    fName,                                          // callerName
+    validator,                                      // validator in namespace Policy
+    defaultFinal,
+    false                                           // exitOnError
+  );
 }
 // -------------------------------------------------------------------------------------------------
 // End of Database::Pool::setPort()
@@ -484,53 +277,19 @@ void Database::Pool::setName()
 {
   static constexpr const char* fName = "Database::Pool::setName";
 
-  try
-  {
-    // Set primary database name for production environment ----------------------------------------
-    if (this->terminalPtr->has(CAOS_OPT_DBNAME_NAME))
-    {
-      this->config.name = this->terminalPtr->get<std::string>(CAOS_OPT_DBNAME_NAME);
-    }
-    else if (const char* env_addr = std::getenv(CAOS_ENV_DBNAME_NAME))
-    {
-      this->config.name = env_addr;
-    }
-    else
-    {
-#if defined(CAOS_DEFAULT_DBNAME)
-      this->config.name = CAOS_DEFAULT_DBNAME;
-#endif
-    }
-    // ---------------------------------------------------------------------------------------------
+  Policy::StringIsPresent validator("DBNAME");
 
-
-
-    // Set alternative database name for test or dev environment -----------------------------------
-    if (this->isDevOrTestEnv())
-    {
-#if defined(CAOS_DEFAULT_DBNAME_ON_DEV_OR_TEST)
-      this->config.name = "" CAOS_DEFAULT_DBNAME_ON_DEV_OR_TEST;
-#endif
-    }
-    // ---------------------------------------------------------------------------------------------
-  }
-  catch(const std::invalid_argument& e)
-  {
-    spdlog::critical("[{}] : {}",fName,e.what());
-    std::exit(1);
-  }
-  catch (const std::exception& e)
-  {
-    spdlog::critical("[{}] : {}",fName,e.what());
-    std::exit(1);
-  }
-
-  // Final -----------------------------------------------------------------------------------------
-  spdlog::info(defaultFinal,
-               fName,
-               "name",
-               this->config.name,
-               this->environmentRef->getName());
+  configureValue<std::string>(
+    this->config.name,                              // configField
+    &TerminalOptions::get_instance(),               // terminalPtr
+    CAOS_DBNAME_ENV_NAME,                           // envName
+    CAOS_DBNAME_OPT_NAME,                           // optName
+    "dbname",                                       // fieldName
+    fName,                                          // callerName
+    validator,                                      // validator in namespace Policy
+    defaultFinal,
+    false                                           // exitOnError
+  );
 }
 // -------------------------------------------------------------------------------------------------
 // End of Database::Pool::setName()
@@ -553,55 +312,21 @@ void Database::Pool::setPoolSizeMin()
 {
   static constexpr const char* fName = "Database::Pool::setPoolSizeMin";
 
-  try
-  {
-    // Set primary database poolsizemin for production environment ------------------------------------
-    const char* poolsizemin = std::getenv(CAOS_ENV_DBPOOLSIZEMIN_NAME);
+  using dataType = std::size_t;
 
-    if (this->terminalPtr->has(CAOS_OPT_DBPOOLSIZEMIN_NAME))
-    {
-      this->config.poolsizemin = this->terminalPtr->get<std::size_t>(CAOS_OPT_DBPOOLSIZEMIN_NAME);
-    }
-    else if (poolsizemin != nullptr)
-    {
-      this->config.poolsizemin = static_cast<std::size_t>(std::stoi(poolsizemin));
-    }
-    else
-    {
-#if defined(CAOS_DEFAULT_DBPOOLSIZEMIN) && (CAOS_DEFAULT_DBPOOLSIZEMIN + 0) > 0
-      this->config.poolsizemin = static_cast<std::size_t>(CAOS_DEFAULT_DBPOOLSIZEMIN);
-#endif
-    }
-    // ---------------------------------------------------------------------------------------------
+  Policy::NumberAtLeast<dataType> validator("DBPOOLSIZEMIN", CAOS_DBPOOLSIZEMIN_LIMIT_MIN);
 
-
-
-    // Set alternative database poolsizemin for test or dev environment ----------------------------
-    if (this->isDevOrTestEnv())
-    {
-#if defined(CAOS_DEFAULT_DBPOOLSIZEMIN_ON_DEV_OR_TEST) && (CAOS_DEFAULT_DBPOOLSIZEMIN_ON_DEV_OR_TEST + 0) > 0
-      this->config.poolsizemin = static_cast<std::size_t>(CAOS_DEFAULT_DBPOOLSIZEMIN_ON_DEV_OR_TEST);
-#endif
-    }
-    // ---------------------------------------------------------------------------------------------
-  }
-  catch(const std::invalid_argument& e)
-  {
-    spdlog::critical("[{}] : {}",fName,e.what());
-    std::exit(1);
-  }
-  catch (const std::exception& e)
-  {
-    spdlog::critical("[{}] : {}",fName,e.what());
-    std::exit(1);
-  }
-
-  // Final -----------------------------------------------------------------------------------------
-  spdlog::info(defaultFinal,
-               fName,
-               "poolsizemin",
-               this->config.poolsizemin,
-               this->environmentRef->getName());
+  configureValue<dataType>(
+    this->config.poolsizemin,                       // configField
+    &TerminalOptions::get_instance(),               // terminalPtr
+    CAOS_DBPOOLSIZEMIN_ENV_NAME,                    // envName
+    CAOS_DBPOOLSIZEMIN_OPT_NAME,                    // optName
+    "dbpoolsizemin",                                // fieldName
+    fName,                                          // callerName
+    validator,                                      // validator in namespace Policy
+    defaultFinal,
+    false                                           // exitOnError
+  );
 }
 // -------------------------------------------------------------------------------------------------
 // End of Database::Pool::setPoolSizeMin()
@@ -623,67 +348,26 @@ void Database::Pool::setPoolSizeMax()
 {
   static constexpr const char* fName = "Database::Pool::setPoolSizeMax";
 
-  try
-  {
-    // Set primary database poolsizemax for production environment ---------------------------------
-    const char* poolsizemax = std::getenv(CAOS_ENV_DBPOOLSIZEMAX_NAME);
+  using dataType = std::size_t;
 
-    if (this->terminalPtr->has(CAOS_OPT_DBPOOLSIZEMAX_NAME))
-    {
-      this->config.poolsizemax = this->terminalPtr->get<std::size_t>(CAOS_OPT_DBPOOLSIZEMAX_NAME);
-    }
-    else if (poolsizemax != nullptr)
-    {
-      this->config.poolsizemax = static_cast<std::size_t>(std::stoi(poolsizemax));
-    }
-    else
-    {
-#if defined(CAOS_DEFAULT_DBPOOLSIZEMAX) && (CAOS_DEFAULT_DBPOOLSIZEMAX + 0) > 0
-      this->config.poolsizemax = static_cast<std::size_t>(CAOS_DEFAULT_DBPOOLSIZEMAX);
-#endif
-    }
-    // ---------------------------------------------------------------------------------------------
+  Policy::NumberAtLeast<dataType> validator("DBPOOLSIZEMAX", CAOS_DBPOOLSIZEMAX_LIMIT_MIN);
 
-
-
-    // Set alternative database poolsizemax for test or dev environment -------------------------------
-    if (this->isDevOrTestEnv())
-    {
-#if defined(CAOS_DEFAULT_DBPOOLSIZEMAX_ON_DEV_OR_TEST) && (CAOS_DEFAULT_DBPOOLSIZEMAX_ON_DEV_OR_TEST + 0) > 0
-      this->config.poolsizemax = static_cast<std::size_t>(CAOS_DEFAULT_DBPOOLSIZEMAX_ON_DEV_OR_TEST);
-#endif
-    }
-    // ---------------------------------------------------------------------------------------------
-  }
-  catch(const std::invalid_argument& e)
-  {
-    spdlog::critical("[{}] : {}",fName,e.what());
-    std::exit(1);
-  }
-  catch (const std::exception& e)
-  {
-    spdlog::critical("[{}] : {}",fName,e.what());
-    std::exit(1);
-  }
-
-  // Final -----------------------------------------------------------------------------------------
-  spdlog::info(defaultFinal,
-               fName,
-               "poolsizemax",
-               this->config.poolsizemax,
-               this->environmentRef->getName());
+  configureValue<dataType>(
+    this->config.poolsizemax,                       // configField
+    &TerminalOptions::get_instance(),               // terminalPtr
+    CAOS_DBPOOLSIZEMAX_ENV_NAME,                    // envName
+    CAOS_DBPOOLSIZEMAX_OPT_NAME,                    // optName
+    "dbpoolsizemax",                                // fieldName
+    fName,                                          // callerName
+    validator,                                      // validator in namespace Policy
+    defaultFinal,
+    false                                           // exitOnError
+  );
 }
 // -------------------------------------------------------------------------------------------------
 // End of Database::Pool::setPoolSizeMax()
 // -------------------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------------------
-
-
-
-
-
-
-
 
 
 
@@ -694,57 +378,21 @@ void Database::Pool::setPoolWait()
 {
   static constexpr const char* fName = "Database::Pool::setPoolWait";
 
-  try
-  {
-    // Set primary database poolwait for production environment ------------------------------------
-    const char* poolwait = std::getenv(CAOS_ENV_DBPOOLWAIT_NAME);
+  using dataType = std::uint32_t;
 
-    if (this->terminalPtr->has(CAOS_OPT_DBPOOLWAIT_NAME))
-    {
-      this->config.poolwait = this->terminalPtr->get<std::uint32_t>(CAOS_OPT_DBPOOLWAIT_NAME);
-    }
-    else if (poolwait != nullptr)
-    {
-      this->config.poolwait = static_cast<std::uint32_t>(std::stoi(poolwait));
-    }
-    else
-    {
-#if defined(CAOS_DEFAULT_DBPOOLWAIT) && (CAOS_DEFAULT_DBPOOLWAIT + 0) > 0
-      this->config.poolwait = static_cast<std::uint32_t>(CAOS_DEFAULT_DBPOOLWAIT);
-#endif
-    }
-    // ---------------------------------------------------------------------------------------------
+  Policy::NumberAtLeast<dataType> validator("DBPOOLWAIT", CAOS_DBPOOLWAIT_LIMIT_MIN);
 
-
-
-    // Set alternative database poolwait for test or dev environment -------------------------------
-    if (this->isDevOrTestEnv())
-    {
-#if defined(CAOS_DEFAULT_DBPOOLWAIT_ON_DEV_OR_TEST) && (CAOS_DEFAULT_DBPOOLWAIT_ON_DEV_OR_TEST + 0) > 0
-      this->config.poolwait = static_cast<std::uint32_t>(CAOS_DEFAULT_DBPOOLWAIT_ON_DEV_OR_TEST);
-#endif
-    }
-    // ---------------------------------------------------------------------------------------------
-  }
-  catch(const std::invalid_argument& e)
-  {
-    spdlog::critical("[{}] : {}",fName,e.what());
-    std::exit(1);
-  }
-  catch (const std::exception& e)
-  {
-    spdlog::critical("[{}] : {}",fName,e.what());
-    std::exit(1);
-  }
-
-
-
-  // Final -----------------------------------------------------------------------------------------
-  spdlog::info(defaultFinal,
-               fName,
-               "poolwait",
-               this->config.poolwait,
-               this->environmentRef->getName());
+  configureValue<dataType>(
+    this->config.poolwait,                          // configField
+    &TerminalOptions::get_instance(),               // terminalPtr
+    CAOS_DBPOOLWAIT_ENV_NAME,                       // envName
+    CAOS_DBPOOLWAIT_OPT_NAME,                       // optName
+    "dbpoolwait",                                   // fieldName
+    fName,                                          // callerName
+    validator,                                      // validator in namespace Policy
+    defaultFinal,
+    false                                           // exitOnError
+  );
 }
 // -------------------------------------------------------------------------------------------------
 // End of Database::Pool::setPoolWait()
@@ -753,83 +401,33 @@ void Database::Pool::setPoolWait()
 
 
 
-
-
-
-
-
-
-
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Init of Database::Pool::setPoolTimeout()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Database::Pool::setPoolTimeout()
 {
-  static constexpr const char* fName = "Database::Pool::setPoolTimeout()";
+  static constexpr const char* fName = "Database::Pool::setPoolTimeout";
 
-  try
-  {
-    // Set primary database pooltimeout for production environment ---------------------------------
-    const char* pooltimeout = std::getenv(CAOS_ENV_DBPOOLTIMEOUT_NAME);
+  using dataType = std::chrono::milliseconds;
 
-    if (this->terminalPtr->has(CAOS_OPT_DBPOOLTIMEOUT_NAME))
-    {
-      this->config.pooltimeout = std::chrono::milliseconds(this->terminalPtr->get<std::uint32_t>(CAOS_OPT_DBPOOLTIMEOUT_NAME));
-    }
-    else if (pooltimeout != nullptr)
-    {
-      this->config.pooltimeout = std::chrono::milliseconds(static_cast<std::chrono::milliseconds>(std::stoi(pooltimeout)));
-    }
-    else
-    {
-#if defined(CAOS_DEFAULT_DBPOOLTIMEOUT) && (CAOS_DEFAULT_DBPOOLTIMEOUT + 0) > 0
-      this->config.pooltimeout = std::chrono::milliseconds(CAOS_DEFAULT_DBPOOLTIMEOUT);
-#endif
-    }
-    // ---------------------------------------------------------------------------------------------
+  Policy::NumberAtLeast<dataType> validator("DBPOOLTIMEOUT", CAOS_DBPOOLTIMEOUT_LIMIT_MIN);
 
-
-
-    // Set alternative database pooltimeout for test or dev environment ----------------------------
-    if (this->isDevOrTestEnv())
-    {
-#if defined(CAOS_DEFAULT_DBPOOLTIMEOUT_ON_DEV_OR_TEST) && (CAOS_DEFAULT_DBPOOLTIMEOUT_ON_DEV_OR_TEST + 0) > 0
-      this->config.pooltimeout = std::chrono::milliseconds(static_cast<std::chrono::milliseconds>(std::stoi(CAOS_DEFAULT_DBPOOLTIMEOUT_ON_DEV_OR_TEST)));
-#endif
-    }
-    // ---------------------------------------------------------------------------------------------
-  }
-  catch(const std::invalid_argument& e)
-  {
-    spdlog::critical("[{}] : {}",fName,e.what());
-    std::exit(1);
-  }
-  catch (const std::exception& e)
-  {
-    spdlog::critical("[{}] : {}",fName,e.what());
-    std::exit(1);
-  }
-
-
-
-  // Final -----------------------------------------------------------------------------------------
-  spdlog::info(defaultFinal,
-               fName,
-               "pooltimeout",
-               static_cast<uint32_t>(this->config.pooltimeout.count()),
-               this->environmentRef->getName());
+  configureValue<dataType, std::uint32_t>(
+    this->config.pooltimeout,                       // configField
+    &TerminalOptions::get_instance(),               // terminalPtr
+    CAOS_DBPOOLTIMEOUT_ENV_NAME,                    // envName
+    CAOS_DBPOOLTIMEOUT_OPT_NAME,                    // optName
+    "dbpooltimeout",                                // fieldName
+    fName,                                          // callerName
+    validator,                                      // validator in namespace Policy
+    defaultFinal,
+    false                                           // exitOnError
+  );
 }
 // -------------------------------------------------------------------------------------------------
 // End of Database::Pool::setPoolTimeout()
 // -------------------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------------------
-
-
-
-
-
-
-
 
 
 
@@ -840,57 +438,21 @@ void Database::Pool::setConnectTimeout()
 {
   static constexpr const char* fName = "Database::Pool::setConnectTimeout";
 
-  try
-  {
-    // Set primary database connect_timeout for production environment -----------------------------
-    const char* connect_timeout = std::getenv(CAOS_ENV_DBCONNECT_TIMEOUT_NAME);
+  using dataType = std::size_t;
 
-    if (this->terminalPtr->has(CAOS_OPT_DBCONNECT_TIMEOUT_NAME))
-    {
-      this->config.connect_timeout = this->terminalPtr->get<std::size_t>(CAOS_OPT_DBCONNECT_TIMEOUT_NAME);
-    }
-    else if (connect_timeout != nullptr)
-    {
-      this->config.connect_timeout = static_cast<std::size_t>(std::stoi(connect_timeout));
-    }
-    else
-    {
-#if defined(CAOS_DEFAULT_DBCONNECT_TIMEOUT) && (CAOS_DEFAULT_DBCONNECT_TIMEOUT + 0) > 0
-      this->config.connect_timeout = static_cast<std::size_t>(CAOS_DEFAULT_DBCONNECT_TIMEOUT);
-#endif
-    }
-    // ---------------------------------------------------------------------------------------------
+  Policy::NumberAtLeast<dataType> validator("DBCONNECT_TIMEOUT", CAOS_DBCONNECT_TIMEOUT_LIMIT_MIN);
 
-
-
-    // Set alternative database connect_timeout for test or dev environment ------------------------
-    if (this->isDevOrTestEnv())
-    {
-#if defined(CAOS_DEFAULT_DBCONNECT_TIMEOUT_ON_DEV_OR_TEST) && (CAOS_DEFAULT_DBCONNECT_TIMEOUT_ON_DEV_OR_TEST + 0) > 0
-      alternative_connect_timeout = static_cast<std::size_t>(CAOS_DEFAULT_DBCONNECT_TIMEOUT_ON_DEV_OR_TEST);
-#endif
-    }
-    // ---------------------------------------------------------------------------------------------
-  }
-  catch(const std::invalid_argument& e)
-  {
-    spdlog::critical("[{}] : {}",fName,e.what());
-    std::exit(1);
-  }
-  catch (const std::exception& e)
-  {
-    spdlog::critical("[{}] : {}",fName,e.what());
-    std::exit(1);
-  }
-
-
-
-  // Final -----------------------------------------------------------------------------------------
-  spdlog::info(defaultFinal,
-               fName,
-               "connect_timeout",
-               this->config.connect_timeout,
-               this->environmentRef->getName());
+  configureValue<dataType>(
+    this->config.connect_timeout,                   // configField
+    &TerminalOptions::get_instance(),               // terminalPtr
+    CAOS_DBCONNECT_TIMEOUT_ENV_NAME,                // envName
+    CAOS_DBCONNECT_TIMEOUT_OPT_NAME,                // optName
+    "dbconnect_timeout",                            // fieldName
+    fName,                                          // callerName
+    validator,                                      // validator in namespace Policy
+    defaultFinal,
+    false                                           // exitOnError
+  );
 }
 // -------------------------------------------------------------------------------------------------
 // End of Database::Pool::setConnectTimeout()
@@ -913,57 +475,21 @@ void Database::Pool::setMaxWait()
 {
   static constexpr const char* fName = "Database::Pool::setMaxWait";
 
-  try
-  {
-    // Set primary database poolwait for production environment ------------------------------------
-    const char* max_wait = std::getenv(CAOS_ENV_DBMAXWAIT_NAME);
+  using dataType = std::chrono::milliseconds;
 
-    if (this->terminalPtr->has(CAOS_OPT_DBMAXWAIT_NAME))
-    {
-      this->config.max_wait = std::chrono::milliseconds(this->terminalPtr->get<std::uint32_t>(CAOS_OPT_DBMAXWAIT_NAME));
-    }
-    else if (max_wait != nullptr)
-    {
-      this->config.max_wait = std::chrono::milliseconds(static_cast<std::chrono::milliseconds>(std::stoi(max_wait)));
-    }
-    else
-    {
-#if defined(CAOS_DEFAULT_DBMAXWAIT) && (CAOS_DEFAULT_DBMAXWAIT + 0) > 0
-      this->config.max_wait = std::chrono::milliseconds(CAOS_DEFAULT_DBMAXWAIT);
-#endif
-    }
-    // ---------------------------------------------------------------------------------------------
+  Policy::NumberAtLeast<dataType> validator("DBMAXWAIT", CAOS_DBMAXWAIT_LIMIT_MIN);
 
-
-
-    // Set alternative database max_wait for test or dev environment -------------------------------
-    if (this->isDevOrTestEnv())
-    {
-#if defined(CAOS_DEFAULT_DBMAXWAIT_ON_DEV_OR_TEST) && (CAOS_DEFAULT_DBMAXWAIT_ON_DEV_OR_TEST + 0) > 0
-      this->config.max_wait = std::chrono::milliseconds(static_cast<std::chrono::milliseconds>(std::stoi(CAOS_DEFAULT_DBMAXWAIT_ON_DEV_OR_TEST)));
-#endif
-    }
-    // ---------------------------------------------------------------------------------------------
-  }
-  catch(const std::invalid_argument& e)
-  {
-    spdlog::critical("[{}] : {}",fName,e.what());
-    std::exit(1);
-  }
-  catch (const std::exception& e)
-  {
-    spdlog::critical("[{}] : {}",fName,e.what());
-    std::exit(1);
-  }
-
-
-
-  // Final -----------------------------------------------------------------------------------------
-  spdlog::info(defaultFinal,
-               fName,
-               "maxwait",
-               static_cast<uint32_t>(this->config.max_wait.count()),
-               this->environmentRef->getName());
+  configureValue<dataType, std::uint32_t>(
+    this->config.maxwait,                           // configField
+    &TerminalOptions::get_instance(),               // terminalPtr
+    CAOS_DBMAXWAIT_ENV_NAME,                        // envName
+    CAOS_DBMAXWAIT_OPT_NAME,                        // optName
+    "dbmaxwait",                                    // fieldName
+    fName,                                          // callerName
+    validator,                                      // validator in namespace Policy
+    defaultFinal,
+    false                                           // exitOnError
+  );
 }
 // -------------------------------------------------------------------------------------------------
 // End of Database::Pool::setMaxWait()
@@ -987,57 +513,21 @@ void Database::Pool::setHealthCheckInterval()
 {
   static constexpr const char* fName = "Database::Pool::setHealthCheckInterval";
 
-  try
-  {
-    // Set primary database health_check_interval for production environment -----------------------
-    const char* health_check_interval = std::getenv(CAOS_ENV_DBHEALTHCHECKINTERVAL_NAME);
+  using dataType = std::chrono::milliseconds;
 
-    if (this->terminalPtr->has(CAOS_OPT_DBHEALTHCHECKINTERVAL_NAME))
-    {
-      this->config.health_check_interval = std::chrono::milliseconds(this->terminalPtr->get<std::uint32_t>(CAOS_OPT_DBHEALTHCHECKINTERVAL_NAME));
-    }
-    else if (health_check_interval != nullptr)
-    {
-      this->config.health_check_interval = std::chrono::milliseconds(static_cast<std::chrono::milliseconds>(std::stoi(health_check_interval)));
-    }
-    else
-    {
-#if defined(CAOS_DEFAULT_DBHEALTHCHECKINTERVAL) && (CAOS_DEFAULT_DBHEALTHCHECKINTERVAL + 0) > 0
-      this->config.health_check_interval = std::chrono::milliseconds(CAOS_DEFAULT_DBHEALTHCHECKINTERVAL);
-#endif
-    }
-    // ---------------------------------------------------------------------------------------------
+  Policy::NumberAtLeast<dataType> validator("DBHEALTHCHECKINTERVAL", CAOS_DBHEALTHCHECKINTERVAL_LIMIT_MIN);
 
-
-
-    // Set alternative database poolwait for test or dev environment -------------------------------
-    if (this->isDevOrTestEnv())
-    {
-#if defined(CAOS_DEFAULT_DBHEALTHCHECKINTERVAL_ON_DEV_OR_TEST) && (CAOS_DEFAULT_DBHEALTHCHECKINTERVAL_ON_DEV_OR_TEST + 0) > 0
-      this->config.health_check_interval = std::chrono::milliseconds(static_cast<std::chrono::milliseconds>(std::stoi(CAOS_DEFAULT_DBHEALTHCHECKINTERVAL_ON_DEV_OR_TEST)));
-#endif
-    }
-    // ---------------------------------------------------------------------------------------------
-  }
-  catch(const std::invalid_argument& e)
-  {
-    spdlog::critical("[{}] : {}",fName,e.what());
-    std::exit(1);
-  }
-  catch (const std::exception& e)
-  {
-    spdlog::critical("[{}] : {}",fName,e.what());
-    std::exit(1);
-  }
-
-
-
-  // Final -----------------------------------------------------------------------------------------
-  spdlog::info(defaultFinal,
-               fName,
-               "health_check_interval",
-               static_cast<uint32_t>(this->config.health_check_interval.count()),
-               this->environmentRef->getName());
+  configureValue<dataType, std::uint32_t>(
+    this->config.healthCheckInterval,               // configField
+    &TerminalOptions::get_instance(),               // terminalPtr
+    CAOS_DBHEALTHCHECKINTERVAL_ENV_NAME,            // envName
+    CAOS_DBHEALTHCHECKINTERVAL_OPT_NAME,            // optName
+    "dbhealthcheckinterval",                        // fieldName
+    fName,                                          // callerName
+    validator,                                      // validator in namespace Policy
+    defaultFinal,
+    false                                           // exitOnError
+  );
 }
 // -------------------------------------------------------------------------------------------------
 // End of Database::Pool::setHealthCheckInterval()
@@ -1062,22 +552,20 @@ const std::size_t&                Database::Pool::getPoolSizeMin()          cons
 const std::size_t&                Database::Pool::getPoolSizeMax()          const noexcept { return this->config.poolsizemax;           }
 const std::uint32_t&              Database::Pool::getPoolWait()             const noexcept { return this->config.poolwait;              }
 const std::chrono::milliseconds&  Database::Pool::getPoolTimeout()          const noexcept { return this->config.pooltimeout;           }
+const std::size_t&                Database::Pool::getConnectTimeout()       const noexcept { return this->config.connect_timeout;       }
+
 #ifdef CAOS_USE_DB_POSTGRESQL
 const std::size_t&                Database::Pool::getKeepAlives()           const noexcept { return this->config.keepalives;            }
 const std::size_t&                Database::Pool::getKeepAlivesIdle()       const noexcept { return this->config.keepalives_idle;       }
 const std::size_t&                Database::Pool::getKeepAlivesInterval()   const noexcept { return this->config.keepalives_interval;   }
 const std::size_t&                Database::Pool::getKeepAlivesCount()      const noexcept { return this->config.keepalives_count;      }
 const std::string&                Database::Pool::getConnectStr()           const noexcept { return this->config.connection_string;     }
-#endif
-const std::size_t&                Database::Pool::getConnectTimeout()       const noexcept { return this->config.connect_timeout;       }
-
-#if (defined(CAOS_USE_DB_MYSQL)||defined(CAOS_USE_DB_MARIADB))
+#elif (defined(CAOS_USE_DB_MYSQL)||defined(CAOS_USE_DB_MARIADB))
       sql::ConnectOptionsMap&     Database::Pool::getConnectOpt()                 noexcept { return this->config.connection_options;    }
 #endif
 
-const std::chrono::milliseconds&  Database::Pool::getMaxWait()              const noexcept { return this->config.max_wait;              }
-const std::chrono::milliseconds&  Database::Pool::getHealthCheckInterval()  const noexcept { return this->config.health_check_interval; }
-// const bool                        Database::Pool::isDevOrTestEnv()          const noexcept { return this->environmentRef->getEnv() == Environment::ENV::dev || this->environmentRef->getEnv() == Environment::ENV::test; }
+const std::chrono::milliseconds&  Database::Pool::getMaxWait()              const noexcept { return this->config.maxwait;               }
+const std::chrono::milliseconds&  Database::Pool::getHealthCheckInterval()  const noexcept { return this->config.healthCheckInterval;   }
 
 
 
@@ -1192,7 +680,7 @@ bool Database::Pool::checkPoolSize(std::size_t& askingPoolSize) noexcept
 
   if (totalConnections >= poolSizeMax)  // Don't saturate Database connections
   {
-    spdlog::warn("[{}] Connection pool limit reached, verify CAOS_DEFAULT_DBPOOLSIZEMAX variable, current poolsize is {}, asked for {} new connections, max poolsize is {}",
+    spdlog::warn("[{}] Connection pool limit reached, verify CAOS_DBPOOLSIZEMAX variable, current poolsize is {}, asked for {} new connections, max poolsize is {}",
                  fName,
                  totalConnections,
                  askingPoolSize,
@@ -1230,7 +718,7 @@ std::size_t Database::Pool::init(std::size_t count)
   spdlog::info("[{}] New pool building", fName);
 
   while (i < pool_size                                                                              // Create connections until the requested size is reached
-         && running_.load(std::memory_order_acquire)                                                // Stop if a signal is detect
+         && running_.load(std::memory_order_acquire)                                                // Stop if a signal detected
          && !this->connectionRefused.load(std::memory_order_acquire))                               // Stop if a previous connection was refused
   {
     try
@@ -1267,7 +755,7 @@ std::size_t Database::Pool::init(std::size_t count)
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Database::Pool::PoolData& Database::Pool::getPoolData() noexcept
 {
-  static PoolData instance(this->getPoolSizeMax());                                     // Lazy init, thread-safe in C++11
+  static PoolData instance(this->getPoolSizeMax());
   return instance;
 }
 // -------------------------------------------------------------------------------------------------
@@ -1471,7 +959,7 @@ dboptuniqptr Database::Pool::acquireConnection()
         {
           try
           {
-            #if VALIDATE_CONNECTION_BEFORE_ACQUIRE==1
+            #if CAOS_VALIDATE_CONNECTION_BEFORE_ACQUIRE==1
             if (this->validateConnection(connection))
             {
             #else

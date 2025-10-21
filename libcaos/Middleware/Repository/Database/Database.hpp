@@ -249,7 +249,7 @@ class Database : public IRepository
           }
         };
 
-        std::atomic<bool>                             connectionRefused                         ;
+        std::atomic<bool>                             connectionRefused     {false}             ;
 
         struct config_s
         {
@@ -265,7 +265,7 @@ class Database : public IRepository
 #endif
                                                                                  }              ;
 
-          std::string                                 name                  {"caos"}            ;
+          std::string                                 name                  {""}                ;
           std::size_t                                 poolsizemin           {0}                 ;
           std::size_t                                 poolsizemax           {0}                 ;
           std::uint32_t                               poolwait              {0}                 ;
@@ -285,8 +285,8 @@ class Database : public IRepository
           sql::ConnectOptionsMap                      connection_options                        ;
 #endif
 
-          std::chrono::milliseconds                   max_wait              {0}                 ;
-          std::chrono::milliseconds                   health_check_interval {0}                 ;
+          std::chrono::milliseconds                   maxwait               {0}                 ;
+          std::chrono::milliseconds                   healthCheckInterval   {0}                 ;
         };
         config_s config;
 

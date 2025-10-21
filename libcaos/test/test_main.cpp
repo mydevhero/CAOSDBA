@@ -1,10 +1,3 @@
-/*
- * test_main.cpp
- *
- *  Created on: 26 lug 2025
- *      Author: mrbi314
- */
-
 #define CATCH_CONFIG_ENABLE_SOURCELINE_INFO
 #define CATCH_CONFIG_MAIN
 #define CATCH_CONFIG_FAST_COMPILE
@@ -14,8 +7,9 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_all.hpp>
 #include <catch2/benchmark/catch_benchmark.hpp>
+#include "libcaos/config.hpp"
 #include "libcaos.hpp"
-
+#include "tests/terminal_options.hpp"
 
 
 

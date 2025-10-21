@@ -71,7 +71,7 @@ int main(int argc, char* argv[])
   });
 
   app
-  .bindaddr(caos->crowcpp->getAddress())
+  .bindaddr(caos->crowcpp->getHost())
   .port(caos->crowcpp->getPort())
   .concurrency(caos->crowcpp->getThreadCount())
   /*.multithreaded()*/

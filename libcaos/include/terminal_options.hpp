@@ -33,11 +33,23 @@ class TerminalOptions {
 
     static TerminalOptions& get_instance(int argc = 0, char** argv = nullptr)
     {
-      static TerminalOptions instance(argc, argv);
-      return instance;
+      if (!instance_)
+      {
+          instance_ = std::make_unique<TerminalOptions>(argc, argv);
+      }
+      return *instance_;
     }
 
+#ifdef CAOS_ENV_TEST
+    static void reset()
+    {
+      instance_.reset();
+    }
+#endif
+
+    TerminalOptions(int argc, char** argv);
     ~TerminalOptions() = default;
+
     void parse();
     [[nodiscard]] bool has(const std::string& option) const noexcept;
 
@@ -52,8 +64,8 @@ class TerminalOptions {
       return (*result)[option].as<T>();
     }
 
+
   private:
-    TerminalOptions(int argc, char** argv);
     [[nodiscard]] std::string help() const noexcept;
 
     TerminalOptions& add_option(const std::string& name, const std::string& description);
@@ -71,6 +83,7 @@ class TerminalOptions {
     char** argv;
     std::unique_ptr<cxxopts::Options> options;
     std::unique_ptr<cxxopts::ParseResult> result;
+    static std::unique_ptr<TerminalOptions> instance_;
 };
 /* -------------------------------------------------------------------------------------------------
  *

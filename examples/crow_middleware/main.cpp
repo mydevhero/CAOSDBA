@@ -20,7 +20,6 @@
 
 #include <Repository.hpp>
 #include <memory>
-#include <Repository.hpp>
 
 int main(int argc, char* argv[])
 {
@@ -75,7 +74,7 @@ int main(int argc, char* argv[])
   auto caos = std::make_unique<Caos>(argc, argv, initFlags::CrowCpp);
 
   app
-  .bindaddr(caos->crowcpp->getAddress())
+  .bindaddr(caos->crowcpp->getHost())
   .port(caos->crowcpp->getPort())
   .concurrency(caos->crowcpp->getThreadCount())
   /*.multithreaded()*/

@@ -3,11 +3,11 @@ cmake_minimum_required(VERSION 3.5)
 
 add_executable(stress main.cpp)
 set_target_properties(stress PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/examples/bin/
+  RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/examples/bin/
 )
 
 # Configurazioni debug con sanitizer
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+if(CMAKE_BUILD_TYPE STREQUAL "debug")
   message(STATUS "Sanitizer abilitati per build Debug")
 
   target_compile_options(stress PRIVATE
@@ -25,6 +25,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 target_link_libraries(stress PUBLIC
-    libcaos
-    repoexception
+  libcaos
+  repoexception
 )

@@ -22,7 +22,6 @@
 
 #include <libcaos/config.hpp>
 #include <terminal_options.hpp>
-#include <environment.hpp>
 
 #include "IRepository.hpp"
 #include "Cache/Cache.hpp"
@@ -116,7 +115,6 @@ class Caos
 
 
     const TerminalOptions*    terminalPtr;
-    const Environment&        environmentRef;
     const Log                 log;
     std::unique_ptr<Cache>    repository;
 

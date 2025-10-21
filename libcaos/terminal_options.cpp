@@ -23,61 +23,74 @@
 /* +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  * Init of implementation of TerminalOptions
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
+std::unique_ptr<TerminalOptions> TerminalOptions::instance_ = nullptr;
+
 TerminalOptions::TerminalOptions(int argc, char** argv) : argc(argc), argv(argv)
 {
   options = std::make_unique<cxxopts::Options>(argv[0], CAOS_OFFICIALNAME);
 
   options->add_options()
-    ("help"                                     , "Show help"                                               )
-    ("version"                                  , "Get build version&timestamp"                             )
-
-    // Environment
-    (CAOS_OPT_APP_ENV_NAME                      , "Environment"                         , cxxopts::value<std::string>()   )
+    ("help"                                           , "Show help"                                                                                                                                       )
+    ("version"                                        , "Get build version&timestamp"                                                                                                                     )
 
     // Log
-    (CAOS_OPT_LOG_SEVERITY_NAME                 , "Log Terminal Severity"               , cxxopts::value<std::string>()   )
+#ifdef CAOS_ENV_DEBUG
+    (CAOS_OPT_LOG_SEVERITY_NAME                       , "Log Terminal Severity"           , cxxopts::value<std::string>()->default_value(CAOS_LOG_SEVERITY_ON_DEBUG_VALUE)                                )
+#endif
+#ifdef CAOS_ENV_TEST
+    (CAOS_OPT_LOG_SEVERITY_NAME                       , "Log Terminal Severity"           , cxxopts::value<std::string>()->default_value(CAOS_LOG_SEVERITY_ON_TEST_VALUE)                                 )
+#endif
+#ifdef CAOS_ENV_RELEASE
+    (CAOS_OPT_LOG_SEVERITY_NAME                       , "Log Terminal Severity"           , cxxopts::value<std::string>()->default_value(CAOS_LOG_SEVERITY_ON_RELEASE_VALUE)                              )
+#endif
 
     // CrowCpp
 #ifdef CAOS_USE_CROWCPP
-    (CAOS_OPT_CROWCPP_BINDTOADDRESS_NAME        , "Bind to address"                     , cxxopts::value<std::string>()   )
-    (CAOS_OPT_CROWCPP_BINDTOPORT_NAME           , "Bind to port"                        , cxxopts::value<std::uint16_t>() )
-    (CAOS_OPT_CROWCPP_THREADS_NAME              , "Number of threads"                   , cxxopts::value<std::uint16_t>() )
+    (CAOS_CROWCPP_HOST_OPT_NAME              , "Bind to address"                 , cxxopts::value<std::string>()->default_value(CAOS_CROWCPP_HOST)                                      )
+    (CAOS_CROWCPP_PORT_OPT_NAME                 , "Bind to port"                    , cxxopts::value<std::uint16_t>()->default_value(std::to_string(CAOS_CROWCPP_PORT))               )
+    (CAOS_CROWCPP_THREADS_OPT_NAME                    , "Number of threads"               , cxxopts::value<std::size_t>()->default_value(std::to_string(CAOS_CROWCPP_THREADS))                    )
 #endif
 
     // Cache
 #ifdef CAOS_USE_CACHE
-    (CAOS_OPT_CACHEUSER_NAME                    , "Cache User"                          , cxxopts::value<std::string>()   )
-    (CAOS_OPT_CACHEPASS_NAME                    , "Cache Password"                      , cxxopts::value<std::string>()   )
-    (CAOS_OPT_CACHEHOST_NAME                    , "Cache Host"                          , cxxopts::value<std::string>()   )
-    (CAOS_OPT_CACHEPORT_NAME                    , "Cache Port"                          , cxxopts::value<std::uint16_t>() )
-    (CAOS_OPT_CACHECLIENTNAME_NAME              , "Cache Client Name"                   , cxxopts::value<std::string>()   )
-    (CAOS_OPT_CACHEINDEX_NAME                   , "Cache Index"                         , cxxopts::value<std::uint8_t>()  )
-    (CAOS_OPT_CACHECOMMANDTIMEOUT_NAME          , "Cache Command Timeout"               , cxxopts::value<std::uint32_t>() )
-    (CAOS_OPT_CACHEPOOLSIZEMIN_NAME             , "Cache Pool Size Min"                 , cxxopts::value<std::size_t>()   )
-    (CAOS_OPT_CACHEPOOLSIZEMAX_NAME             , "Cache Pool Size Max"                 , cxxopts::value<std::size_t>()   )
-    (CAOS_OPT_CACHEPOOLWAIT_NAME                , "Cache Pool Wait"                     , cxxopts::value<std::uint32_t>() )
-    (CAOS_OPT_CACHEPOOLCONNECTIONTIMEOUT_NAME   , "Cache Pool Connection Timeout"       , cxxopts::value<std::uint32_t>() )
-    (CAOS_OPT_CACHEPOOLCONNECTIONLIFETIME_NAME  , "Cache Pool Connection Lifetime"      , cxxopts::value<std::uint32_t>() )
-    (CAOS_OPT_CACHEPOOLCONNECTIONIDLETIME_NAME  , "Cache Pool Connection Idle Lifetime" , cxxopts::value<std::uint32_t>() )
+    (CAOS_CACHEUSER_OPT_NAME                          , "Cache User"                      , cxxopts::value<std::string>()->default_value(CAOS_CACHEUSER)                                          )
+    (CAOS_CACHEPASS_OPT_NAME                          , "Cache Password"                  , cxxopts::value<std::string>()->default_value(CAOS_CACHEPASS)                                          )
+    (CAOS_CACHEHOST_OPT_NAME                          , "Cache Host"                      , cxxopts::value<std::string>()->default_value(CAOS_CACHEHOST)                                          )
+    (CAOS_CACHEPORT_OPT_NAME                          , "Cache Port"                      , cxxopts::value<std::uint16_t>()->default_value(std::to_string(CAOS_CACHEPORT))                        )
+    (CAOS_CACHECLIENTNAME_OPT_NAME                    , "Cache Client Name"               , cxxopts::value<std::string>()->default_value(CAOS_CACHECLIENTNAME)                                    )
+    (CAOS_CACHEINDEX_OPT_NAME                         , "Cache Index"                     , cxxopts::value<std::uint8_t>()->default_value(std::to_string(CAOS_CACHEINDEX))                        )
+    (CAOS_CACHECOMMANDTIMEOUT_OPT_NAME                , "Cache Command Timeout"           , cxxopts::value<std::uint32_t>()->default_value(std::to_string(CAOS_CACHECOMMANDTIMEOUT))              )
+    (CAOS_CACHEPOOLSIZEMIN_OPT_NAME                   , "Cache Pool Size Min"             , cxxopts::value<std::size_t>()->default_value(std::to_string(CAOS_CACHEPOOLSIZEMIN))                   )
+    (CAOS_CACHEPOOLSIZEMAX_OPT_NAME                   , "Cache Pool Size Max"             , cxxopts::value<std::size_t>()->default_value(std::to_string(CAOS_CACHEPOOLSIZEMAX))                   )
+    (CAOS_CACHEPOOLWAIT_OPT_NAME                      , "Cache Pool Wait"                 , cxxopts::value<std::uint32_t>()->default_value(std::to_string(CAOS_CACHEPOOLWAIT))                    )
+    (CAOS_CACHEPOOLCONNECTIONTIMEOUT_OPT_NAME         , "Cache Pool Connection Timeout"   , cxxopts::value<std::uint32_t>()->default_value(std::to_string(CAOS_CACHEPOOLCONNECTIONTIMEOUT))       )
+    (CAOS_CACHEPOOLCONNECTIONLIFETIME_OPT_NAME        , "Cache Pool Connection Lifetime"  , cxxopts::value<std::uint32_t>()->default_value(std::to_string(CAOS_CACHEPOOLCONNECTIONLIFETIME))      )
+    (CAOS_CACHEPOOLCONNECTIONIDLETIME_OPT_NAME        , "Cache Pool Connection Idle-time" , cxxopts::value<std::uint32_t>()->default_value(std::to_string(CAOS_CACHEPOOLCONNECTIONIDLETIME))      )
 #endif
 
     // Database
-    (CAOS_OPT_DBUSER_NAME                       , "Database User"                       , cxxopts::value<std::string>()   )
-    (CAOS_OPT_DBPASS_NAME                       , "Database Password"                   , cxxopts::value<std::string>()   )
-    (CAOS_OPT_DBHOST_NAME                       , "Database Host"                       , cxxopts::value<std::string>()   )
-    (CAOS_OPT_DBPORT_NAME                       , "Database Port"                       , cxxopts::value<std::uint16_t>() )
-    (CAOS_OPT_DBNAME_NAME                       , "Database Name"                       , cxxopts::value<std::string>()   )
-    (CAOS_OPT_DBPOOLSIZEMIN_NAME                , "Database Pool Size Min"              , cxxopts::value<std::size_t>()   )
-    (CAOS_OPT_DBPOOLSIZEMAX_NAME                , "Database Pool Size Max"              , cxxopts::value<std::size_t>()   )
-    (CAOS_OPT_DBPOOLWAIT_NAME                   , "Database Pool Wait"                  , cxxopts::value<std::uint32_t>() )
+    (CAOS_DBUSER_OPT_NAME                             , "Database User"                   , cxxopts::value<std::string>()->default_value(CAOS_DBUSER)                                             )
+    (CAOS_DBPASS_OPT_NAME                             , "Database Password"               , cxxopts::value<std::string>()->default_value(CAOS_DBPASS)                                             )
+    (CAOS_DBHOST_OPT_NAME                             , "Database Host"                   , cxxopts::value<std::string>()->default_value(CAOS_DBHOST)                                             )
+    (CAOS_DBPORT_OPT_NAME                             , "Database Port"                   , cxxopts::value<std::uint16_t>()->default_value(std::to_string(CAOS_DBPORT))                           )
+    (CAOS_DBNAME_OPT_NAME                             , "Database Name"                   , cxxopts::value<std::string>()->default_value(CAOS_DBNAME)                                             )
+    (CAOS_DBPOOLSIZEMIN_OPT_NAME                      , "Database Pool Size Min"          , cxxopts::value<std::size_t>()->default_value(std::to_string(CAOS_DBPOOLSIZEMIN))                      )
+    (CAOS_DBPOOLSIZEMAX_OPT_NAME                      , "Database Pool Size Max"          , cxxopts::value<std::size_t>()->default_value(std::to_string(CAOS_DBPOOLSIZEMAX))                      )
+    (CAOS_DBPOOLWAIT_OPT_NAME                         , "Database Pool Wait"              , cxxopts::value<std::uint32_t>()->default_value(std::to_string(CAOS_DBPOOLWAIT))                       )
+    (CAOS_DBPOOLTIMEOUT_OPT_NAME                      , "Database Pool Timeout"           , cxxopts::value<std::uint32_t>()->default_value(std::to_string(CAOS_DBPOOLTIMEOUT))                    )
 #ifdef CAOS_USE_DB_POSTGRESQL
-    (CAOS_OPT_DBKEEPALIVES_NAME                 , "Database Keepalives"                 , cxxopts::value<std::size_t>()   )
-    (CAOS_OPT_DBKEEPALIVES_IDLE_NAME            , "Database Keepalives Idle"            , cxxopts::value<std::size_t>()   )
-    (CAOS_OPT_DBKEEPALIVES_INTERVAL_NAME        , "Database Keepalives Interval"        , cxxopts::value<std::size_t>()   )
-    (CAOS_OPT_DBKEEPALIVES_COUNT_NAME           , "Database Keepalives Count"           , cxxopts::value<std::size_t>()   )
+    (CAOS_DBKEEPALIVES_OPT_NAME                       , "Database Keepalives"             , cxxopts::value<std::size_t>()->default_value(std::to_string(CAOS_DBKEEPALIVES))                       )
+    (CAOS_DBKEEPALIVES_IDLE_OPT_NAME                  , "Database Keepalives Idle"        , cxxopts::value<std::size_t>()->default_value(std::to_string(CAOS_DBKEEPALIVES_IDLE))                  )
+    (CAOS_DBKEEPALIVES_INTERVAL_OPT_NAME              , "Database Keepalives Interval"    , cxxopts::value<std::size_t>()->default_value(std::to_string(CAOS_DBKEEPALIVES_INTERVAL))              )
+    (CAOS_DBKEEPALIVES_COUNT_OPT_NAME                 , "Database Keepalives Count"       , cxxopts::value<std::size_t>()->default_value(std::to_string(CAOS_DBKEEPALIVES_COUNT))                 )
 #endif
-    (CAOS_OPT_DBMAXWAIT_NAME                    , "Database Max Wait"                   , cxxopts::value<std::uint32_t>() )
-    (CAOS_OPT_DBHEALTHCHECKINTERVAL_NAME        , "Database Healtch Check interval"     , cxxopts::value<std::uint32_t>() )
+    (CAOS_DBCONNECT_TIMEOUT_OPT_NAME                  , "Database Connect Timeout"        , cxxopts::value<std::size_t>()->default_value(std::to_string(CAOS_DBCONNECT_TIMEOUT))                  )
+    (CAOS_DBMAXWAIT_OPT_NAME                          , "Database Max Wait"               , cxxopts::value<std::uint32_t>()->default_value(std::to_string(CAOS_DBMAXWAIT))                        )
+    (CAOS_DBHEALTHCHECKINTERVAL_OPT_NAME              , "Database Health Check interval"  , cxxopts::value<std::uint32_t>()->default_value(std::to_string(CAOS_DBHEALTHCHECKINTERVAL))            )
+
+    (CAOS_LOG_THRESHOLD_CONNECTION_LIMIT_EXCEEDED_OPT_NAME , "Database Health Check interval"  , cxxopts::value<std::uint32_t>()->default_value(std::to_string(CAOS_LOG_THRESHOLD_CONNECTION_LIMIT_EXCEEDED))  )
+    // (CAOS_VALIDATE_CONNECTION_BEFORE_ACQUIRE_OPT_NAME      , "Database Healtch Check interval" , cxxopts::value<bool>()->default_value(std::to_string(CAOS_VALIDATE_CONNECTION_BEFORE_ACQUIRE))                     )
+    // (CAOS_VALIDATE_USING_TRANSACTION_OPT_NAME              , "Database Healtch Check interval" , cxxopts::value<bool>()->default_value(std::to_string(CAOS_VALIDATE_USING_TRANSACTION))                             )
   ;
 
   this->parse();

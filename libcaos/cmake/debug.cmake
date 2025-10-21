@@ -1,7 +1,7 @@
 option(ENABLE_TSAN "Enable Thread Sanitizer (disables ASan)" OFF) # Do not use, it fails on redis and libmariadb
 option(ENABLE_ASAN "Enable Address Sanitizer (disables TSan)" ON) # ASan come default
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+if(CMAKE_BUILD_TYPE STREQUAL "debug")
   message(STATUS "Sanitizer on build Debug")
 
   if(ENABLE_TSAN)

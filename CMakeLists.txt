@@ -11,7 +11,7 @@ set(CMAKE_CXX_COMPILER "g++")
 # set(CMAKE_C_COMPILER "clang")
 # set(CMAKE_CXX_COMPILER "clang++")
 
-option(CAOS_USE_CCACHE "Uses CCache" ON)
+option(CAOS_USE_CCACHE "Uses CCache" OFF)
 if(CAOS_USE_CCACHE)
   find_program(CCACHE_PROGRAM ccache)
   if(CCACHE_PROGRAM)
@@ -29,9 +29,34 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Project Name
 project(CAOS VERSION 0.0.1 LANGUAGES CXX)
 
-option(CAOS_BUILD_EXAMPLES "Build examples" ON)
+# Select CAOS_ENV ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE "debug" CACHE STRING "CAOS Environment." )
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
+    "debug"
+    "test"
+    "release"
+  )
+endif()
+# Select CAOS_ENV ----------------------------------------------------------------------------------
 
-option(CAOS_USE_CACHE "CAOS using Cache" ON)
+option(CAOS_USE_CACHE       "CAOS using Cache"    ON)
+option(CAOS_BUILD_EXAMPLES  "CAOS build examples" ON)
+option(CAOS_USE_CROWCPP     "CAOS use Crow"       ON)
+# option(CAOS_CHECK_COVERAGE  "CAOS check coverage" OFF)
+
+# Select CAOS_DB_BACKEND +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+set(CAOS_DB_BACKEND "POSTGRESQL" CACHE STRING "Database backend to use for CAOS." )
+set_property(CACHE CAOS_DB_BACKEND PROPERTY STRINGS
+  "POSTGRESQL"
+  "MYSQL"
+  "MARIADB"
+)
+# Select CAOS_DB_BACKEND ---------------------------------------------------------------------------
+
+
+
+# Select CAOS_USE_CACHE ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 if(CAOS_USE_CACHE)
   set(CAOS_CACHE_BACKEND "REDIS" CACHE STRING "Cache backend to use for CAOS." )
 
@@ -39,52 +64,21 @@ if(CAOS_USE_CACHE)
     "REDIS"
   )
 endif()
+# Select CAOS_USE_CACHE ----------------------------------------------------------------------------
 
-set(CAOS_DB_BACKEND "POSTGRESQL" CACHE STRING "Database backend to use for CAOS." )
-set_property(CACHE CAOS_DB_BACKEND PROPERTY STRINGS
-  "POSTGRESQL"
-  "MYSQL"
-  "MARIADB"
-)
 
-option(CAOS_USE_CROWCPP "CAOS use Crow" ON)
-
+# Add libcaos ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 add_subdirectory(libcaos)
-
 add_library(repoexception INTERFACE)
 target_include_directories(repoexception INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/libcaos/Middleware/Repository)
 target_link_libraries(repoexception INTERFACE libcaos)
+# Add libcaos --------------------------------------------------------------------------------------
 
-if(CAOS_ENABLE_COVERAGE)
-  target_compile_definitions(libcaos PUBLIC CAOS_ENABLE_TESTS)
-  target_compile_options(libcaos PRIVATE -fprofile-instr-generate -fcoverage-mapping)
-  target_link_options(libcaos PRIVATE -fprofile-instr-generate -fcoverage-mapping)
-endif()
 
-if(CAOS_ENABLE_TESTS)
-  target_compile_definitions(libcaos PUBLIC CAOS_ENABLE_TESTS)
-  message(STATUS "Testing features enabled - CAOS_ENABLE_TESTS macro defined")
 
-  include(CTest)
-  enable_testing()
-
-  include(libcaos/cmake/CPM.cmake)
-
-  CPMAddPackage(
-    Catch2
-    VERSION 3.9.0
-    GITHUB_REPOSITORY catchorg/Catch2
-    OPTIONS
-    "CATCH_INSTALL_DOCS Off"
-    "CATCH_INSTALL_EXTRAS Off"
-    "CATCH_ENABLE_REPRODUCIBLE_BUILD Off"
-  )
-
-  add_subdirectory(test)
-endif()
-
+# Option CAOS_BUILD_EXAMPLES +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 if(CAOS_BUILD_EXAMPLES)
   add_subdirectory(examples)
   target_compile_definitions(libcaos PUBLIC CAOS_BUILD_EXAMPLES)
 endif()
-
+# Option CAOS_BUILD_EXAMPLES -----------------------------------------------------------------------

@@ -74,7 +74,7 @@ bool Database::Pool::validateConnection(const dbuniq& connection)
     {
       spdlog::trace("[{}] Health check query", fName);
 
-      #if VALIDATE_USING_TRANSACTION == 1
+      #if CAOS_VALIDATE_USING_TRANSACTION == 1
       // Disabilita autocommit per simulare una transazione
       connection->setAutoCommit(false);
       #endif
@@ -88,7 +88,7 @@ bool Database::Pool::validateConnection(const dbuniq& connection)
         return value == 1;
       }
 
-      #if VALIDATE_USING_TRANSACTION == 1
+      #if CAOS_VALIDATE_USING_TRANSACTION == 1
       connection->commit();
       connection->setAutoCommit(true);
       #endif
@@ -129,7 +129,7 @@ bool Database::Pool::validateConnection(const dbuniq& connection)
   }
   catch (const std::exception& e)
   {
-    #if VALIDATE_USING_TRANSACTION == 1
+    #if CAOS_VALIDATE_USING_TRANSACTION == 1
     try { connection->rollback(); } catch (...) {}
     try { connection->setAutoCommit(true); } catch (...) {}
     #endif
@@ -137,7 +137,7 @@ bool Database::Pool::validateConnection(const dbuniq& connection)
   }
   catch (...)
   {
-    #if VALIDATE_USING_TRANSACTION == 1
+    #if CAOS_VALIDATE_USING_TRANSACTION == 1
     try { connection->rollback(); } catch (...) {}
     try { connection->setAutoCommit(true); } catch (...) {}
     #endif

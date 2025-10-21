@@ -103,11 +103,6 @@ class Cache : public IRepository
             this->terminalPtr     = &TerminalOptions::get_instance();
           }
 
-          if (this->environmentRef==nullptr)
-          {
-            this->environmentRef  = &Environment::get_instance();
-          }
-
           this->setUser()                   ;
           this->setPass()                   ;
           this->setHost()                   ;

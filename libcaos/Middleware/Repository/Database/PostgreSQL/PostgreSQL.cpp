@@ -50,13 +50,6 @@ void   Database::Pool::setConnectStr() noexcept
 
 
 
-
-
-
-
-
-
-
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Init of PostgreSQL::Pool::validateConnection()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -78,7 +71,7 @@ bool Database::Pool::validateConnection(const dbuniq& connection)
       pqxx::result result;
 
       {
-        #if VALIDATE_USING_TRANSACTION == 0
+        #if CAOS_VALIDATE_USING_TRANSACTION == 0
         pqxx::nontransaction nontx(*connection);
         result = nontx.exec("SELECT 1");
         #else
@@ -114,13 +107,6 @@ bool Database::Pool::validateConnection(const dbuniq& connection)
 // End of PostgreSQL::Pool::validateConnection()
 // -------------------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------------------
-
-
-
-
-
-
-
 
 
 
@@ -188,20 +174,11 @@ void Database::Pool::createConnection(std::size_t& pool_size)
       loggedOnce.store(true, std::memory_order_release);
     }
   }
-
-  return;
 }
 // -------------------------------------------------------------------------------------------------
 // End of PostgreSQL::Pool::createConnection()
 // -------------------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------------------
-
-
-
-
-
-
-
 
 
 
@@ -313,13 +290,6 @@ void Database::Pool::closeConnection(std::optional<Database::ConnectionWrapper>&
 
 
 
-
-
-
-
-
-
-
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Init of Database::Pool::setKeepAlives()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -327,67 +297,26 @@ void Database::Pool::setKeepAlives()
 {
   static constexpr const char* fName = "Database::Pool::setKeepAlives";
 
-  try
-  {
-    // Set primary database keepalives for production environment ----------------------------------
-    if (this->terminalPtr->has(CAOS_OPT_DBKEEPALIVES_NAME))
-    {
-      this->config.keepalives = this->terminalPtr->get<std::size_t>(CAOS_OPT_DBKEEPALIVES_NAME);
-    }
-    else if (const char* keepalives = std::getenv(CAOS_ENV_DBKEEPALIVES_NAME))
-    {
-      this->config.keepalives = static_cast<std::size_t>(std::stoi(keepalives));
-    }
-    else
-    {
-#if defined(CAOS_DEFAULT_DBKEEPALIVES) && (CAOS_DEFAULT_DBKEEPALIVES + 0) > 0
-      this->config.keepalives = static_cast<std::size_t>(CAOS_DEFAULT_DBKEEPALIVES);
-#endif
-    }
-    // ---------------------------------------------------------------------------------------------
+  using dataType = std::size_t;
 
+  Policy::NumberAtLeast<dataType> validator("DBKEEPALIVES", CAOS_DBKEEPALIVES_LIMIT_MIN);
 
-
-    // Set alternative database keepalives for test or dev environment -----------------------------
-    if (this->isDevOrTestEnv())
-    {
-#if defined(CAOS_DEFAULT_DBKEEPALIVES_ON_DEV_OR_TEST) && (CAOS_DEFAULT_DBKEEPALIVES_ON_DEV_OR_TEST + 0) > 0
-      this->config.keepalives = static_cast<std::size_t>(CAOS_DEFAULT_DBKEEPALIVES_ON_DEV_OR_TEST);
-#endif
-    }
-    // ---------------------------------------------------------------------------------------------
-  }
-  catch(const std::invalid_argument& e)
-  {
-    spdlog::critical("[{}] : {}",fName,e.what());
-    std::exit(1);
-  }
-  catch (const std::exception& e)
-  {
-    spdlog::critical("[{}] : {}",fName,e.what());
-    std::exit(1);
-  }
-
-
-
-  // Final -----------------------------------------------------------------------------------------
-  spdlog::info(defaultFinal,
-               fName,
-               "keepalives",
-               this->config.keepalives,
-               this->environmentRef->getName());
+  configureValue<dataType>(
+    this->config.keepalives,                        // configField
+    &TerminalOptions::get_instance(),               // terminalPtr
+    CAOS_DBKEEPALIVES_ENV_NAME,                     // envName
+    CAOS_DBKEEPALIVES_OPT_NAME,                     // optName
+    "dbkeepalives",                                 // fieldName
+    fName,                                          // callerName
+    validator,                                      // validator in namespace Policy
+    defaultFinal,
+    false                                           // exitOnError
+  );
 }
 // -------------------------------------------------------------------------------------------------
 // End of Database::Pool::setKeepAlives()
 // -------------------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------------------
-
-
-
-
-
-
-
 
 
 
@@ -398,67 +327,26 @@ void Database::Pool::setKeepAlivesIdle()
 {
   static constexpr const char* fName = "Database::Pool::setKeepAlivesIdle";
 
-  try
-  {
-    // Set primary database keepalives_idle for production environment -----------------------------
-    if (this->terminalPtr->has(CAOS_OPT_DBKEEPALIVES_IDLE_NAME))
-    {
-      this->config.keepalives_idle = this->terminalPtr->get<std::size_t>(CAOS_OPT_DBKEEPALIVES_IDLE_NAME);
-    }
-    else if (const char* keepalives_idle = std::getenv(CAOS_ENV_DBKEEPALIVES_IDLE_NAME))
-    {
-      this->config.keepalives_idle = static_cast<std::size_t>(std::stoi(keepalives_idle));
-    }
-    else
-    {
-#if defined(CAOS_DEFAULT_DBKEEPALIVES_IDLE) && (CAOS_DEFAULT_DBKEEPALIVES_IDLE + 0) > 0
-      this->config.keepalives_idle = static_cast<std::size_t>(CAOS_DEFAULT_DBKEEPALIVES_IDLE);
-#endif
-    }
-    // ---------------------------------------------------------------------------------------------
+  using dataType = std::size_t;
 
+  Policy::NumberAtLeast<dataType> validator("DBKEEPALIVES_IDLE", CAOS_DBKEEPALIVES_IDLE_LIMIT_MIN);
 
-
-    // Set alternative database keepalives_idle for test or dev environment ------------------------
-    if (this->isDevOrTestEnv())
-    {
-#if defined(CAOS_DEFAULT_DBKEEPALIVES_IDLE_ON_DEV_OR_TEST) && (CAOS_DEFAULT_DBKEEPALIVES_IDLE_ON_DEV_OR_TEST + 0) > 0
-      this->config.keepalives_idle = static_cast<std::size_t>(CAOS_DEFAULT_DBKEEPALIVES_IDLE_ON_DEV_OR_TEST);
-#endif
-    }
-    // ---------------------------------------------------------------------------------------------
-  }
-  catch(const std::invalid_argument& e)
-  {
-    spdlog::critical("[{}] : {}",fName,e.what());
-    std::exit(1);
-  }
-  catch (const std::exception& e)
-  {
-    spdlog::critical("[{}] : {}",fName,e.what());
-    std::exit(1);
-  }
-
-
-
-  // Final -----------------------------------------------------------------------------------------
-  spdlog::info(defaultFinal,
-               fName,
-               "keepalives_idle",
-               this->config.keepalives_idle,
-               this->environmentRef->getName());
+  configureValue<dataType>(
+    this->config.keepalives_idle,                   // configField
+    &TerminalOptions::get_instance(),               // terminalPtr
+    CAOS_DBKEEPALIVES_IDLE_ENV_NAME,                // envName
+    CAOS_DBKEEPALIVES_IDLE_OPT_NAME,                // optName
+    "dbkeepalives_idle",                            // fieldName
+    fName,                                          // callerName
+    validator,                                      // validator in namespace Policy
+    defaultFinal,
+    false                                           // exitOnError
+  );
 }
 // -------------------------------------------------------------------------------------------------
 // End of Database::Pool::setKeepAlivesIdle()
 // -------------------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------------------
-
-
-
-
-
-
-
 
 
 
@@ -469,67 +357,26 @@ void Database::Pool::setKeepAlivesInterval()
 {
   static constexpr const char* fName = "Database::Pool::setKeepAlivesInterval";
 
-  try
-  {
-    // Set primary database keepalives_interval for production environment -------------------------
-    if (this->terminalPtr->has(CAOS_OPT_DBKEEPALIVES_INTERVAL_NAME))
-    {
-      this->config.keepalives_interval = this->terminalPtr->get<std::size_t>(CAOS_OPT_DBKEEPALIVES_INTERVAL_NAME);
-    }
-    else if (const char* keepalives_interval = std::getenv(CAOS_ENV_DBKEEPALIVES_INTERVAL_NAME))
-    {
-      this->config.keepalives_interval = static_cast<std::size_t>(std::stoi(keepalives_interval));
-    }
-    else
-    {
-#if defined(CAOS_DEFAULT_DBKEEPALIVES_INTERVAL) && (CAOS_DEFAULT_DBKEEPALIVES_INTERVAL + 0) > 0
-      this->config.keepalives_interval = static_cast<std::size_t>(CAOS_DEFAULT_DBKEEPALIVES_INTERVAL);
-#endif
-    }
-    // ---------------------------------------------------------------------------------------------
+  using dataType = std::size_t;
 
+  Policy::NumberAtLeast<dataType> validator("DBKEEPALIVES_INTERVAL", CAOS_DBKEEPALIVES_INTERVAL_LIMIT_MIN);
 
-
-    // Set alternative database keepalives_interval for test or dev environment --------------------
-    if (this->isDevOrTestEnv())
-    {
-#if defined(CAOS_DEFAULT_DBKEEPALIVES_INTERVAL_ON_DEV_OR_TEST) && (CAOS_DEFAULT_DBKEEPALIVES_INTERVAL_ON_DEV_OR_TEST + 0) > 0
-      this->config.keepalives_interval = static_cast<std::size_t>(CAOS_DEFAULT_DBKEEPALIVES_INTERVAL_ON_DEV_OR_TEST);
-#endif
-    }
-    // ---------------------------------------------------------------------------------------------
-  }
-  catch(const std::invalid_argument& e)
-  {
-    spdlog::critical("[{}] : {}",fName,e.what());
-    std::exit(1);
-  }
-  catch (const std::exception& e)
-  {
-    spdlog::critical("[{}] : {}",fName,e.what());
-    std::exit(1);
-  }
-
-
-
-  // Final -----------------------------------------------------------------------------------------
-  spdlog::info(defaultFinal,
-               fName,
-               "keepalives_interval",
-               this->config.keepalives_interval,
-               this->environmentRef->getName());
+  configureValue<dataType>(
+    this->config.keepalives_interval,               // configField
+    &TerminalOptions::get_instance(),               // terminalPtr
+    CAOS_DBKEEPALIVES_INTERVAL_ENV_NAME,            // envName
+    CAOS_DBKEEPALIVES_INTERVAL_OPT_NAME,            // optName
+    "dbkeepalives_interval",                        // fieldName
+    fName,                                          // callerName
+    validator,                                      // validator in namespace Policy
+    defaultFinal,
+    false                                           // exitOnError
+  );
 }
 // -------------------------------------------------------------------------------------------------
 // End of Database::Pool::setKeepAlivesInterval()
 // -------------------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------------------
-
-
-
-
-
-
-
 
 
 
@@ -540,70 +387,26 @@ void Database::Pool::setKeepAlivesCount()
 {
   static constexpr const char* fName = "Database::Pool::setKeepAlivesCount";
 
-  try
-  {
-    // Set primary database keepalives_count for production environment ----------------------------
-    if (this->terminalPtr->has(CAOS_OPT_DBKEEPALIVES_COUNT_NAME))
-    {
-      this->config.keepalives_count = this->terminalPtr->get<std::size_t>(CAOS_OPT_DBKEEPALIVES_COUNT_NAME);
-    }
-    else if (const char* keepalives_count = std::getenv(CAOS_ENV_DBKEEPALIVES_COUNT_NAME))
-    {
-      this->config.keepalives_count = static_cast<std::size_t>(std::stoi(keepalives_count));
-    }
-    else
-    {
-#if defined(CAOS_DEFAULT_DBKEEPALIVES_COUNT) && (CAOS_DEFAULT_DBKEEPALIVES_COUNT + 0) > 0
-      this->config.keepalives_count = static_cast<std::size_t>(CAOS_DEFAULT_DBKEEPALIVES_COUNT);
-#endif
-    }
-    // ---------------------------------------------------------------------------------------------
+  using dataType = std::size_t;
 
+  Policy::NumberAtLeast<dataType> validator("DBKEEPALIVES_COUNT", CAOS_DBKEEPALIVES_COUNT_LIMIT_MIN);
 
-
-    // Set alternative database keepalives_count for test or dev environment -----------------------
-    if (this->isDevOrTestEnv())
-    {
-#if defined(CAOS_DEFAULT_DBKEEPALIVES_COUNT_ON_DEV_OR_TEST) && (CAOS_DEFAULT_DBKEEPALIVES_COUNT_ON_DEV_OR_TEST + 0) > 0
-      this->config.keepalives_count = static_cast<std::size_t>(CAOS_DEFAULT_DBKEEPALIVES_COUNT_ON_DEV_OR_TEST);
-#endif
-    }
-    // ---------------------------------------------------------------------------------------------
-  }
-  catch(const std::invalid_argument& e)
-  {
-    spdlog::critical("[{}] : {}",fName,e.what());
-    std::exit(1);
-  }
-  catch (const std::exception& e)
-  {
-    spdlog::critical("[{}] : {}",fName,e.what());
-    std::exit(1);
-  }
-
-
-
-  // Final -----------------------------------------------------------------------------------------
-  spdlog::info(defaultFinal,
-               fName,
-               "keepalives_count",
-               this->config.keepalives_count,
-               this->environmentRef->getName());
+  configureValue<dataType>(
+    this->config.keepalives_count,                  // configField
+    &TerminalOptions::get_instance(),               // terminalPtr
+    CAOS_DBKEEPALIVES_COUNT_ENV_NAME,               // envName
+    CAOS_DBKEEPALIVES_COUNT_OPT_NAME,               // optName
+    "dbkeepalives_count",                           // fieldName
+    fName,                                          // callerName
+    validator,                                      // validator in namespace Policy
+    defaultFinal,
+    false                                           // exitOnError
+  );
 }
 // -------------------------------------------------------------------------------------------------
 // End of Database::Pool::setKeepAlivesCount()
 // -------------------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------------------
-
-
-
-
-
-
-
-
-
-
 
 
 
