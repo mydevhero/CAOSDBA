@@ -283,11 +283,14 @@ void configureValue(
 
     // 2. ASSIGNMENT: Assign read value to final configField
     if constexpr (detail::is_chrono_duration_v<T>) {
-      // Generic conversion for all std::chrono::duration types
-      // Create a temporary duration using ReadType as the count
-      using read_duration_t = std::chrono::duration<ReadType>;
+      // 1. Extract the Period (time unit, e.g., std::milli) from the target type T.
+      using T_Period = typename T::period;
 
-      // Cast the temporary duration to the target duration type T (e.g., seconds to milliseconds)
+      // 2. Define the temporary duration using ReadType (the numeric type) and T's Period.
+      // Example: std::chrono::duration<std::uint32_t, std::milli>
+      using read_duration_t = std::chrono::duration<ReadType, T_Period>;
+
+      // 3. Perform the cast: the count (readValue) is now interpreted in the correct unit (e.g., milliseconds).
       configField = std::chrono::duration_cast<T>(read_duration_t(readValue));
     }
     else
@@ -295,6 +298,21 @@ void configureValue(
       // Direct assignment for standard types (string, int, etc.)
       configField = readValue;
     }
+
+    // // 2. ASSIGNMENT: Assign read value to final configField
+    // if constexpr (detail::is_chrono_duration_v<T>) {
+    //   // Generic conversion for all std::chrono::duration types
+    //   // Create a temporary duration using ReadType as the count
+    //   using read_duration_t = std::chrono::duration<ReadType>;
+
+    //   // Cast the temporary duration to the target duration type T (e.g., seconds to milliseconds)
+    //   configField = std::chrono::duration_cast<T>(read_duration_t(readValue));
+    // }
+    // else
+    // {
+    //   // Direct assignment for standard types (string, int, etc.)
+    //   configField = readValue;
+    // }
 
     // 3. VALIDATION: Execute the specific Validation Policy
     // The validator lambda/functor must throw an exception on failure
@@ -338,8 +356,6 @@ class Utils
 class IRepository: public IQuery
 {
   public:
-    std::atomic<bool>                                   running_{true}                    ;
-
     IRepository() = default;
     virtual ~IRepository() = default;
 };

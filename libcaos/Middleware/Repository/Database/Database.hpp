@@ -196,7 +196,6 @@ class Database : public IRepository
         std::condition_variable                       shutdown_cv_                              ;
         std::mutex                                    shutdown_mutex_                           ;
         std::condition_variable                       condition                                 ;
-        std::atomic<bool>                             running_                                  ;
         std::thread                                   healthCheckThread_                        ;
 
         // Connections map -------------------------------------------------------------------------
@@ -345,7 +344,7 @@ class Database : public IRepository
 
         [[nodiscard]] const std::chrono::milliseconds getTotalDuration(const dbuniq&)           ;
         [[nodiscard]] const std::chrono::milliseconds getLastDuration(const dbuniq&)            ;
-        [[nodiscard]] const std::chrono::milliseconds calculateAverageDuration()                ;
+        [[nodiscard]]       std::chrono::milliseconds calculateAverageDuration()                ;
         [[nodiscard]] int                             getUsageCount(const dbuniq&) noexcept     ;
                       void                            printConnectionStats()                    ;
 

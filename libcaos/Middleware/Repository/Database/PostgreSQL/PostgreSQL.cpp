@@ -441,10 +441,7 @@ PostgreSQL::PostgreSQL(Database* database_):database(database_)
 
 
 
-PostgreSQL::~PostgreSQL()
-{
-  running_.store(false, std::memory_order_release);
-}
+PostgreSQL::~PostgreSQL() {}
 /***************************************************************************************************
  *
  *

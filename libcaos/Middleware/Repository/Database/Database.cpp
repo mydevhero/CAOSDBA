@@ -52,8 +52,7 @@ constexpr const char* defaultFinal = "{} : Setting database {} to {} in {}  envi
  *
  **************************************************************************************************/
 Database::Pool::Pool()
-  : running_(true),
-    connectionRefused(false),
+  : connectionRefused(false),
     config({})
 {
   if (this->terminalPtr==nullptr)
@@ -105,9 +104,10 @@ Database::Pool::~Pool()
 {
   this->printConnectionStats();
 
-  this->running_.store(false, std::memory_order_release);
+  running.store(false, std::memory_order_release);
 
   this->condition.notify_all();
+  this->shutdown_cv_.notify_all();
 
   if (this->healthCheckThread_.joinable())
   {
@@ -701,7 +701,7 @@ std::size_t Database::Pool::init(std::size_t count)
   spdlog::info("[{}] New pool building", fName);
 
   while (i < pool_size                                                                              // Create connections until the requested size is reached
-         && running_.load(std::memory_order_acquire)                                                // Stop if a signal detected
+         && running.load(std::memory_order_acquire)                                                // Stop if a signal detected
          && !this->connectionRefused.load(std::memory_order_acquire))                               // Stop if a previous connection was refused
   {
     try
@@ -764,7 +764,7 @@ void Database::Pool::healthCheckLoop()
 {
   static constexpr const char* fName = "Database::Pool::healthCheckLoop";
 
-  while (this->running_.load(std::memory_order_acquire))
+  while (running.load(std::memory_order_acquire))
   {
     spdlog::trace("Running {}", fName);
 
@@ -833,7 +833,7 @@ void Database::Pool::healthCheckLoop()
             this->getHealthCheckInterval(),
             [this]{
                 this->connectionRefused = false;
-                return !this->running_.load(std::memory_order_acquire);
+                return !running.load(std::memory_order_acquire);
             }
       );
     }
@@ -856,7 +856,7 @@ void Database::Pool::healthCheckLoop()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Init of Database::Pool::calculateAverageDuration()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-const std::chrono::milliseconds Database::Pool::calculateAverageDuration()
+std::chrono::milliseconds Database::Pool::calculateAverageDuration()
 {
   std::chrono::milliseconds total_duration{0};
   int total_operations = 0;
@@ -905,7 +905,7 @@ const std::chrono::milliseconds Database::Pool::calculateAverageDuration()
 #define INIT_CONNECTION()                         \
   try                                             \
   {                                               \
-    this->init(1);                    \
+    this->init(1);                                \
   }                                               \
   catch (const repository::broken_connection& e)  \
   {                                               \
@@ -916,7 +916,7 @@ dboptuniqptr Database::Pool::acquireConnection()
 {
   static constexpr const char* fName = "Database::Pool::acquireConnection";
 
-  if (!this->running_.load(std::memory_order_acquire))
+  if (!running.load(std::memory_order_acquire))
   {
     return std::nullopt;
   }
@@ -1149,7 +1149,7 @@ std::optional<Database::ConnectionWrapper> Database::Pool::acquire()
 
     if (connection_opt) {
         return ConnectionWrapper(
-            connection_opt, // Estrai il pointer dall'optional
+            connection_opt,
             [this](dboptuniqptr conn_ptr){
               this->releaseConnection(conn_ptr);
             });
@@ -1336,7 +1336,7 @@ void Database::Pool::printConnectionStats()
       total_duration += metrics.total_duration;
       total_uses += metrics.usage_count;
 
-      if (metrics.is_acquired==true)
+      if (metrics.is_acquired)
       {
         active_connections++;
       }
@@ -1358,7 +1358,7 @@ void Database::Pool::printConnectionStats()
   {
     auto avg_duration = total_duration / total_uses;
     std::cout << "Average operation time: "
-              << avg_duration.count() << "μs\n";
+              << avg_duration.count() << "ms\n";
   }
 }
 // -------------------------------------------------------------------------------------------------

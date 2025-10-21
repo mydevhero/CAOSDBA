@@ -402,10 +402,7 @@ MariaDB::MariaDB(Database* database_):database(database_)
 
 
 
-MariaDB::~MariaDB()
-{
-  running_.store(false, std::memory_order_release);
-}
+MariaDB::~MariaDB() {}
 /***************************************************************************************************
  *
  *

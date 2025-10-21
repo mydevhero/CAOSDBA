@@ -20,19 +20,6 @@
 
 #pragma once
 
-#include <libcaos/version.hpp>
-#include <thread>
-#include <stdexcept>
-#include <memory>
-#include <string>
-#include <cstring>
-#include <unordered_map>
-#include <iostream>
-#include <cstdint>
-#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
-#include "spdlog/spdlog.h"
-
-
 // Default values ----------------------------------------------------------------------------------
 // #define CAOS_DEFAULT_THREADS_VALUE                            4
 // #define DEFAULT_UNPRIVILEGED_PORT_MIN                         1024
@@ -63,9 +50,7 @@
 
 #define CAOS_SEVERITY_LEVEL_BEFORE_LOG_START                  spdlog::level::trace
 
-// #define CAOS_LOG_SEVERITY_ON_DEBUG_VALUE                      "trace"
-// #define CAOS_LOG_SEVERITY_ON_TEST_VALUE                       "debug"
-// #define CAOS_LOG_SEVERITY_ON_RELEASE_VALUE                    "warn"
+// #define CAOS_LOG_SEVERITY                                     "trace"
 
 // #define CAOS_LOG_QUEUE                                        8192
 // #define CAOS_LOG_THREAD_COUNT                                 1
@@ -276,27 +261,17 @@
 //--------------------------------------------------------------------------------------------------
 
 
-
-
+#include <libcaos/version.hpp>
+#include <thread>
+#include <stdexcept>
+#include <memory>
+#include <string>
+#include <cstring>
+#include <unordered_map>
+#include <iostream>
+#include <cstdint>
+#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
+#include "spdlog/spdlog.h"
 #include "config_validation.hpp"
+#include <common.hpp>
 #include "logo.hpp"
-
-
-
-
-
-
-
-
-
-enum class initFlags:std::uint8_t {
-  None        = 0,
-  Repository  = 1 << 0,
-  CrowCpp     = 1 << 1,
-  All         = Repository | CrowCpp
-};
-
-
-
-using LogSeverity = spdlog::level::level_enum;
-enum class LogDestinationSink: std::uint8_t { terminal=0, syslog, EOE };

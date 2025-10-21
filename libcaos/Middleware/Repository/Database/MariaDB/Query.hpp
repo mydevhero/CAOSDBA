@@ -26,7 +26,7 @@ std::optional<std::string> MariaDB::IQuery_Test_echoString(std::string str)
 {
   static constexpr const char* fName = "MariaDB::echoString";
 
-  if(!running_.load(std::memory_order_relaxed))
+  if(!running.load(std::memory_order_relaxed))
   {
     return std::nullopt;
   }

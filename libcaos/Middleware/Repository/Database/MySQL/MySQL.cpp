@@ -401,10 +401,7 @@ MySQL::MySQL(Database* database_):database(database_)
 
 
 
-MySQL::~MySQL()
-{
-  running_.store(false, std::memory_order_release);
-}
+MySQL::~MySQL(){}
 /***************************************************************************************************
  *
  *
