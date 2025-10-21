@@ -46,9 +46,9 @@ class CrowCpp : public Utils
     CrowCpp();
 
 
-    [[nodiscard]] std::string         getHost()         const noexcept;
-    [[nodiscard]] std::uint16_t       getPort()         const noexcept;
-    [[nodiscard]] std::uint16_t       getThreadCount()  const noexcept;
+    [[nodiscard]] std::string    getHost()         const noexcept;
+    [[nodiscard]] std::uint16_t  getPort()         const noexcept;
+    [[nodiscard]] std::size_t    getThreadCount()  const noexcept;
 
 
     ~CrowCpp(){}

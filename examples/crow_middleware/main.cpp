@@ -20,13 +20,27 @@
 
 #include <Repository.hpp>
 #include <memory>
+// #include <csignal>
+
+// void signal_handler(int signal)
+// {
+//   if (signal == SIGINT || signal == SIGTERM)
+//   {
+//     std::cout << "Signal " << signal << " intercepted. Shutdown running now\n";
+
+//     caos.reset();
+//   }
+// }
 
 int main(int argc, char* argv[])
 {
+  // std::signal(SIGINT, signal_handler);
+  // std::signal(SIGTERM, signal_handler);
+
   spdlog::set_level(CAOS_SEVERITY_LEVEL_BEFORE_LOG_START);
 
-  middleware::Repository repo_middleware{argc, argv};
-  crow::App<middleware::Repository> app{repo_middleware};
+  middleware::Repository middleware{argc, argv};
+  crow::App<middleware::Repository> app{middleware};
 
   CROW_ROUTE(app, "/<string>")([&app](crow::request& req, crow::response& res, std::string str)
   {
@@ -71,12 +85,12 @@ int main(int argc, char* argv[])
     res.end();
   });
 
-  auto caos = std::make_unique<Caos>(argc, argv, initFlags::CrowCpp);
+  auto& caos_middleware_instance = app.get_middleware<middleware::Repository>();
 
   app
-  .bindaddr(caos->crowcpp->getHost())
-  .port(caos->crowcpp->getPort())
-  .concurrency(caos->crowcpp->getThreadCount())
+  .bindaddr(caos_middleware_instance.caos->crowcpp->getHost())
+  .port(caos_middleware_instance.caos->crowcpp->getPort())
+  .concurrency(caos_middleware_instance.caos->crowcpp->getThreadCount())
   /*.multithreaded()*/
   .run();
 

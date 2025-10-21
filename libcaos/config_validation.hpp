@@ -15,9 +15,9 @@ constexpr bool is_non_null_string(const char* str = nullptr) { return str != nul
 constexpr bool is_non_empty_string(const char* str = nullptr) { return str[0] != '\0'; }
 constexpr bool is_non_null_and_non_empty_string(const char* str = nullptr) { return is_non_null_string(str) && is_non_empty_string(str); }
 // ?
-constexpr bool string_has_a_value(const char* str = nullptr) { return str[0] == '\0' || strlen(str) > 0; }
+// constexpr bool string_has_a_value(const char* str = nullptr) { return str[0] == '\0' || strlen(str) > 0; }
 // ?
-constexpr bool is_non_null_and_has_a_value(const char* str = nullptr) { return is_non_null_string(str) && string_has_a_value(str); }
+// constexpr bool is_non_null_and_has_a_value(const char* str = nullptr) { return is_non_null_string(str) && string_has_a_value(str); }
 constexpr bool is_in_range(int min, int max, int num) { return num >= min && num <= max; }
 constexpr bool is_valid_env(const char* str = nullptr)
 {
@@ -51,11 +51,11 @@ constexpr bool is_non_null_number()
 }
 
 // ?
-template<int Value = -999999>
-constexpr bool is_gt_than_number(int min) /* to delete */
-{
-  return Value > min;
-}
+// template<int Value = -999999>
+// constexpr bool is_gt_than_number(int min) /* to delete */
+// {
+//   return Value > min;
+// }
 
 template<int Value = -999999>
 constexpr bool numberAtLeast(int min)
@@ -64,18 +64,18 @@ constexpr bool numberAtLeast(int min)
 }
 
 // ?
-template<int Value = -999999>
-constexpr bool is_ls_than_number(int max)
-{
-  return Value < max;
-}
+// template<int Value = -999999>
+// constexpr bool is_ls_than_number(int max)
+// {
+//   return Value < max;
+// }
 
 // ?
-template<int Value = -999999>
-constexpr bool is_non_null_and_gt_than_number(int min)
-{
-  return is_non_null_number<Value>() && is_gt_than_number<Value>(min);
-}
+// template<int Value = -999999>
+// constexpr bool is_non_null_and_gt_than_number(int min)
+// {
+//   return is_non_null_number<Value>() && is_gt_than_number<Value>(min);
+// }
 
 template<int Value = -999999>
 constexpr bool is_number_non_null_and_at_least(int min)
@@ -85,11 +85,11 @@ constexpr bool is_number_non_null_and_at_least(int min)
 
 
 // ?
-template<int Value = -999999>
-constexpr bool is_non_null_and_in_range_number(int min, int max)
-{
-  return is_non_null_number<Value>() && is_gt_than_number<Value>(min) && is_ls_than_number<Value>(max);
-}
+// template<int Value = -999999>
+// constexpr bool is_non_null_and_in_range_number(int min, int max)
+// {
+//   return is_non_null_number<Value>() && is_gt_than_number<Value>(min) && is_ls_than_number<Value>(max);
+// }
 
 
 
@@ -119,7 +119,6 @@ static_assert(is_number_non_null_and_at_least<CAOS_DEFAULT_THREADS_VALUE>(CAOS_D
 
 #define DEFAULT_UNPRIVILEGED_PORT_MIN_ERRMSG "DEFAULT_UNPRIVILEGED_PORT_MIN" APPEND_ERRMSG_AT_LEAST
 static_assert(is_number_non_null_and_at_least<DEFAULT_UNPRIVILEGED_PORT_MIN>(DEFAULT_UNPRIVILEGED_PORT_MIN_LIMIT_MIN), DEFAULT_UNPRIVILEGED_PORT_MIN_ERRMSG);
-static constexpr int unprivileged_port_min = DEFAULT_UNPRIVILEGED_PORT_MIN;
 //--------------------------------------------------------------------------------------------------
 
 
@@ -134,7 +133,6 @@ static constexpr int unprivileged_port_min = DEFAULT_UNPRIVILEGED_PORT_MIN;
 
 #define DEFAULT_UNPRIVILEGED_PORT_MAX_ERRMSG "DEFAULT_UNPRIVILEGED_PORT_MAX" APPEND_ERRMSG_AT_LEAST
 static_assert(is_number_non_null_and_at_least<DEFAULT_UNPRIVILEGED_PORT_MAX>(DEFAULT_UNPRIVILEGED_PORT_MAX_LIMIT_MIN), DEFAULT_UNPRIVILEGED_PORT_MAX_ERRMSG);
-static constexpr int unprivileged_port_max = DEFAULT_UNPRIVILEGED_PORT_MAX;
 //--------------------------------------------------------------------------------------------------
 
 
@@ -172,26 +170,21 @@ static_assert(is_valid_env(CAOS_ENV), "CMAKE_BUILD_TYPE must be equal to \"debug
 // TODO: static_assert(is_non_null_and_has_a_value(CAOS_SEVERITY_LEVEL_BEFORE_LOG_START), "CAOS_SEVERITY_LEVEL_BEFORE_LOG_START must be defined and must have a value (even empty)");
 
 
-#ifdef CAOS_LOG_SEVERITY_ON_DEBUG_VALUE
-  static_assert(is_non_null_and_non_empty_string(CAOS_LOG_SEVERITY_ON_DEBUG_VALUE), "CAOS_LOG_SEVERITY_ON_DEBUG_VALUE must be defined and non-empty");
-#else
-  #define CAOS_LOG_SEVERITY_ON_DEBUG_VALUE "trace"
+#ifdef CAOS_ENV_DEBUG
+  #ifndef CAOS_LOG_SEVERITY
+    #define CAOS_LOG_SEVERITY "trace"
+  #endif
+#elif defined(CAOS_ENV_TEST)
+  #ifndef CAOS_LOG_SEVERITY
+    #define CAOS_LOG_SEVERITY "debug"
+  #endif
+#elif defined(CAOS_ENV_RELEASE)
+  #ifndef CAOS_LOG_SEVERITY
+    #define CAOS_LOG_SEVERITY "warn"
+  #endif
 #endif
-static_assert(is_valid_severity(CAOS_LOG_SEVERITY_ON_DEBUG_VALUE), "CAOS_LOG_SEVERITY_ON_DEBUG_VALUE invalid severity, allowed values: trace, debug, info, warn, err, critical, off");
+static_assert(is_valid_severity(CAOS_LOG_SEVERITY), "CAOS_LOG_SEVERITY, allowed values: trace, debug, info, warn, err, critical, off");
 
-#ifdef CAOS_LOG_SEVERITY_ON_TEST_VALUE
-  static_assert(is_non_null_and_non_empty_string(CAOS_LOG_SEVERITY_ON_TEST_VALUE), "CAOS_LOG_SEVERITY_ON_TEST_VALUE must be defined and non-empty");
-#else
-  #define CAOS_LOG_SEVERITY_ON_TEST_VALUE "debug"
-#endif
-static_assert(is_valid_severity(CAOS_LOG_SEVERITY_ON_TEST_VALUE), "CAOS_LOG_SEVERITY_ON_TEST_VALUE invalid severity, allowed values: trace, debug, info, warn, err, critical, off");
-
-#ifdef CAOS_LOG_SEVERITY_ON_RELEASE_VALUE
-  static_assert(is_non_null_and_non_empty_string(CAOS_LOG_SEVERITY_ON_RELEASE_VALUE), "CAOS_LOG_SEVERITY_ON_RELEASE_VALUE must be defined and non-empty");
-#else
-  #define CAOS_LOG_SEVERITY_ON_RELEASE_VALUE "warn"
-#endif
-static_assert(is_valid_severity(CAOS_LOG_SEVERITY_ON_RELEASE_VALUE), "CAOS_LOG_SEVERITY_ON_RELEASE_VALUE invalid severity, allowed values: trace, debug, info, warn, err, critical, off");
 
 // Log queue ---------------------------------------------------------------------------------------
 #define CAOS_LOG_QUEUE_DEFAULT    8192

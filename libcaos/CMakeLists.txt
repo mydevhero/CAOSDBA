@@ -82,6 +82,7 @@ add_library(${PROJECT_NAME} STATIC ${PROJECT_NAME}.cpp
   ${REDIS_SOURCES}
   config_validation.hpp
   logo.hpp
+  common.hpp
 )
 include(cmake/compiler.cmake)
 include(cmake/query_code_generation.cmake)

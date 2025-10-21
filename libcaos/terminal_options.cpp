@@ -34,20 +34,12 @@ TerminalOptions::TerminalOptions(int argc, char** argv) : argc(argc), argv(argv)
     ("version"                                        , "Get build version&timestamp"                                                                                                                     )
 
     // Log
-#ifdef CAOS_ENV_DEBUG
-    (CAOS_OPT_LOG_SEVERITY_NAME                       , "Log Terminal Severity"           , cxxopts::value<std::string>()->default_value(CAOS_LOG_SEVERITY_ON_DEBUG_VALUE)                                )
-#endif
-#ifdef CAOS_ENV_TEST
-    (CAOS_OPT_LOG_SEVERITY_NAME                       , "Log Terminal Severity"           , cxxopts::value<std::string>()->default_value(CAOS_LOG_SEVERITY_ON_TEST_VALUE)                                 )
-#endif
-#ifdef CAOS_ENV_RELEASE
-    (CAOS_OPT_LOG_SEVERITY_NAME                       , "Log Terminal Severity"           , cxxopts::value<std::string>()->default_value(CAOS_LOG_SEVERITY_ON_RELEASE_VALUE)                              )
-#endif
+    (CAOS_OPT_LOG_SEVERITY_NAME                       , "Log Terminal Severity"           , cxxopts::value<std::string>()->default_value(CAOS_LOG_SEVERITY)                                )
 
     // CrowCpp
 #ifdef CAOS_USE_CROWCPP
-    (CAOS_CROWCPP_HOST_OPT_NAME              , "Bind to address"                 , cxxopts::value<std::string>()->default_value(CAOS_CROWCPP_HOST)                                      )
-    (CAOS_CROWCPP_PORT_OPT_NAME                 , "Bind to port"                    , cxxopts::value<std::uint16_t>()->default_value(std::to_string(CAOS_CROWCPP_PORT))               )
+    (CAOS_CROWCPP_HOST_OPT_NAME                       , "Bind to address"                 , cxxopts::value<std::string>()->default_value(CAOS_CROWCPP_HOST)                                      )
+    (CAOS_CROWCPP_PORT_OPT_NAME                       , "Bind to port"                    , cxxopts::value<std::uint16_t>()->default_value(std::to_string(CAOS_CROWCPP_PORT))               )
     (CAOS_CROWCPP_THREADS_OPT_NAME                    , "Number of threads"               , cxxopts::value<std::size_t>()->default_value(std::to_string(CAOS_CROWCPP_THREADS))                    )
 #endif
 

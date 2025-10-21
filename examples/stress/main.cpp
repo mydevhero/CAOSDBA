@@ -21,26 +21,27 @@
 
 #include <libcaos.hpp>
 #include <csignal>
-#include <atomic>
+#include <common.hpp>
 #include <memory>
 
-std::atomic<bool> running_(true);
+
 std::unique_ptr<Caos> caos;
 const int num_threads = 10;
 std::vector<std::thread> threads;
 
-void signal_handler(int signal) {
+void signal_handler(int signal)
+{
   if (signal == SIGINT || signal == SIGTERM)
   {
     std::cout << "Signal " << signal << " intercepted. Shutdown running now\n";
-    caos.reset();
-    running_.store(false,std::memory_order_release);
 
-    // Aspetta che tutti i thread terminino
+    running.store(false,std::memory_order_release);
+
     for (auto& t : threads) {
         t.join();
     }
 
+    caos.reset();
   }
 }
 
@@ -48,7 +49,7 @@ std::atomic<int> global_i(0);
 
 void worker_thread()
 {
-  while(running_.load(std::memory_order_acquire))
+  while(running.load(std::memory_order_acquire))
   {
     int current_i = global_i.load(std::memory_order_acquire);
 
@@ -122,7 +123,7 @@ int main(int argc, char* argv[])
       threads.emplace_back(worker_thread);
   }
 
-  while(running_.load(std::memory_order_acquire))
+  while(running.load(std::memory_order_acquire))
   {}
 
 

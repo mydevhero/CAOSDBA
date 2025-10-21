@@ -156,9 +156,9 @@ void CrowCpp::setThreadCount()
 
 
 
-std::string   CrowCpp::getHost()        const noexcept { return this->config.host;    }
-std::uint16_t CrowCpp::getPort()        const noexcept { return this->config.port;    }
-std::uint16_t CrowCpp::getThreadCount() const noexcept { return this->config.threads; }
+std::string    CrowCpp::getHost()        const noexcept { return this->config.host;    }
+std::uint16_t  CrowCpp::getPort()        const noexcept { return this->config.port;    }
+std::size_t    CrowCpp::getThreadCount() const noexcept { return this->config.threads; }
 /* -------------------------------------------------------------------------------------------------
  * End of class CrowCpp
  * -----------------------------------------------------------------------------------------------*/

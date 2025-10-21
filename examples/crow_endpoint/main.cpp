@@ -20,12 +20,25 @@
 
 #include <Repository.hpp>
 #include <memory>
+// #include <csignal>
+
+// std::unique_ptr<Caos> caos;
+
+// void signal_handler(int signal)
+// {
+//   if (signal == SIGINT || signal == SIGTERM)
+//   {
+//     std::cout << "Signal " << signal << " intercepted. Shutdown running now\n";
+
+//     caos.reset();
+//   }
+// }
 
 int main(int argc, char* argv[])
 {
   spdlog::set_level(CAOS_SEVERITY_LEVEL_BEFORE_LOG_START);
 
-  auto caos = std::make_unique<Caos>(argc, argv, initFlags::CrowCpp|initFlags::Repository);
+  auto caos = std::make_unique<Caos>(argc, argv);
 
   crow::App<> app;
 

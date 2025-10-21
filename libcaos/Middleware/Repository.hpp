@@ -28,11 +28,11 @@ namespace middleware
 {
   struct Repository
   {
-    std::unique_ptr<Caos> caosPtr;
+    std::unique_ptr<Caos> caos;
 
     Repository(int argc, char* argv[])
     {
-      caosPtr = std::make_unique<Caos>(argc, argv, initFlags::Repository);
+      caos = std::make_unique<Caos>(argc, argv);
     }
 
     struct context
@@ -42,7 +42,7 @@ namespace middleware
 
     void before_handle(crow::request& req, crow::response& res, context& ctx)
     {
-      ctx.repository = caosPtr->repository.get();
+      ctx.repository = caos->repository.get();
 
       if (ctx.repository==nullptr)
       {

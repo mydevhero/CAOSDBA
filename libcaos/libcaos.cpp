@@ -23,6 +23,7 @@
 #include <optional>
 #include <sstream>
 
+std::atomic<bool> running = true;
 
 
 
@@ -217,8 +218,21 @@ void Caos::PRINT_HEADER() noexcept
   std::cout << "\n\n";
 }
 
+Caos::Caos(int argc, char* argv[]) : terminalPtr(&TerminalOptions::get_instance(argc, argv))
+{
+  this->init(initFlags::Repository|initFlags::CrowCpp);
+}
+
+Caos::Caos(int argc, char* argv[], initFlags flags) : terminalPtr(&TerminalOptions::get_instance(argc, argv))
+{
+  this->init(flags);
+}
+
+
 Caos::~Caos()
 {
+  running.store(false,std::memory_order_release);
+
 #ifdef CAOS_USE_CROWCPP
   if (this->crowcpp != nullptr)
   {
@@ -231,25 +245,26 @@ Caos::~Caos()
     this->repository.reset();
   }
 }
+/* -------------------------------------------------------------------------------------------------
+ * class caos
+ * -----------------------------------------------------------------------------------------------*/
 
-Caos::Caos(int argc, char* argv[], initFlags flags)
-: terminalPtr(&TerminalOptions::get_instance(argc, argv))
+void Caos::init(initFlags flags)
 {
-
-  if (static_cast<std::uint8_t>(flags) & static_cast<std::uint8_t>(initFlags::Repository))
+  if ((static_cast<std::uint8_t>(flags) & static_cast<std::uint8_t>(initFlags::Repository)) != 0)
   {
     this->repository = std::make_unique<Cache>(std::make_unique<Database>());
   }
 
-#ifdef CAOS_USE_CROWCPP
-  if (static_cast<std::uint8_t>(flags) & static_cast<std::uint8_t>(initFlags::CrowCpp))
+  if ((static_cast<std::uint8_t>(flags) & static_cast<std::uint8_t>(initFlags::CrowCpp)) != 0)
   {
-    this->crowcpp = std::make_unique<CrowCpp>();
-  }
+#ifdef CAOS_USE_CROWCPP
+      this->crowcpp = std::make_unique<CrowCpp>();
+#else
+#error "Can't provide crowcpp object while CAOS_USE_CROWCPP is OFF in CMakeLists.txt"
 #endif
+  }
+
 
   Caos::PRINT_HEADER();
 }
-/* -------------------------------------------------------------------------------------------------
- * class caos
- * -----------------------------------------------------------------------------------------------*/

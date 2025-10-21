@@ -65,6 +65,9 @@ inline bool operator!(initFlags flag1)
 
 class Caos
 {
+  private:
+    void init(initFlags flags);
+
   public:
 
     /* +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -122,10 +125,8 @@ class Caos
     std::unique_ptr<CrowCpp>  crowcpp;
 #endif
 
-    Caos(int argc,
-         char* argv[],
-         initFlags = initFlags::Repository
-    );
+    Caos(int argc, char* argv[]);
+    Caos(int argc, char* argv[], initFlags flags);
 
     static void PRINT_LOGO()                  noexcept;
     static void PRINT_VERSION()               noexcept;
