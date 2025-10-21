@@ -35,21 +35,19 @@ class Cache : public IRepository
       private:
         struct config_s
         {
-          std::string                                 user                                      ;
-          std::string                                 pass                                      ;
-          std::string                                 host                  {"127.0.0.1"}       ;
-#ifdef CAOS_USE_CACHE_REDIS
-          std::uint16_t                               port                  {6379}              ;
-#endif
-          std::string                                 clientname            {"CAOS"}            ;
-          std::uint8_t                                index                 {0}                 ;
-          std::chrono::milliseconds                   commandtimeout        {0}                 ;
-          std::size_t                                 poolsizemin           {1}                 ;
-          std::size_t                                 poolsizemax           {1}                 ;
-          std::chrono::milliseconds                   poolwait              {0}                 ;
-          std::chrono::milliseconds                   poolconnectiontimeout {0}                 ;
-          std::chrono::seconds                        poolconnectionlifetime{0}                 ;
-          std::chrono::milliseconds                   poolconnectionidletime{0}                 ;
+          std::string                                 user                  {CAOS_CACHEUSER}    ;
+          std::string                                 pass                  {CAOS_CACHEPASS}    ;
+          std::string                                 host                  {CAOS_CACHEHOST}    ;
+          std::uint16_t                               port                  {CAOS_CACHEPORT}    ;
+          std::string                                 clientname            {CAOS_CACHECLIENTNAME};
+          std::uint8_t                                index                 {CAOS_CACHEINDEX}   ;
+          std::chrono::milliseconds                   commandtimeout        {CAOS_CACHECOMMANDTIMEOUT};
+          std::size_t                                 poolsizemin           {CAOS_CACHEPOOLSIZEMIN};
+          std::size_t                                 poolsizemax           {CAOS_CACHEPOOLSIZEMAX};
+          std::chrono::milliseconds                   poolwait              {CAOS_CACHEPOOLWAIT};
+          std::chrono::milliseconds                   poolconnectiontimeout {CAOS_CACHEPOOLCONNECTIONTIMEOUT};
+          std::chrono::seconds                        poolconnectionlifetime{CAOS_CACHEPOOLCONNECTIONLIFETIME};
+          std::chrono::milliseconds                   poolconnectionidletime{CAOS_CACHEPOOLCONNECTIONIDLETIME};
 #ifdef CAOS_USE_CACHE_REDIS
           sw::redis::ConnectionOptions                connection_options                        ;
           sw::redis::ConnectionPoolOptions            pool_options                              ;

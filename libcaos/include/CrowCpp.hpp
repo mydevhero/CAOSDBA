@@ -32,9 +32,9 @@ class CrowCpp : public Utils
   private:
     struct config_s
     {
-      std::string   host      {"127.0.0.1"};
-      std::uint16_t port      {18080};
-      std::size_t   threads   {getHwMaxThreads()};
+      std::string   host      {CAOS_CROWCPP_HOST}     ;
+      std::uint16_t port      {CAOS_CROWCPP_PORT}     ;
+      std::size_t   threads   {CAOS_CROWCPP_THREADS}  ;
     };
 
     config_s config;

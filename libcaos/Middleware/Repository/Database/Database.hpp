@@ -253,40 +253,30 @@ class Database : public IRepository
 
         struct config_s
         {
-          std::string                                 user                                      ;
-          std::string                                 pass                                      ;
-          std::string                                 host                  {"127.0.0.1"}       ;
-
-          std::uint16_t                               port                  {
-#ifdef CAOS_USE_DB_POSTGRESQL
-                                                                             5432
-#elif (defined(CAOS_USE_DB_MYSQL) || defined(CAOS_USE_DB_MARIADB))
-                                                                             3306
-#endif
-                                                                                 }              ;
-
-          std::string                                 name                  {""}                ;
-          std::size_t                                 poolsizemin           {0}                 ;
-          std::size_t                                 poolsizemax           {0}                 ;
-          std::uint32_t                               poolwait              {0}                 ;
-          std::chrono::milliseconds                   pooltimeout           {0}                 ;
+          std::string                                 user                  {CAOS_DBUSER}       ;
+          std::string                                 pass                  {CAOS_DBPASS}       ;
+          std::string                                 host                  {CAOS_DBHOST}       ;
+          std::uint16_t                               port                  {CAOS_DBPORT}       ;
+          std::string                                 name                  {CAOS_DBNAME}       ;
+          std::size_t                                 poolsizemin           {CAOS_DBPOOLSIZEMIN};
+          std::size_t                                 poolsizemax           {CAOS_DBPOOLSIZEMAX};
+          std::uint32_t                               poolwait              {CAOS_DBPOOLWAIT}   ;
+          std::chrono::milliseconds                   pooltimeout           {CAOS_DBPOOLTIMEOUT};
+          std::chrono::milliseconds                   maxwait               {CAOS_DBMAXWAIT}    ;
+          std::size_t                                 connect_timeout       {CAOS_DBCONNECT_TIMEOUT};
+          std::chrono::milliseconds                   healthCheckInterval   {CAOS_DBHEALTHCHECKINTERVAL};
 
 #ifdef CAOS_USE_DB_POSTGRESQL
-          std::size_t                                 keepalives            {0}                 ;
-          std::size_t                                 keepalives_idle       {0}                 ;
-          std::size_t                                 keepalives_interval   {0}                 ;
-          std::size_t                                 keepalives_count      {0}                 ;
-          std::string                                 connection_string                         ;
+          std::size_t                                 keepalives            {CAOS_DBKEEPALIVES} ;
+          std::size_t                                 keepalives_idle       {CAOS_DBKEEPALIVES_IDLE};
+          std::size_t                                 keepalives_interval   {CAOS_DBKEEPALIVES_INTERVAL};
+          std::size_t                                 keepalives_count      {CAOS_DBKEEPALIVES_COUNT};
+          std::string                                 connection_string     {""}                ;
+#elif (defined(CAOS_USE_DB_MYSQL)||defined(CAOS_USE_DB_MARIADB))
+          sql::ConnectOptionsMap                      connection_options    {}                  ;
 #endif
 
-          std::size_t                                 connect_timeout       {0}                 ;
 
-#if (defined(CAOS_USE_DB_MYSQL)||defined(CAOS_USE_DB_MARIADB))
-          sql::ConnectOptionsMap                      connection_options                        ;
-#endif
-
-          std::chrono::milliseconds                   maxwait               {0}                 ;
-          std::chrono::milliseconds                   healthCheckInterval   {0}                 ;
         };
         config_s config;
 

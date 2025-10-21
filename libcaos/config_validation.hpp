@@ -838,7 +838,7 @@ static_assert(is_non_null_and_non_empty_string(CAOS_LOG_SYSLOG_PATTERN), CAOS_LO
 
 
   // Cache Client Name -----------------------------------------------------------------------------
-  #define CAOS_CACHECLIENTNAME_DEFAULT ""
+  #define CAOS_CACHECLIENTNAME_DEFAULT "CAOS"
 
   #ifdef CAOS_ENV_ALT                                                                               // CAOS_ENV="test" or CAOS_ENV="debug"
     #ifdef CAOS_CACHECLIENTNAME_ALT
@@ -1750,10 +1750,6 @@ static_assert(is_number_non_null_and_at_least<CAOS_DBPOOLTIMEOUT>(CAOS_DBPOOLTIM
   #define CAOS_DBKEEPALIVES_INTERVAL_ERRMSG "CAOS_DBKEEPALIVES_INTERVAL" APPEND_ERRMSG_AT_LEAST TOSTRING(CAOS_DBKEEPALIVES_INTERVAL_LIMIT_MIN)
   static_assert(is_number_non_null_and_at_least<CAOS_DBKEEPALIVES_INTERVAL>(CAOS_DBKEEPALIVES_INTERVAL_LIMIT_MIN), CAOS_DBKEEPALIVES_INTERVAL_ERRMSG);
   //------------------------------------------------------------------------------------------------
-
-
-
-
 
 
 

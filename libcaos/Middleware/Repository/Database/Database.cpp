@@ -131,38 +131,27 @@ Database::Pool::~Pool()
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Init of Database::Pool::setUser()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Database::Pool::setUser()
 {
-  static constexpr const char* fName = "Database::Pool::setUser";
+  const char* fName     = "Database::Pool::setUser"                 ;
+  const char* fieldName = "DBUSER"                                  ;
+  using       dataType  = std::string                               ;
 
+  Policy::StringIsPresent validator(fieldName)                      ;
 
-  Policy::StringIsPresent validator("DBUSER");
-
-  configureValue<std::string>(
-    this->config.user,                              // configField
-    &TerminalOptions::get_instance(),               // terminalPtr
-    CAOS_DBUSER_ENV_NAME,                           // envName
-    CAOS_DBUSER_OPT_NAME,                           // optName
-    "dbuser",                                       // fieldName
-    fName,                                          // callerName
-    validator,                                      // validator in namespace Policy
+  configureValue<dataType>(
+    this->config.user,                                              // configField
+    &TerminalOptions::get_instance(),                               // terminalPtr
+    CAOS_DBUSER_ENV_NAME,                                           // envName
+    CAOS_DBUSER_OPT_NAME,                                           // optName
+    fieldName,                                                      // fieldName
+    fName,                                                          // callerName
+    validator,                                                      // validator in namespace Policy
     defaultFinal,
-    false                                           // exitOnError
+    false                                                           // exitOnError
   );
 }
 // -------------------------------------------------------------------------------------------------
@@ -177,20 +166,22 @@ void Database::Pool::setUser()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Database::Pool::setPass()
 {
-  static constexpr const char* fName = "Database::Pool::setPass";
+  const char* fName     = "Database::Pool::setPass"                 ;
+  const char* fieldName = "DBPASS"                                  ;
+  using       dataType  = std::string                               ;
 
-  Policy::StringIsPresent validator("DBPASS");
+  Policy::StringIsPresent validator(fieldName)                      ;
 
-  configureValue<std::string>(
-    this->config.pass,                              // configField
-    &TerminalOptions::get_instance(),               // terminalPtr
-    CAOS_DBPASS_ENV_NAME,                           // envName
-    CAOS_DBPASS_OPT_NAME,                           // optName
-    "dbpass",                                       // fieldName
-    fName,                                          // callerName
-    validator,                                      // validator in namespace Policy
+  configureValue<dataType>(
+    this->config.pass,                                              // configField
+    &TerminalOptions::get_instance(),                               // terminalPtr
+    CAOS_DBPASS_ENV_NAME,                                           // envName
+    CAOS_DBPASS_OPT_NAME,                                           // optName
+    fieldName,                                                      // fieldName
+    fName,                                                          // callerName
+    validator,                                                      // validator in namespace Policy
     defaultFinal,
-    false                                           // exitOnError
+    false                                                           // exitOnError
   );
 }
 // -------------------------------------------------------------------------------------------------
@@ -205,20 +196,22 @@ void Database::Pool::setPass()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Database::Pool::setHost()
 {
-  static constexpr const char* fName = "Database::Pool::setHost";
+  const char* fName     = "Database::Pool::setHost"                 ;
+  const char* fieldName = "DBHOST"                                  ;
+  using       dataType  = std::string                               ;
 
-  Policy::HostValidator validator("DBHOST");
+  Policy::HostValidator validator(fieldName)                        ;
 
-  configureValue<std::string>(
-    this->config.host,                              // configField
-    &TerminalOptions::get_instance(),               // terminalPtr
-    CAOS_DBHOST_ENV_NAME,                           // envName
-    CAOS_DBHOST_OPT_NAME,                           // optName
-    "host",                                         // fieldName
-    fName,                                          // callerName
-    validator,                                      // validator in namespace Policy
+  configureValue<dataType>(
+    this->config.host,                                              // configField
+    &TerminalOptions::get_instance(),                               // terminalPtr
+    CAOS_DBHOST_ENV_NAME,                                           // envName
+    CAOS_DBHOST_OPT_NAME,                                           // optName
+    fieldName,                                                      // fieldName
+    fName,                                                          // callerName
+    validator,                                                      // validator in namespace Policy
     defaultFinal,
-    false                                           // exitOnError
+    false                                                           // exitOnError
   );
 }
 // -------------------------------------------------------------------------------------------------
@@ -228,32 +221,27 @@ void Database::Pool::setHost()
 
 
 
-
-
-
-
-
-
-
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Init of Database::Pool::setPort()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Database::Pool::setPort()
 {
-  static constexpr const char* fName = "Database::Pool::setPort";
+  const char* fName     = "Database::Pool::setPort"                 ;
+  const char* fieldName = "DBPORT"                                  ;
+  using       dataType  = std::uint16_t                             ;
 
-  Policy::PortValidator validator;
+  Policy::PortValidator validator                                   ;
 
-  configureValue<std::uint16_t>(
-    this->config.port,                              // configField
-    &TerminalOptions::get_instance(),               // terminalPtr
-    CAOS_DBPORT_ENV_NAME,                           // envName
-    CAOS_DBPORT_OPT_NAME,                           // optName
-    "dbport",                                       // fieldName
-    fName,                                          // callerName
-    validator,                                      // validator in namespace Policy
+  configureValue<dataType>(
+    this->config.port,                                              // configField
+    &TerminalOptions::get_instance(),                               // terminalPtr
+    CAOS_DBPORT_ENV_NAME,                                           // envName
+    CAOS_DBPORT_OPT_NAME,                                           // optName
+    fieldName,                                                      // fieldName
+    fName,                                                          // callerName
+    validator,                                                      // validator in namespace Policy
     defaultFinal,
-    false                                           // exitOnError
+    false                                                           // exitOnError
   );
 }
 // -------------------------------------------------------------------------------------------------
@@ -275,20 +263,22 @@ void Database::Pool::setPort()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Database::Pool::setName()
 {
-  static constexpr const char* fName = "Database::Pool::setName";
+  const char* fName     = "Database::Pool::setName"                 ;
+  const char* fieldName = "DBNAME"                                  ;
+  using       dataType  = std::string                               ;
 
-  Policy::StringIsPresent validator("DBNAME");
+  Policy::StringIsPresent validator(fieldName)                      ;
 
-  configureValue<std::string>(
-    this->config.name,                              // configField
-    &TerminalOptions::get_instance(),               // terminalPtr
-    CAOS_DBNAME_ENV_NAME,                           // envName
-    CAOS_DBNAME_OPT_NAME,                           // optName
-    "dbname",                                       // fieldName
-    fName,                                          // callerName
-    validator,                                      // validator in namespace Policy
+  configureValue<dataType>(
+    this->config.name,                                              // configField
+    &TerminalOptions::get_instance(),                               // terminalPtr
+    CAOS_DBNAME_ENV_NAME,                                           // envName
+    CAOS_DBNAME_OPT_NAME,                                           // optName
+    fieldName,                                                      // fieldName
+    fName,                                                          // callerName
+    validator,                                                      // validator in namespace Policy
     defaultFinal,
-    false                                           // exitOnError
+    false                                                           // exitOnError
   );
 }
 // -------------------------------------------------------------------------------------------------
@@ -298,34 +288,30 @@ void Database::Pool::setName()
 
 
 
-
-
-
-
-
-
-
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Init of Database::Pool::setPoolSizeMin()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Database::Pool::setPoolSizeMin()
 {
-  static constexpr const char* fName = "Database::Pool::setPoolSizeMin";
+  const char* fName     = "Database::Pool::setPoolSizeMin"          ;
+  const char* fieldName = "DBPOOLSIZEMIN"                           ;
+  using       dataType  = std::size_t                               ;
 
-  using dataType = std::size_t;
-
-  Policy::NumberAtLeast<dataType> validator("DBPOOLSIZEMIN", CAOS_DBPOOLSIZEMIN_LIMIT_MIN);
+  Policy::NumberAtLeast<dataType> validator(
+    fieldName,
+    CAOS_DBPOOLSIZEMIN_LIMIT_MIN
+  )                                                                 ;
 
   configureValue<dataType>(
-    this->config.poolsizemin,                       // configField
-    &TerminalOptions::get_instance(),               // terminalPtr
-    CAOS_DBPOOLSIZEMIN_ENV_NAME,                    // envName
-    CAOS_DBPOOLSIZEMIN_OPT_NAME,                    // optName
-    "dbpoolsizemin",                                // fieldName
-    fName,                                          // callerName
-    validator,                                      // validator in namespace Policy
+    this->config.poolsizemin,                                       // configField
+    &TerminalOptions::get_instance(),                               // terminalPtr
+    CAOS_DBPOOLSIZEMIN_ENV_NAME,                                    // envName
+    CAOS_DBPOOLSIZEMIN_OPT_NAME,                                    // optName
+    fieldName,                                                      // fieldName
+    fName,                                                          // callerName
+    validator,                                                      // validator in namespace Policy
     defaultFinal,
-    false                                           // exitOnError
+    false                                                           // exitOnError
   );
 }
 // -------------------------------------------------------------------------------------------------
@@ -335,33 +321,30 @@ void Database::Pool::setPoolSizeMin()
 
 
 
-
-
-
-
-
-
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Init of Database::Pool::setPoolSizeMax()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Database::Pool::setPoolSizeMax()
 {
-  static constexpr const char* fName = "Database::Pool::setPoolSizeMax";
+  const char* fName     = "Database::Pool::setPoolSizeMax"          ;
+  const char* fieldName = "DBPOOLSIZEMAX"                           ;
+  using       dataType  = std::size_t                               ;
 
-  using dataType = std::size_t;
-
-  Policy::NumberAtLeast<dataType> validator("DBPOOLSIZEMAX", CAOS_DBPOOLSIZEMAX_LIMIT_MIN);
+  Policy::NumberAtLeast<dataType> validator(
+    fieldName,
+    CAOS_DBPOOLSIZEMAX_LIMIT_MIN
+  )                                                                 ;
 
   configureValue<dataType>(
-    this->config.poolsizemax,                       // configField
-    &TerminalOptions::get_instance(),               // terminalPtr
-    CAOS_DBPOOLSIZEMAX_ENV_NAME,                    // envName
-    CAOS_DBPOOLSIZEMAX_OPT_NAME,                    // optName
-    "dbpoolsizemax",                                // fieldName
-    fName,                                          // callerName
-    validator,                                      // validator in namespace Policy
+    this->config.poolsizemax,                                       // configField
+    &TerminalOptions::get_instance(),                               // terminalPtr
+    CAOS_DBPOOLSIZEMAX_ENV_NAME,                                    // envName
+    CAOS_DBPOOLSIZEMAX_OPT_NAME,                                    // optName
+    fieldName,                                                      // fieldName
+    fName,                                                          // callerName
+    validator,                                                      // validator in namespace Policy
     defaultFinal,
-    false                                           // exitOnError
+    false                                                           // exitOnError
   );
 }
 // -------------------------------------------------------------------------------------------------
@@ -376,22 +359,25 @@ void Database::Pool::setPoolSizeMax()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Database::Pool::setPoolWait()
 {
-  static constexpr const char* fName = "Database::Pool::setPoolWait";
+  const char* fName     = "Database::Pool::setPoolWait"             ;
+  const char* fieldName = "DBPOOLWAIT"                              ;
+  using       dataType  = std::uint32_t                             ;
 
-  using dataType = std::uint32_t;
-
-  Policy::NumberAtLeast<dataType> validator("DBPOOLWAIT", CAOS_DBPOOLWAIT_LIMIT_MIN);
+  Policy::NumberAtLeast<dataType> validator(
+    fieldName,
+    CAOS_DBPOOLWAIT_LIMIT_MIN
+  )                                                                 ;
 
   configureValue<dataType>(
-    this->config.poolwait,                          // configField
-    &TerminalOptions::get_instance(),               // terminalPtr
-    CAOS_DBPOOLWAIT_ENV_NAME,                       // envName
-    CAOS_DBPOOLWAIT_OPT_NAME,                       // optName
-    "dbpoolwait",                                   // fieldName
-    fName,                                          // callerName
-    validator,                                      // validator in namespace Policy
+    this->config.poolwait,                                          // configField
+    &TerminalOptions::get_instance(),                               // terminalPtr
+    CAOS_DBPOOLWAIT_ENV_NAME,                                       // envName
+    CAOS_DBPOOLWAIT_OPT_NAME,                                       // optName
+    fieldName,                                                      // fieldName
+    fName,                                                          // callerName
+    validator,                                                      // validator in namespace Policy
     defaultFinal,
-    false                                           // exitOnError
+    false                                                           // exitOnError
   );
 }
 // -------------------------------------------------------------------------------------------------
@@ -406,22 +392,25 @@ void Database::Pool::setPoolWait()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Database::Pool::setPoolTimeout()
 {
-  static constexpr const char* fName = "Database::Pool::setPoolTimeout";
+  const char* fName     = "Database::Pool::setPoolTimeout"          ;
+  const char* fieldName = "DBPOOLTIMEOUT"                           ;
+  using       dataType  = std::chrono::milliseconds                 ;
 
-  using dataType = std::chrono::milliseconds;
-
-  Policy::NumberAtLeast<dataType> validator("DBPOOLTIMEOUT", CAOS_DBPOOLTIMEOUT_LIMIT_MIN);
+  Policy::NumberAtLeast<dataType> validator(
+    fieldName,
+    CAOS_DBPOOLTIMEOUT_LIMIT_MIN
+  )                                                                 ;
 
   configureValue<dataType, std::uint32_t>(
-    this->config.pooltimeout,                       // configField
-    &TerminalOptions::get_instance(),               // terminalPtr
-    CAOS_DBPOOLTIMEOUT_ENV_NAME,                    // envName
-    CAOS_DBPOOLTIMEOUT_OPT_NAME,                    // optName
-    "dbpooltimeout",                                // fieldName
-    fName,                                          // callerName
-    validator,                                      // validator in namespace Policy
+    this->config.pooltimeout,                                       // configField
+    &TerminalOptions::get_instance(),                               // terminalPtr
+    CAOS_DBPOOLTIMEOUT_ENV_NAME,                                    // envName
+    CAOS_DBPOOLTIMEOUT_OPT_NAME,                                    // optName
+    fieldName,                                                      // fieldName
+    fName,                                                          // callerName
+    validator,                                                      // validator in namespace Policy
     defaultFinal,
-    false                                           // exitOnError
+    false                                                           // exitOnError
   );
 }
 // -------------------------------------------------------------------------------------------------
@@ -436,22 +425,25 @@ void Database::Pool::setPoolTimeout()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Database::Pool::setConnectTimeout()
 {
-  static constexpr const char* fName = "Database::Pool::setConnectTimeout";
+  const char* fName     = "Database::Pool::setConnectTimeout"       ;
+  const char* fieldName = "DBCONNECT_TIMEOUT"                       ;
+  using       dataType  = std::size_t                               ;
 
-  using dataType = std::size_t;
-
-  Policy::NumberAtLeast<dataType> validator("DBCONNECT_TIMEOUT", CAOS_DBCONNECT_TIMEOUT_LIMIT_MIN);
+  Policy::NumberAtLeast<dataType> validator(
+    fieldName,
+    CAOS_DBCONNECT_TIMEOUT_LIMIT_MIN
+  )                                                                 ;
 
   configureValue<dataType>(
-    this->config.connect_timeout,                   // configField
-    &TerminalOptions::get_instance(),               // terminalPtr
-    CAOS_DBCONNECT_TIMEOUT_ENV_NAME,                // envName
-    CAOS_DBCONNECT_TIMEOUT_OPT_NAME,                // optName
-    "dbconnect_timeout",                            // fieldName
-    fName,                                          // callerName
-    validator,                                      // validator in namespace Policy
+    this->config.connect_timeout,                                   // configField
+    &TerminalOptions::get_instance(),                               // terminalPtr
+    CAOS_DBCONNECT_TIMEOUT_ENV_NAME,                                // envName
+    CAOS_DBCONNECT_TIMEOUT_OPT_NAME,                                // optName
+    fieldName,                                                      // fieldName
+    fName,                                                          // callerName
+    validator,                                                      // validator in namespace Policy
     defaultFinal,
-    false                                           // exitOnError
+    false                                                           // exitOnError
   );
 }
 // -------------------------------------------------------------------------------------------------
@@ -461,34 +453,30 @@ void Database::Pool::setConnectTimeout()
 
 
 
-
-
-
-
-
-
-
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Init of Database::Pool::setMaxWait()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Database::Pool::setMaxWait()
 {
-  static constexpr const char* fName = "Database::Pool::setMaxWait";
+  const char* fName     = "Database::Pool::setMaxWait"              ;
+  const char* fieldName = "DBMAXWAIT"                               ;
+  using       dataType  = std::chrono::milliseconds                 ;
 
-  using dataType = std::chrono::milliseconds;
-
-  Policy::NumberAtLeast<dataType> validator("DBMAXWAIT", CAOS_DBMAXWAIT_LIMIT_MIN);
+  Policy::NumberAtLeast<dataType> validator(
+    fieldName,
+    CAOS_DBMAXWAIT_LIMIT_MIN
+  )                                                                 ;
 
   configureValue<dataType, std::uint32_t>(
-    this->config.maxwait,                           // configField
-    &TerminalOptions::get_instance(),               // terminalPtr
-    CAOS_DBMAXWAIT_ENV_NAME,                        // envName
-    CAOS_DBMAXWAIT_OPT_NAME,                        // optName
-    "dbmaxwait",                                    // fieldName
-    fName,                                          // callerName
-    validator,                                      // validator in namespace Policy
+    this->config.maxwait,                                           // configField
+    &TerminalOptions::get_instance(),                               // terminalPtr
+    CAOS_DBMAXWAIT_ENV_NAME,                                        // envName
+    CAOS_DBMAXWAIT_OPT_NAME,                                        // optName
+    fieldName,                                                      // fieldName
+    fName,                                                          // callerName
+    validator,                                                      // validator in namespace Policy
     defaultFinal,
-    false                                           // exitOnError
+    false                                                           // exitOnError
   );
 }
 // -------------------------------------------------------------------------------------------------
@@ -498,35 +486,30 @@ void Database::Pool::setMaxWait()
 
 
 
-
-
-
-
-
-
-
-
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Init of Database::Pool::setHealthCheckInterval()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Database::Pool::setHealthCheckInterval()
 {
-  static constexpr const char* fName = "Database::Pool::setHealthCheckInterval";
+  const char* fName     = "Database::Pool::setHealthCheckInterval"  ;
+  const char* fieldName = "DBHEALTHCHECKINTERVAL"                   ;
+  using       dataType  = std::chrono::milliseconds                 ;
 
-  using dataType = std::chrono::milliseconds;
-
-  Policy::NumberAtLeast<dataType> validator("DBHEALTHCHECKINTERVAL", CAOS_DBHEALTHCHECKINTERVAL_LIMIT_MIN);
+  Policy::NumberAtLeast<dataType> validator(
+    fieldName,
+    CAOS_DBHEALTHCHECKINTERVAL_LIMIT_MIN
+  )                                                                 ;
 
   configureValue<dataType, std::uint32_t>(
-    this->config.healthCheckInterval,               // configField
-    &TerminalOptions::get_instance(),               // terminalPtr
-    CAOS_DBHEALTHCHECKINTERVAL_ENV_NAME,            // envName
-    CAOS_DBHEALTHCHECKINTERVAL_OPT_NAME,            // optName
-    "dbhealthcheckinterval",                        // fieldName
-    fName,                                          // callerName
-    validator,                                      // validator in namespace Policy
+    this->config.healthCheckInterval,                               // configField
+    &TerminalOptions::get_instance(),                               // terminalPtr
+    CAOS_DBHEALTHCHECKINTERVAL_ENV_NAME,                            // envName
+    CAOS_DBHEALTHCHECKINTERVAL_OPT_NAME,                            // optName
+    fieldName,                                                      // fieldName
+    fName,                                                          // callerName
+    validator,                                                      // validator in namespace Policy
     defaultFinal,
-    false                                           // exitOnError
+    false                                                           // exitOnError
   );
 }
 // -------------------------------------------------------------------------------------------------

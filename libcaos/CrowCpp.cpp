@@ -71,20 +71,22 @@ CrowCpp::CrowCpp()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void CrowCpp::setHost()
 {
-  static constexpr const char* fName = "CrowCpp::setHost";
+  const char* fName     = "CrowCpp::setHost"                        ;
+  const char* fieldName = "CROWCPP_HOST"                            ;
+  using       dataType  = std::string                               ;
 
-  Policy::HostValidator validator("CROWCPP_HOST");
+  Policy::HostValidator validator(fieldName)                        ;
 
-  configureValue<std::string>(
-    this->config.host,                              // configField
-    &TerminalOptions::get_instance(),               // terminalPtr
-    CAOS_CROWCPP_HOST_ENV_NAME,                     // envName
-    CAOS_CROWCPP_HOST_OPT_NAME,                     // optName
-    "host",                                         // fieldName
-    fName,                                          // callerName
-    validator,                                      // validator in namespace Policy
+  configureValue<dataType>(
+    this->config.host,                                              // configField
+    &TerminalOptions::get_instance(),                               // terminalPtr
+    CAOS_CROWCPP_HOST_ENV_NAME,                                     // envName
+    CAOS_CROWCPP_HOST_OPT_NAME,                                     // optName
+    fieldName,                                                      // fieldName
+    fName,                                                          // callerName
+    validator,                                                      // validator in namespace Policy
     defaultFinal,
-    false                                           // exitOnError
+    false                                                           // exitOnError
   );
 }
 // -------------------------------------------------------------------------------------------------
@@ -99,20 +101,22 @@ void CrowCpp::setHost()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void CrowCpp::setPort()
 {
-  static constexpr const char* fName = "CrowCpp::setPort";
+  const char* fName     = "CrowCpp::setPort"                        ;
+  const char* fieldName = "CROWCPP_PORT"                            ;
+  using       dataType  = std::uint16_t                             ;
 
-  Policy::PortValidator validator;
+  Policy::PortValidator validator                                   ;
 
-  configureValue<std::uint16_t>(
-    this->config.port,                              // configField
-    &TerminalOptions::get_instance(),               // terminalPtr
-    CAOS_CROWCPP_PORT_ENV_NAME,               // envName
-    CAOS_CROWCPP_PORT_OPT_NAME,               // optName
-    "port",                                         // fieldName
-    fName,                                          // callerName
-    validator,                                      // validator in namespace Policy
+  configureValue<dataType>(
+    this->config.port,                                              // configField
+    &TerminalOptions::get_instance(),                               // terminalPtr
+    CAOS_CROWCPP_PORT_ENV_NAME,                                     // envName
+    CAOS_CROWCPP_PORT_OPT_NAME,                                     // optName
+    fieldName,                                                      // fieldName
+    fName,                                                          // callerName
+    validator,                                                      // validator in namespace Policy
     defaultFinal,
-    false                                           // exitOnError
+    false                                                           // exitOnError
   );
 }
 // -------------------------------------------------------------------------------------------------
@@ -127,20 +131,22 @@ void CrowCpp::setPort()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void CrowCpp::setThreadCount()
 {
-  static constexpr const char* fName = "CrowCpp::setThreadCount";
+  const char* fName     = "CrowCpp::setThreadCount"                 ;
+  const char* fieldName = "CROWCPP_THREADS"                         ;
+  using       dataType  = std::size_t                               ;
 
-  Policy::ThreadsValidator validator;
+  Policy::ThreadsValidator validator                                ;
 
-  configureValue<std::size_t>(
-    this->config.threads,                           // configField
-    &TerminalOptions::get_instance(),               // terminalPtr
-    CAOS_CROWCPP_THREADS_ENV_NAME,                  // envName
-    CAOS_CROWCPP_THREADS_OPT_NAME,                  // optName
-    "threads",                                      // fieldName
-    fName,                                          // callerName
-    validator,                                      // validator in namespace Policy
+  configureValue<dataType>(
+    this->config.threads,                                           // configField
+    &TerminalOptions::get_instance(),                               // terminalPtr
+    CAOS_CROWCPP_THREADS_ENV_NAME,                                  // envName
+    CAOS_CROWCPP_THREADS_OPT_NAME,                                  // optName
+    fieldName,                                                      // fieldName
+    fName,                                                          // callerName
+    validator,                                                      // validator in namespace Policy
     defaultFinal,
-    false                                           // exitOnError
+    false                                                           // exitOnError
   );
 }
 // -------------------------------------------------------------------------------------------------

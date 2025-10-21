@@ -40,8 +40,8 @@ constexpr const char* defaultFinal = "{} : Setting cache {} to {} in {} environm
  *
  *
  **************************************************************************************************/
-Cache::Cache(std::unique_ptr<IRepository> database__)
-  : database_(std::move(database__)),
+Cache::Cache(std::unique_ptr<IRepository> db_)
+  : database_(std::move(db_)),
     pool(std::make_unique<Pool>()),
     cache(pool->init(database_))
 {
@@ -77,22 +77,22 @@ Cache::~Cache()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Cache::Pool::setUser()
 {
-  static constexpr const char* fName = "Cache::Pool::setUser";
+  const char* fName     = "Cache::Pool::setUser"                    ;
+  const char* fieldName = "CACHEUSER"                               ;
+  using dataType        = std::string                               ;
 
-  using dataType = std::string;
-
-  Policy::NoOpValidator<dataType> noOpValidator;
+  Policy::NoOpValidator<dataType> noOpValidator                     ;
 
   configureValue<dataType>(
-    this->config.user,                              // configField
-    &TerminalOptions::get_instance(),               // terminalPtr
-    CAOS_CACHEUSER_ENV_NAME,                        // envName
-    CAOS_CACHEUSER_OPT_NAME,                        // optName
-    "cacheuser",                                    // fieldName
-    fName,                                          // callerName
-    noOpValidator,                                  // validator in namespace Policy - no validation
+    this->config.user,                                              // configField
+    &TerminalOptions::get_instance(),                               // terminalPtr
+    CAOS_CACHEUSER_ENV_NAME,                                        // envName
+    CAOS_CACHEUSER_OPT_NAME,                                        // optName
+    fieldName,                                                      // fieldName
+    fName,                                                          // callerName
+    noOpValidator,                                                  // validator in namespace Policy - no validation
     defaultFinal,
-    false                                           // exitOnError
+    false                                                           // exitOnError
   );
 }
 // -------------------------------------------------------------------------------------------------
@@ -107,22 +107,22 @@ void Cache::Pool::setUser()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Cache::Pool::setPass()
 {
-  static constexpr const char* fName = "Cache::Pool::setPass";
+  const char* fName     = "Cache::Pool::setPass"                    ;
+  const char* fieldName = "CACHEPASS"                               ;
+  using dataType        = std::string                               ;
 
-  using dataType = std::string;
-
-  Policy::NoOpValidator<dataType> noOpValidator;
+  Policy::NoOpValidator<dataType> noOpValidator                     ;
 
   configureValue<dataType>(
-    this->config.pass,                              // configField
-    &TerminalOptions::get_instance(),               // terminalPtr
-    CAOS_CACHEPASS_ENV_NAME,                        // envName
-    CAOS_CACHEPASS_OPT_NAME,                        // optName
-    "cachepass",                                    // fieldName
-    fName,                                          // callerName
-    noOpValidator,                                  // validator in namespace Policy - no validation
+    this->config.pass,                                              // configField
+    &TerminalOptions::get_instance(),                               // terminalPtr
+    CAOS_CACHEPASS_ENV_NAME,                                        // envName
+    CAOS_CACHEPASS_OPT_NAME,                                        // optName
+    fieldName,                                                      // fieldName
+    fName,                                                          // callerName
+    noOpValidator,                                                  // validator in namespace Policy - no validation
     defaultFinal,
-    false                                           // exitOnError
+    false                                                           // exitOnError
   );
 }
 // -------------------------------------------------------------------------------------------------
@@ -137,20 +137,22 @@ void Cache::Pool::setPass()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Cache::Pool::setHost()
 {
-  static constexpr const char* fName = "Cache::Pool::setHost";
+  const char* fName     = "Cache::Pool::setHost"                    ;
+  const char* fieldName = "CACHEHOST"                               ;
+  using dataType        = std::string                               ;
 
-  Policy::HostValidator validator("CACHEHOST");
+  Policy::HostValidator validator(fieldName)                        ;
 
-  configureValue<std::string>(
-    this->config.host,                              // configField
-    &TerminalOptions::get_instance(),               // terminalPtr
-    CAOS_CACHEHOST_ENV_NAME,                        // envName
-    CAOS_CACHEHOST_OPT_NAME,                        // optName
-    "cachehost",                                    // fieldName
-    fName,                                          // callerName
-    validator,                                      // validator in namespace Policy
+  configureValue<dataType>(
+    this->config.host,                                              // configField
+    &TerminalOptions::get_instance(),                               // terminalPtr
+    CAOS_CACHEHOST_ENV_NAME,                                        // envName
+    CAOS_CACHEHOST_OPT_NAME,                                        // optName
+    fieldName,                                                      // fieldName
+    fName,                                                          // callerName
+    validator,                                                      // validator in namespace Policy
     defaultFinal,
-    false                                           // exitOnError
+    false                                                           // exitOnError
   );
 }
 // -------------------------------------------------------------------------------------------------
@@ -165,20 +167,22 @@ void Cache::Pool::setHost()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Cache::Pool::setPort()
 {
-  static constexpr const char* fName = "Cache::Pool::setPort";
+  const char* fName     = "Cache::Pool::setPort"                    ;
+  const char* fieldName = "CACHEPORT"                               ;
+  using dataType        = std::uint16_t                             ;
 
-  Policy::PortValidator validator;
+  Policy::PortValidator validator                                   ;
 
-  configureValue<std::uint16_t>(
-    this->config.port,                              // configField
-    &TerminalOptions::get_instance(),               // terminalPtr
-    CAOS_CACHEPORT_ENV_NAME,                        // envName
-    CAOS_CACHEPORT_OPT_NAME,                        // optName
-    "cacheport",                                    // fieldName
-    fName,                                          // callerName
-    validator,                                      // validator in namespace Policy
+  configureValue<dataType>(
+    this->config.port,                                              // configField
+    &TerminalOptions::get_instance(),                               // terminalPtr
+    CAOS_CACHEPORT_ENV_NAME,                                        // envName
+    CAOS_CACHEPORT_OPT_NAME,                                        // optName
+    fieldName,                                                      // fieldName
+    fName,                                                          // callerName
+    validator,                                                      // validator in namespace Policy
     defaultFinal,
-    false                                           // exitOnError
+    false                                                           // exitOnError
   );
 }
 // -------------------------------------------------------------------------------------------------
@@ -193,22 +197,22 @@ void Cache::Pool::setPort()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Cache::Pool::setClientName()
 {
-  static constexpr const char* fName = "Cache::Pool::setClientName";
+  const char* fName     = "Cache::Pool::setClientName"              ;
+  const char* fieldName = "CACHECLIENTNAME"                         ;
+  using dataType        = std::string                               ;
 
-  using dataType = std::string;
-
-  Policy::NoOpValidator<dataType> noOpValidator;
+  Policy::NoOpValidator<dataType> noOpValidator                     ;
 
   configureValue<dataType>(
-    this->config.clientname,                        // configField
-    &TerminalOptions::get_instance(),               // terminalPtr
-    CAOS_CACHECLIENTNAME_ENV_NAME,                  // envName
-    CAOS_CACHECLIENTNAME_OPT_NAME,                  // optName
-    "cacheclientname",                              // fieldName
-    fName,                                          // callerName
-    noOpValidator,                                  // validator in namespace Policy - no validation
+    this->config.clientname,                                        // configField
+    &TerminalOptions::get_instance(),                               // terminalPtr
+    CAOS_CACHECLIENTNAME_ENV_NAME,                                  // envName
+    CAOS_CACHECLIENTNAME_OPT_NAME,                                  // optName
+    fieldName,                                                      // fieldName
+    fName,                                                          // callerName
+    noOpValidator,                                                  // validator in namespace Policy - no validation
     defaultFinal,
-    false                                           // exitOnError
+    false                                                           // exitOnError
   );
 }
 // -------------------------------------------------------------------------------------------------
@@ -223,22 +227,25 @@ void Cache::Pool::setClientName()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Cache::Pool::setIndex()
 {
-  static constexpr const char* fName = "Cache::Pool::setIndex";
+  const char* fName     = "Cache::Pool::setIndex"                   ;
+  const char* fieldName = "CACHEINDEX"                              ;
+  using dataType        = std::uint8_t                              ;
 
-  using dataType = std::uint8_t;
-
-  Policy::InRange<dataType> validator("CACHEINDEX", CAOS_CACHEINDEX_LIMIT_MIN, CAOS_CACHEINDEX_LIMIT_MAX);
+  Policy::InRange<dataType> validator(
+    fieldName,
+    CAOS_CACHEINDEX_LIMIT_MIN,
+    CAOS_CACHEINDEX_LIMIT_MAX)                                      ;
 
   configureValue<dataType>(
-    this->config.index,                             // configField
-    &TerminalOptions::get_instance(),               // terminalPtr
-    CAOS_CACHEINDEX_ENV_NAME,                       // envName
-    CAOS_CACHEINDEX_OPT_NAME,                       // optName
-    "cacheindex",                                   // fieldName
-    fName,                                          // callerName
+    this->config.index,                                             // configField
+    &TerminalOptions::get_instance(),                               // terminalPtr
+    CAOS_CACHEINDEX_ENV_NAME,                                       // envName
+    CAOS_CACHEINDEX_OPT_NAME,                                       // optName
+    fieldName,                                                      // fieldName
+    fName,                                                          // callerName
     validator,
     defaultFinal,
-    false                                           // exitOnError
+    false                                                           // exitOnError
   );
 }
 // -------------------------------------------------------------------------------------------------
@@ -253,22 +260,24 @@ void Cache::Pool::setIndex()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Cache::Pool::setCommandTimeout()
 {
-  static constexpr const char* fName = "Cache::Pool::setCommandTimeout";
+  const char* fName     = "Cache::Pool::setCommandTimeout"          ;
+  const char* fieldName = "CACHECOMMANDTIMEOUT"                     ;
+  using dataType        = std::chrono::milliseconds                 ;
 
-  using dataType = std::chrono::milliseconds;
-
-  Policy::NumberAtLeast<dataType> validator("CACHECOMMANDTIMEOUT", CAOS_CACHECOMMANDTIMEOUT_LIMIT_MIN);
+  Policy::NumberAtLeast<dataType> validator(
+    fieldName,
+    CAOS_CACHECOMMANDTIMEOUT_LIMIT_MIN)                             ;
 
   configureValue<dataType, std::uint32_t>(
-    this->config.commandtimeout,                    // configField
-    &TerminalOptions::get_instance(),               // terminalPtr
-    CAOS_CACHECOMMANDTIMEOUT_ENV_NAME,              // envName
-    CAOS_CACHECOMMANDTIMEOUT_OPT_NAME,              // optName
-    "cachecommandtimeout",                          // fieldName
-    fName,                                          // callerName
-    validator,                                      // validator in namespace Policy
+    this->config.commandtimeout,                                    // configField
+    &TerminalOptions::get_instance(),                               // terminalPtr
+    CAOS_CACHECOMMANDTIMEOUT_ENV_NAME,                              // envName
+    CAOS_CACHECOMMANDTIMEOUT_OPT_NAME,                              // optName
+    fieldName,                                                      // fieldName
+    fName,                                                          // callerName
+    validator,                                                      // validator in namespace Policy
     defaultFinal,
-    false                                           // exitOnError
+    false                                                           // exitOnError
   );
 }
 // -------------------------------------------------------------------------------------------------
@@ -283,22 +292,25 @@ void Cache::Pool::setCommandTimeout()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Cache::Pool::setPoolSizeMin()
 {
-  static constexpr const char* fName = "Cache::Pool::setPoolSizeMin";
+  const char* fName     = "Cache::Pool::setPoolSizeMin"             ;
+  const char* fieldName = "CACHEPOOLSIZEMIN"                        ;
+  using dataType        = std::size_t                               ;
 
-  using dataType = std::size_t;
-
-  Policy::NumberAtLeast<dataType> validator("CACHEPOOLSIZEMIN", CAOS_CACHEPOOLSIZEMIN_LIMIT_MIN);
+  Policy::NumberAtLeast<dataType> validator(
+    fieldName,
+    CAOS_CACHEPOOLSIZEMIN_LIMIT_MIN
+  )                                                                 ;
 
   configureValue<dataType>(
-    this->config.poolsizemin,                       // configField
-    &TerminalOptions::get_instance(),               // terminalPtr
-    CAOS_CACHEPOOLSIZEMIN_ENV_NAME,                 // envName
-    CAOS_CACHEPOOLSIZEMIN_OPT_NAME,                 // optName
-    "cachepoolsizemin",                             // fieldName
-    fName,                                          // callerName
-    validator,                                      // validator in namespace Policy
+    this->config.poolsizemin,                                       // configField
+    &TerminalOptions::get_instance(),                               // terminalPtr
+    CAOS_CACHEPOOLSIZEMIN_ENV_NAME,                                 // envName
+    CAOS_CACHEPOOLSIZEMIN_OPT_NAME,                                 // optName
+    fieldName,                                                      // fieldName
+    fName,                                                          // callerName
+    validator,                                                      // validator in namespace Policy
     defaultFinal,
-    false                                           // exitOnError
+    false                                                           // exitOnError
   );
 }
 // -------------------------------------------------------------------------------------------------
@@ -313,22 +325,25 @@ void Cache::Pool::setPoolSizeMin()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Cache::Pool::setPoolSizeMax()
 {
-  static constexpr const char* fName = "Cache::Pool::setPoolSizeMax";
+  const char* fName     = "Cache::Pool::setPoolSizeMax"             ;
+  const char* fieldName = "CACHEPOOLSIZEMAX"                        ;
+  using dataType        = std::size_t                               ;
 
-  using dataType = std::size_t;
-
-  Policy::NumberAtLeast<dataType> validator("CACHEPOOLSIZEMAX", CAOS_CACHEPOOLSIZEMAX_LIMIT_MIN);
+  Policy::NumberAtLeast<dataType> validator(
+    fieldName,
+    CAOS_CACHEPOOLSIZEMAX_LIMIT_MIN
+  )                                                                 ;
 
   configureValue<dataType>(
-    this->config.poolsizemax,                       // configField
-    &TerminalOptions::get_instance(),               // terminalPtr
-    CAOS_CACHEPOOLSIZEMAX_ENV_NAME,                 // envName
-    CAOS_CACHEPOOLSIZEMAX_OPT_NAME,                 // optName
-    "cachepoolsizemax",                             // fieldName
-    fName,                                          // callerName
-    validator,                                      // validator in namespace Policy
+    this->config.poolsizemax,                                       // configField
+    &TerminalOptions::get_instance(),                               // terminalPtr
+    CAOS_CACHEPOOLSIZEMAX_ENV_NAME,                                 // envName
+    CAOS_CACHEPOOLSIZEMAX_OPT_NAME,                                 // optName
+    fieldName,                                                      // fieldName
+    fName,                                                          // callerName
+    validator,                                                      // validator in namespace Policy
     defaultFinal,
-    false                                           // exitOnError
+    false                                                           // exitOnError
   );
 }
 // -------------------------------------------------------------------------------------------------
@@ -343,22 +358,25 @@ void Cache::Pool::setPoolSizeMax()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Cache::Pool::setPoolWait()
 {
-  static constexpr const char* fName = "Cache::Pool::setPoolWait";
+  const char* fName     = "Cache::Pool::setPoolWait"                ;
+  const char* fieldName = "CACHEPOOLWAIT"                           ;
+  using dataType        = std::chrono::milliseconds                 ;
 
-  using dataType = std::chrono::milliseconds;
-
-  Policy::NumberAtLeast<dataType> validator("CACHEPOOLWAIT", CAOS_CACHEPOOLWAIT_LIMIT_MIN);
+  Policy::NumberAtLeast<dataType> validator(
+    fieldName,
+    CAOS_CACHEPOOLWAIT_LIMIT_MIN
+  )                                                                 ;
 
   configureValue<dataType, std::uint32_t>(
-    this->config.poolwait,                          // configField
-    &TerminalOptions::get_instance(),               // terminalPtr
-    CAOS_CACHEPOOLWAIT_ENV_NAME,                    // envName
-    CAOS_CACHEPOOLWAIT_OPT_NAME,                    // optName
-    "cachepoolwait",                                // fieldName
-    fName,                                          // callerName
-    validator,                                      // validator in namespace Policy
+    this->config.poolwait,                                          // configField
+    &TerminalOptions::get_instance(),                               // terminalPtr
+    CAOS_CACHEPOOLWAIT_ENV_NAME,                                    // envName
+    CAOS_CACHEPOOLWAIT_OPT_NAME,                                    // optName
+    fieldName,                                                      // fieldName
+    fName,                                                          // callerName
+    validator,                                                      // validator in namespace Policy
     defaultFinal,
-    false                                           // exitOnError
+    false                                                           // exitOnError
   );
 }
 // -------------------------------------------------------------------------------------------------
@@ -373,22 +391,25 @@ void Cache::Pool::setPoolWait()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Cache::Pool::setPoolConnectionTimeout()
 {
-  static constexpr const char* fName = "Cache::Pool::setPoolConnectionTimeout";
+  const char* fName     = "Cache::Pool::setPoolConnectionTimeout"   ;
+  const char* fieldName = "CACHEPOOLCONNECTIONTIMEOUT"              ;
+  using dataType        = std::chrono::milliseconds                 ;
 
-  using dataType = std::chrono::milliseconds;
-
-  Policy::NumberAtLeast<dataType> validator("CACHEPOOLCONNECTIONTIMEOUT", CAOS_CACHEPOOLCONNECTIONTIMEOUT_LIMIT_MIN);
+  Policy::NumberAtLeast<dataType> validator(
+    fieldName,
+    CAOS_CACHEPOOLCONNECTIONTIMEOUT_LIMIT_MIN
+  )                                                                 ;
 
   configureValue<dataType, std::uint32_t>(
-    this->config.poolconnectiontimeout,             // configField
-    &TerminalOptions::get_instance(),               // terminalPtr
-    CAOS_CACHEPOOLCONNECTIONTIMEOUT_ENV_NAME,       // envName
-    CAOS_CACHEPOOLCONNECTIONTIMEOUT_OPT_NAME,       // optName
-    "cachepoolconnectiontimeout",                   // fieldName
-    fName,                                          // callerName
-    validator,                                      // validator in namespace Policy
+    this->config.poolconnectiontimeout,                             // configField
+    &TerminalOptions::get_instance(),                               // terminalPtr
+    CAOS_CACHEPOOLCONNECTIONTIMEOUT_ENV_NAME,                       // envName
+    CAOS_CACHEPOOLCONNECTIONTIMEOUT_OPT_NAME,                       // optName
+    fieldName,                                                      // fieldName
+    fName,                                                          // callerName
+    validator,                                                      // validator in namespace Policy
     defaultFinal,
-    false                                           // exitOnError
+    false                                                           // exitOnError
   );
 }
 // -------------------------------------------------------------------------------------------------
@@ -403,22 +424,25 @@ void Cache::Pool::setPoolConnectionTimeout()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Cache::Pool::setPoolConnectionLifetime()
 {
-  static constexpr const char* fName = "Cache::Pool::setPoolConnectionLifetime";
+  const char* fName     = "Cache::Pool::setPoolConnectionLifetime"  ;
+  const char* fieldName = "CACHEPOOLCONNECTIONLIFETIME"             ;
+  using dataType        = std::chrono::seconds                      ;
 
-  using dataType = std::chrono::seconds;
-
-  Policy::NumberAtLeast<dataType> validator("CACHEPOOLCONNECTIONLIFETIME", CAOS_CACHEPOOLCONNECTIONLIFETIME_LIMIT_MIN);
+  Policy::NumberAtLeast<dataType> validator(
+    fieldName,
+    CAOS_CACHEPOOLCONNECTIONLIFETIME_LIMIT_MIN
+  )                                                                 ;
 
   configureValue<dataType, std::uint32_t>(
-    this->config.poolconnectionlifetime,            // configField
-    &TerminalOptions::get_instance(),               // terminalPtr
-    CAOS_CACHEPOOLCONNECTIONLIFETIME_ENV_NAME,      // envName
-    CAOS_CACHEPOOLCONNECTIONLIFETIME_OPT_NAME,      // optName
-    "cachepoolconnectionlifetime",                  // fieldName
-    fName,                                          // callerName
-    validator,                                      // validator in namespace Policy
+    this->config.poolconnectionlifetime,                            // configField
+    &TerminalOptions::get_instance(),                               // terminalPtr
+    CAOS_CACHEPOOLCONNECTIONLIFETIME_ENV_NAME,                      // envName
+    CAOS_CACHEPOOLCONNECTIONLIFETIME_OPT_NAME,                      // optName
+    fieldName,                                                      // fieldName
+    fName,                                                          // callerName
+    validator,                                                      // validator in namespace Policy
     defaultFinal,
-    false                                           // exitOnError
+    false                                                           // exitOnError
   );
 }
 // -------------------------------------------------------------------------------------------------
@@ -433,22 +457,25 @@ void Cache::Pool::setPoolConnectionLifetime()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Cache::Pool::setPoolConnectionIdletime()
 {
-  static constexpr const char* fName = "Cache::Pool::setPoolConnectionIdletime";
+  const char* fName     = "Cache::Pool::setPoolConnectionIdletime"  ;
+  const char* fieldName = "CACHEPOOLCONNECTIONIDLETIME"             ;
+  using dataType        = std::chrono::milliseconds                 ;
 
-  using dataType = std::chrono::milliseconds;
-
-  Policy::NumberAtLeast<dataType> validator("CACHEPOOLCONNECTIONIDLETIME", CAOS_CACHEPOOLCONNECTIONIDLETIME_LIMIT_MIN);
+  Policy::NumberAtLeast<dataType> validator(
+    fieldName,
+    CAOS_CACHEPOOLCONNECTIONIDLETIME_LIMIT_MIN
+  )                                                                 ;
 
   configureValue<dataType, std::uint32_t>(
-    this->config.poolconnectionidletime,            // configField
-    &TerminalOptions::get_instance(),               // terminalPtr
-    CAOS_CACHEPOOLCONNECTIONIDLETIME_ENV_NAME,      // envName
-    CAOS_CACHEPOOLCONNECTIONIDLETIME_OPT_NAME,      // optName
-    "cachepoolconnectionidletime",                  // fieldName
-    fName,                                          // callerName
-    validator,                                      // validator in namespace Policy
+    this->config.poolconnectionidletime,                            // configField
+    &TerminalOptions::get_instance(),                               // terminalPtr
+    CAOS_CACHEPOOLCONNECTIONIDLETIME_ENV_NAME,                      // envName
+    CAOS_CACHEPOOLCONNECTIONIDLETIME_OPT_NAME,                      // optName
+    fieldName,                                                      // fieldName
+    fName,                                                          // callerName
+    validator,                                                      // validator in namespace Policy
     defaultFinal,
-    false                                           // exitOnError
+    false                                                           // exitOnError
   );
 }
 // -------------------------------------------------------------------------------------------------

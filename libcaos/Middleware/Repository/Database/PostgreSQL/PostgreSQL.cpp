@@ -55,7 +55,7 @@ void   Database::Pool::setConnectStr() noexcept
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 bool Database::Pool::validateConnection(const dbuniq& connection)
 {
-  static constexpr const char* fName = "PostgreSQL::Pool::validateConnection";
+  const char* fName = "PostgreSQL::Pool::validateConnection";
 
   if (!connection)
   {
@@ -115,7 +115,7 @@ bool Database::Pool::validateConnection(const dbuniq& connection)
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Database::Pool::createConnection(std::size_t& pool_size)
 {
-  static constexpr const char* fName = "PostgreSQL::Pool::createConnection";
+  const char* fName = "PostgreSQL::Pool::createConnection";
 
   static std::atomic<bool> loggedOnce {false};
 
@@ -189,7 +189,7 @@ void Database::Pool::createConnection(std::size_t& pool_size)
 // Internal use
 void Database::Pool::closeConnection(const dbuniq& connection)
 {
-  static constexpr const char* fName = "PostgreSQL::Pool::closeConnection(1)";
+  const char* fName = "PostgreSQL::Pool::closeConnection";
 
   try
   {
@@ -236,7 +236,7 @@ void Database::Pool::closeConnection(const dbuniq& connection)
 // Crow's endpoint use
 void Database::Pool::closeConnection(std::optional<Database::ConnectionWrapper>& connection)
 {
-  static constexpr const char* fName = "PostgreSQL::Pool::closeConnection(2)";
+  const char* fName = "PostgreSQL::Pool::closeConnection(Crowcpp endpoint)";
 
   try
   {
@@ -295,22 +295,25 @@ void Database::Pool::closeConnection(std::optional<Database::ConnectionWrapper>&
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Database::Pool::setKeepAlives()
 {
-  static constexpr const char* fName = "Database::Pool::setKeepAlives";
+  const char* fName     = "Database::Pool::setKeepAlives"           ;
+  const char* fieldName = "DBKEEPALIVES"                            ;
+  using       dataType  = std::size_t                               ;
 
-  using dataType = std::size_t;
-
-  Policy::NumberAtLeast<dataType> validator("DBKEEPALIVES", CAOS_DBKEEPALIVES_LIMIT_MIN);
+  Policy::NumberAtLeast<dataType> validator(
+    fieldName,
+    CAOS_DBKEEPALIVES_LIMIT_MIN
+  )                                                                 ;
 
   configureValue<dataType>(
-    this->config.keepalives,                        // configField
-    &TerminalOptions::get_instance(),               // terminalPtr
-    CAOS_DBKEEPALIVES_ENV_NAME,                     // envName
-    CAOS_DBKEEPALIVES_OPT_NAME,                     // optName
-    "dbkeepalives",                                 // fieldName
-    fName,                                          // callerName
-    validator,                                      // validator in namespace Policy
+    this->config.keepalives,                                        // configField
+    &TerminalOptions::get_instance(),                               // terminalPtr
+    CAOS_DBKEEPALIVES_ENV_NAME,                                     // envName
+    CAOS_DBKEEPALIVES_OPT_NAME,                                     // optName
+    fieldName,                                                      // fieldName
+    fName,                                                          // callerName
+    validator,                                                      // validator in namespace Policy
     defaultFinal,
-    false                                           // exitOnError
+    false                                                           // exitOnError
   );
 }
 // -------------------------------------------------------------------------------------------------
@@ -325,22 +328,25 @@ void Database::Pool::setKeepAlives()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Database::Pool::setKeepAlivesIdle()
 {
-  static constexpr const char* fName = "Database::Pool::setKeepAlivesIdle";
+  const char* fName     = "Database::Pool::setKeepAlivesIdle"       ;
+  const char* fieldName = "DBKEEPALIVES_IDLE"                       ;
+  using       dataType  = std::size_t                               ;
 
-  using dataType = std::size_t;
-
-  Policy::NumberAtLeast<dataType> validator("DBKEEPALIVES_IDLE", CAOS_DBKEEPALIVES_IDLE_LIMIT_MIN);
+  Policy::NumberAtLeast<dataType> validator(
+    fieldName,
+    CAOS_DBKEEPALIVES_IDLE_LIMIT_MIN
+  )                                                                 ;
 
   configureValue<dataType>(
-    this->config.keepalives_idle,                   // configField
-    &TerminalOptions::get_instance(),               // terminalPtr
-    CAOS_DBKEEPALIVES_IDLE_ENV_NAME,                // envName
-    CAOS_DBKEEPALIVES_IDLE_OPT_NAME,                // optName
-    "dbkeepalives_idle",                            // fieldName
-    fName,                                          // callerName
-    validator,                                      // validator in namespace Policy
+    this->config.keepalives_idle,                                   // configField
+    &TerminalOptions::get_instance(),                               // terminalPtr
+    CAOS_DBKEEPALIVES_IDLE_ENV_NAME,                                // envName
+    CAOS_DBKEEPALIVES_IDLE_OPT_NAME,                                // optName
+    fieldName,                                                      // fieldName
+    fName,                                                          // callerName
+    validator,                                                      // validator in namespace Policy
     defaultFinal,
-    false                                           // exitOnError
+    false                                                           // exitOnError
   );
 }
 // -------------------------------------------------------------------------------------------------
@@ -355,22 +361,25 @@ void Database::Pool::setKeepAlivesIdle()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Database::Pool::setKeepAlivesInterval()
 {
-  static constexpr const char* fName = "Database::Pool::setKeepAlivesInterval";
+  const char* fName     = "Database::Pool::setKeepAlivesInterval"   ;
+  const char* fieldName = "DBKEEPALIVES_INTERVAL"                   ;
+  using       dataType  = std::size_t                               ;
 
-  using dataType = std::size_t;
-
-  Policy::NumberAtLeast<dataType> validator("DBKEEPALIVES_INTERVAL", CAOS_DBKEEPALIVES_INTERVAL_LIMIT_MIN);
+  Policy::NumberAtLeast<dataType> validator(
+    fieldName,
+    CAOS_DBKEEPALIVES_INTERVAL_LIMIT_MIN
+  )                                                                 ;
 
   configureValue<dataType>(
-    this->config.keepalives_interval,               // configField
-    &TerminalOptions::get_instance(),               // terminalPtr
-    CAOS_DBKEEPALIVES_INTERVAL_ENV_NAME,            // envName
-    CAOS_DBKEEPALIVES_INTERVAL_OPT_NAME,            // optName
-    "dbkeepalives_interval",                        // fieldName
-    fName,                                          // callerName
-    validator,                                      // validator in namespace Policy
+    this->config.keepalives_interval,                               // configField
+    &TerminalOptions::get_instance(),                               // terminalPtr
+    CAOS_DBKEEPALIVES_INTERVAL_ENV_NAME,                            // envName
+    CAOS_DBKEEPALIVES_INTERVAL_OPT_NAME,                            // optName
+    fieldName,                                                      // fieldName
+    fName,                                                          // callerName
+    validator,                                                      // validator in namespace Policy
     defaultFinal,
-    false                                           // exitOnError
+    false                                                           // exitOnError
   );
 }
 // -------------------------------------------------------------------------------------------------
@@ -385,22 +394,25 @@ void Database::Pool::setKeepAlivesInterval()
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Database::Pool::setKeepAlivesCount()
 {
-  static constexpr const char* fName = "Database::Pool::setKeepAlivesCount";
+  const char* fName     = "Database::Pool::setKeepAlivesCount"      ;
+  const char* fieldName = "DBKEEPALIVES_COUNT"                      ;
+  using       dataType  = std::size_t                               ;
 
-  using dataType = std::size_t;
-
-  Policy::NumberAtLeast<dataType> validator("DBKEEPALIVES_COUNT", CAOS_DBKEEPALIVES_COUNT_LIMIT_MIN);
+  Policy::NumberAtLeast<dataType> validator(
+    fieldName,
+    CAOS_DBKEEPALIVES_COUNT_LIMIT_MIN
+  )                                                                 ;
 
   configureValue<dataType>(
-    this->config.keepalives_count,                  // configField
-    &TerminalOptions::get_instance(),               // terminalPtr
-    CAOS_DBKEEPALIVES_COUNT_ENV_NAME,               // envName
-    CAOS_DBKEEPALIVES_COUNT_OPT_NAME,               // optName
-    "dbkeepalives_count",                           // fieldName
-    fName,                                          // callerName
-    validator,                                      // validator in namespace Policy
+    this->config.keepalives_count,                                  // configField
+    &TerminalOptions::get_instance(),                               // terminalPtr
+    CAOS_DBKEEPALIVES_COUNT_ENV_NAME,                               // envName
+    CAOS_DBKEEPALIVES_COUNT_OPT_NAME,                               // optName
+    fieldName,                                                      // fieldName
+    fName,                                                          // callerName
+    validator,                                                      // validator in namespace Policy
     defaultFinal,
-    false                                           // exitOnError
+    false                                                           // exitOnError
   );
 }
 // -------------------------------------------------------------------------------------------------
