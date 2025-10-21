@@ -243,11 +243,11 @@ These implementations define how each backend retrieves, caches, or updates data
 ### Release
 
 ```bash
-mkdir -p build/Release
+mkdir -p build/release
 
-cd build/Release
+cd build/release
 
-cmake -DCMAKE_BUILD_TYPE:STRING=Release -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=ON ../../
+cmake -DCMAKE_BUILD_TYPE:STRING=release -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=ON ../../
 
 cmake --build .
 ```
