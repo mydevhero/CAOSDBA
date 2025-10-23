@@ -171,7 +171,7 @@ void Cache::Pool::setPort()
   const char* fieldName = "CACHEPORT"                               ;
   using dataType        = std::uint16_t                             ;
 
-  Policy::PortValidator validator                                   ;
+  Policy::PortValidator validator("CACHEPORT")                      ;
 
   configureValue<dataType>(
     this->config.port,                                              // configField

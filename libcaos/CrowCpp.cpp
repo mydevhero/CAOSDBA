@@ -21,7 +21,7 @@
 #include "CrowCpp.hpp"
 
 
-constexpr const char* defaultFinal = "{} : Setting crowcpp {} to {} in {}  environment";
+constexpr const char* defaultFinal = "{} : Setting crowcpp {} to {} in {} environment";
 
 
 
@@ -105,7 +105,7 @@ void CrowCpp::setPort()
   const char* fieldName = "CROWCPP_PORT"                            ;
   using       dataType  = std::uint16_t                             ;
 
-  Policy::PortValidator validator                                   ;
+  Policy::PortValidator validator("CROWCPP_PORT")                   ;
 
   configureValue<dataType>(
     this->config.port,                                              // configField
@@ -135,7 +135,7 @@ void CrowCpp::setThreadCount()
   const char* fieldName = "CROWCPP_THREADS"                         ;
   using       dataType  = std::size_t                               ;
 
-  Policy::ThreadsValidator validator                                ;
+  Policy::ThreadsValidator validator("CROWCPP_THREADS")             ;
 
   configureValue<dataType>(
     this->config.threads,                                           // configField

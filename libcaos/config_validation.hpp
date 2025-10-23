@@ -14,10 +14,6 @@ static_assert(__cplusplus >= 201703L, "Requires C++17");
 constexpr bool is_non_null_string(const char* str = nullptr) { return str != nullptr; }
 constexpr bool is_non_empty_string(const char* str = nullptr) { return str[0] != '\0'; }
 constexpr bool is_non_null_and_non_empty_string(const char* str = nullptr) { return is_non_null_string(str) && is_non_empty_string(str); }
-// ?
-// constexpr bool string_has_a_value(const char* str = nullptr) { return str[0] == '\0' || strlen(str) > 0; }
-// ?
-// constexpr bool is_non_null_and_has_a_value(const char* str = nullptr) { return is_non_null_string(str) && string_has_a_value(str); }
 constexpr bool is_in_range(int min, int max, int num) { return num >= min && num <= max; }
 constexpr bool is_valid_env(const char* str = nullptr)
 {
@@ -50,32 +46,11 @@ constexpr bool is_non_null_number()
   return Value != -999999;
 }
 
-// ?
-// template<int Value = -999999>
-// constexpr bool is_gt_than_number(int min) /* to delete */
-// {
-//   return Value > min;
-// }
-
 template<int Value = -999999>
 constexpr bool numberAtLeast(int min)
 {
   return min > Value;
 }
-
-// ?
-// template<int Value = -999999>
-// constexpr bool is_ls_than_number(int max)
-// {
-//   return Value < max;
-// }
-
-// ?
-// template<int Value = -999999>
-// constexpr bool is_non_null_and_gt_than_number(int min)
-// {
-//   return is_non_null_number<Value>() && is_gt_than_number<Value>(min);
-// }
 
 template<int Value = -999999>
 constexpr bool is_number_non_null_and_at_least(int min)
@@ -83,63 +58,53 @@ constexpr bool is_number_non_null_and_at_least(int min)
   return is_non_null_number<Value>() && !numberAtLeast<Value>(min);
 }
 
-
-// ?
-// template<int Value = -999999>
-// constexpr bool is_non_null_and_in_range_number(int min, int max)
-// {
-//   return is_non_null_number<Value>() && is_gt_than_number<Value>(min) && is_ls_than_number<Value>(max);
-// }
-
-
-
 // Default values ----------------------------------------------------------------------------------
 
 // Threads -----------------------------------------------------------------------------------------
-#define CAOS_DEFAULT_THREADS_VALUE_DEFAULT    1
-#define CAOS_DEFAULT_THREADS_VALUE_LIMIT_MIN  1
+#define CAOS_DEFAULT_THREADS_DEFAULT    1
+#define CAOS_DEFAULT_THREADS_LIMIT_MIN  0
 
-#ifndef CAOS_DEFAULT_THREADS_VALUE
-  #define CAOS_DEFAULT_THREADS_VALUE CAOS_DEFAULT_THREADS_VALUE_DEFAULT
+#ifndef CAOS_DEFAULT_THREADS
+  #define CAOS_DEFAULT_THREADS CAOS_DEFAULT_THREADS_DEFAULT
 #endif
 
-#define CAOS_DEFAULT_THREADS_VALUE_ERRMSG "CAOS_DEFAULT_THREADS_VALUE" APPEND_ERRMSG_AT_LEAST
-static_assert(is_number_non_null_and_at_least<CAOS_DEFAULT_THREADS_VALUE>(CAOS_DEFAULT_THREADS_VALUE_LIMIT_MIN), CAOS_DEFAULT_THREADS_VALUE_ERRMSG);
+#define CAOS_DEFAULT_THREADS_ERRMSG "CAOS_DEFAULT_THREADS" APPEND_ERRMSG_AT_LEAST TOSTRING(CAOS_DEFAULT_THREADS_LIMIT_MIN)
+static_assert(is_number_non_null_and_at_least<CAOS_DEFAULT_THREADS>(CAOS_DEFAULT_THREADS_LIMIT_MIN), CAOS_DEFAULT_THREADS_ERRMSG);
 //--------------------------------------------------------------------------------------------------
 
 
 
 // Unprivileged port min ---------------------------------------------------------------------------
-#define DEFAULT_UNPRIVILEGED_PORT_MIN_DEFAULT   1024
-#define DEFAULT_UNPRIVILEGED_PORT_MIN_LIMIT_MIN 1024
+#define CAOS_DEFAULT_UNPRIVILEGED_PORT_MIN_DEFAULT   1024
+#define CAOS_DEFAULT_UNPRIVILEGED_PORT_MIN_LIMIT_MIN 1024
 
-#ifndef DEFAULT_UNPRIVILEGED_PORT_MIN
-  #define DEFAULT_UNPRIVILEGED_PORT_MIN DEFAULT_UNPRIVILEGED_PORT_MIN_DEFAULT
+#ifndef CAOS_DEFAULT_UNPRIVILEGED_PORT_MIN
+  #define CAOS_DEFAULT_UNPRIVILEGED_PORT_MIN CAOS_DEFAULT_UNPRIVILEGED_PORT_MIN_DEFAULT
 #endif
 
-#define DEFAULT_UNPRIVILEGED_PORT_MIN_ERRMSG "DEFAULT_UNPRIVILEGED_PORT_MIN" APPEND_ERRMSG_AT_LEAST
-static_assert(is_number_non_null_and_at_least<DEFAULT_UNPRIVILEGED_PORT_MIN>(DEFAULT_UNPRIVILEGED_PORT_MIN_LIMIT_MIN), DEFAULT_UNPRIVILEGED_PORT_MIN_ERRMSG);
+#define CAOS_DEFAULT_UNPRIVILEGED_PORT_MIN_ERRMSG "CAOS_DEFAULT_UNPRIVILEGED_PORT_MIN" APPEND_ERRMSG_AT_LEAST
+static_assert(is_number_non_null_and_at_least<CAOS_DEFAULT_UNPRIVILEGED_PORT_MIN>(CAOS_DEFAULT_UNPRIVILEGED_PORT_MIN_LIMIT_MIN), CAOS_DEFAULT_UNPRIVILEGED_PORT_MIN_ERRMSG);
 //--------------------------------------------------------------------------------------------------
 
 
 
 // Unprivileged port max ---------------------------------------------------------------------------
-#define DEFAULT_UNPRIVILEGED_PORT_MAX_DEFAULT 49151
-#define DEFAULT_UNPRIVILEGED_PORT_MAX_LIMIT_MIN 1024
+#define CAOS_DEFAULT_UNPRIVILEGED_PORT_MAX_DEFAULT 49151
+#define CAOS_DEFAULT_UNPRIVILEGED_PORT_MAX_LIMIT_MIN 1024
 
-#ifndef DEFAULT_UNPRIVILEGED_PORT_MAX
-  #define DEFAULT_UNPRIVILEGED_PORT_MAX DEFAULT_UNPRIVILEGED_PORT_MAX_DEFAULT
+#ifndef CAOS_DEFAULT_UNPRIVILEGED_PORT_MAX
+  #define CAOS_DEFAULT_UNPRIVILEGED_PORT_MAX CAOS_DEFAULT_UNPRIVILEGED_PORT_MAX_DEFAULT
 #endif
 
-#define DEFAULT_UNPRIVILEGED_PORT_MAX_ERRMSG "DEFAULT_UNPRIVILEGED_PORT_MAX" APPEND_ERRMSG_AT_LEAST
-static_assert(is_number_non_null_and_at_least<DEFAULT_UNPRIVILEGED_PORT_MAX>(DEFAULT_UNPRIVILEGED_PORT_MAX_LIMIT_MIN), DEFAULT_UNPRIVILEGED_PORT_MAX_ERRMSG);
+#define CAOS_DEFAULT_UNPRIVILEGED_PORT_MAX_ERRMSG "CAOS_DEFAULT_UNPRIVILEGED_PORT_MAX" APPEND_ERRMSG_AT_LEAST
+static_assert(is_number_non_null_and_at_least<CAOS_DEFAULT_UNPRIVILEGED_PORT_MAX>(CAOS_DEFAULT_UNPRIVILEGED_PORT_MAX_LIMIT_MIN), CAOS_DEFAULT_UNPRIVILEGED_PORT_MAX_ERRMSG);
 //--------------------------------------------------------------------------------------------------
 
 
 
 // Check unprivileged port min/max order
-#if DEFAULT_UNPRIVILEGED_PORT_MIN >= DEFAULT_UNPRIVILEGED_PORT_MAX
-  #error "DEFAULT_UNPRIVILEGED_PORT_MIN must be < than DEFAULT_UNPRIVILEGED_PORT_MAX"
+#if CAOS_DEFAULT_UNPRIVILEGED_PORT_MIN >= CAOS_DEFAULT_UNPRIVILEGED_PORT_MAX
+  #error "CAOS_DEFAULT_UNPRIVILEGED_PORT_MIN must be < than CAOS_DEFAULT_UNPRIVILEGED_PORT_MAX"
 #endif
 //--------------------------------------------------------------------------------------------------
 
@@ -153,23 +118,37 @@ static_assert(is_number_non_null_and_at_least<DEFAULT_UNPRIVILEGED_PORT_MAX>(DEF
 static_assert(is_valid_env(CAOS_ENV), "CMAKE_BUILD_TYPE must be equal to \"debug\", \"test\" or \"release\" (case sensitive!). Add -DCMAKE_BUILD_TYPE:STRING=${ENV} on cmake");
 //--------------------------------------------------------------------------------------------------
 
-// LOG Severity ------------------------------------------------------------------------------------
-#ifdef CAOS_ENV_LOG_SEVERITY_NAME
-  static_assert(is_non_null_and_non_empty_string(CAOS_ENV_LOG_SEVERITY_NAME), "CAOS_ENV_LOG_SEVERITY_NAME must be defined and non-empty");
-#else
+// CAOS_ENV_LOG_SEVERITY_NAME ----------------------------------------------------------------------
+#ifndef CAOS_ENV_LOG_SEVERITY_NAME
   #define CAOS_ENV_LOG_SEVERITY_NAME "CAOS_SEVERITY"
 #endif
 
-#ifdef CAOS_OPT_LOG_SEVERITY_NAME
-  static_assert(is_non_null_and_non_empty_string(CAOS_OPT_LOG_SEVERITY_NAME), "CAOS_OPT_LOG_SEVERITY_NAME must be defined and non-empty");
-#else
+#define CAOS_ENV_LOG_SEVERITY_NAME_ERRMSG "CAOS_ENV_LOG_SEVERITY_NAME " APPEND_ERRMSG_NON_EMPTY
+static_assert(is_non_null_and_non_empty_string(CAOS_ENV_LOG_SEVERITY_NAME), CAOS_ENV_LOG_SEVERITY_NAME_ERRMSG);
+//--------------------------------------------------------------------------------------------------
+
+
+
+// CAOS_OPT_LOG_SEVERITY_NAME ----------------------------------------------------------------------
+#ifndef CAOS_OPT_LOG_SEVERITY_NAME
   #define CAOS_OPT_LOG_SEVERITY_NAME "severity"
 #endif
 
+#define CAOS_OPT_LOG_SEVERITY_NAME_ERRMSG "CAOS_OPT_LOG_SEVERITY_NAME " APPEND_ERRMSG_NON_EMPTY
+static_assert(is_non_null_and_non_empty_string(CAOS_OPT_LOG_SEVERITY_NAME), CAOS_OPT_LOG_SEVERITY_NAME_ERRMSG);
+//--------------------------------------------------------------------------------------------------
 
-// TODO: static_assert(is_non_null_and_has_a_value(CAOS_SEVERITY_LEVEL_BEFORE_LOG_START), "CAOS_SEVERITY_LEVEL_BEFORE_LOG_START must be defined and must have a value (even empty)");
 
 
+// SPDLOG before log init --------------------------------------------------------------------------
+#ifndef SPDLOG_ACTIVE_LEVEL
+  #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
+#endif
+//--------------------------------------------------------------------------------------------------
+
+
+
+// CAOS_LOG_SEVERITY -------------------------------------------------------------------------------
 #ifdef CAOS_ENV_DEBUG
   #ifndef CAOS_LOG_SEVERITY
     #define CAOS_LOG_SEVERITY "trace"
@@ -183,7 +162,11 @@ static_assert(is_valid_env(CAOS_ENV), "CMAKE_BUILD_TYPE must be equal to \"debug
     #define CAOS_LOG_SEVERITY "warn"
   #endif
 #endif
-static_assert(is_valid_severity(CAOS_LOG_SEVERITY), "CAOS_LOG_SEVERITY, allowed values: trace, debug, info, warn, err, critical, off");
+
+#define CAOS_LOG_SEVERITY_ERRMSG "CAOS_LOG_SEVERITY, allowed values: trace, debug, info, warn, err, critical, off"
+static_assert(is_valid_severity(CAOS_LOG_SEVERITY), CAOS_LOG_SEVERITY_ERRMSG);
+//--------------------------------------------------------------------------------------------------
+
 
 
 // Log queue ---------------------------------------------------------------------------------------
@@ -399,14 +382,14 @@ static_assert(is_non_null_and_non_empty_string(CAOS_LOG_SYSLOG_PATTERN), CAOS_LO
   #endif
 
   #define CAOS_CROWCPP_PORT_ERRMSG "CAOS_CROWCPP_PORT" APPEND_ERRMSG_OUT_OF_RANGE
-  static_assert(is_in_range(DEFAULT_UNPRIVILEGED_PORT_MIN, DEFAULT_UNPRIVILEGED_PORT_MAX, CAOS_CROWCPP_PORT), CAOS_CROWCPP_PORT_ERRMSG);
+  static_assert(is_in_range(CAOS_DEFAULT_UNPRIVILEGED_PORT_MIN, CAOS_DEFAULT_UNPRIVILEGED_PORT_MAX, CAOS_CROWCPP_PORT), CAOS_CROWCPP_PORT_ERRMSG);
   //------------------------------------------------------------------------------------------------
 
 
 
   // Crowcpp threads -------------------------------------------------------------------------------
-  #define CAOS_CROWCPP_THREADS_LIMIT_MIN  1
-  #define CAOS_CROWCPP_THREADS_DEFAULT    CAOS_DEFAULT_THREADS_VALUE
+  #define CAOS_CROWCPP_THREADS_LIMIT_MIN  CAOS_DEFAULT_THREADS_LIMIT_MIN
+  #define CAOS_CROWCPP_THREADS_DEFAULT    CAOS_DEFAULT_THREADS
 
   #ifdef CAOS_ENV_ALT                                                                               // CAOS_ENV="test" or CAOS_ENV="debug"
     #ifdef CAOS_CROWCPP_THREADS_ALT
@@ -825,7 +808,7 @@ static_assert(is_non_null_and_non_empty_string(CAOS_LOG_SYSLOG_PATTERN), CAOS_LO
   #endif
 
   #define CAOS_CACHEPORT_ERRMSG "CAOS_CACHEPORT" APPEND_ERRMSG_OUT_OF_RANGE
-  static_assert(is_in_range(DEFAULT_UNPRIVILEGED_PORT_MIN, DEFAULT_UNPRIVILEGED_PORT_MAX, CAOS_CACHEPORT), CAOS_CACHEPORT_ERRMSG);
+  static_assert(is_in_range(CAOS_DEFAULT_UNPRIVILEGED_PORT_MIN, CAOS_DEFAULT_UNPRIVILEGED_PORT_MAX, CAOS_CACHEPORT), CAOS_CACHEPORT_ERRMSG);
   //------------------------------------------------------------------------------------------------
 
 
@@ -965,7 +948,7 @@ static_assert(is_non_null_and_non_empty_string(CAOS_LOG_SYSLOG_PATTERN), CAOS_LO
 
   // Cache connection timeout ----------------------------------------------------------------------
   #define CAOS_CACHEPOOLCONNECTIONTIMEOUT_DEFAULT 100
-  #define CAOS_CACHEPOOLCONNECTIONTIMEOUT_LIMIT_MIN 1
+  #define CAOS_CACHEPOOLCONNECTIONTIMEOUT_LIMIT_MIN 100
 
   #ifdef CAOS_ENV_ALT                                                                               // CAOS_ENV="test" or CAOS_ENV="debug"
     #ifdef CAOS_CACHEPOOLCONNECTIONTIMEOUT_ALT
@@ -1006,8 +989,8 @@ static_assert(is_non_null_and_non_empty_string(CAOS_LOG_SYSLOG_PATTERN), CAOS_LO
 
 
   // Cache connection timeout ----------------------------------------------------------------------
-  #define CAOS_CACHEPOOLCONNECTIONIDLETIME_DEFAULT 100
-  #define CAOS_CACHEPOOLCONNECTIONIDLETIME_LIMIT_MIN 1
+  #define CAOS_CACHEPOOLCONNECTIONIDLETIME_DEFAULT 10000
+  #define CAOS_CACHEPOOLCONNECTIONIDLETIME_LIMIT_MIN 10000
 
   #ifdef CAOS_ENV_ALT                                                                               // CAOS_ENV="test" or CAOS_ENV="debug"
     #ifdef CAOS_CACHEPOOLCONNECTIONIDLETIME_ALT
@@ -1559,7 +1542,7 @@ static_assert(is_non_null_string(CAOS_DBHOST), CAOS_DBHOST_ERRMSG);
 #endif
 
 #define CAOS_DBPORT_ERRMSG "CAOS_DBPORT" APPEND_ERRMSG_OUT_OF_RANGE
-static_assert(is_in_range(DEFAULT_UNPRIVILEGED_PORT_MIN, DEFAULT_UNPRIVILEGED_PORT_MAX, CAOS_DBPORT), CAOS_DBPORT_ERRMSG);
+static_assert(is_in_range(CAOS_DEFAULT_UNPRIVILEGED_PORT_MIN, CAOS_DEFAULT_UNPRIVILEGED_PORT_MAX, CAOS_DBPORT), CAOS_DBPORT_ERRMSG);
 //--------------------------------------------------------------------------------------------------
 
 

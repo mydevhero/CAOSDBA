@@ -36,7 +36,6 @@
 
 int main(int argc, char* argv[])
 {
-  spdlog::set_level(CAOS_SEVERITY_LEVEL_BEFORE_LOG_START);
 
   auto caos = std::make_unique<Caos>(argc, argv);
 

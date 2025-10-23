@@ -107,8 +107,6 @@ int main(int argc, char* argv[])
   std::signal(SIGINT, signal_handler);
   std::signal(SIGTERM, signal_handler);
 
-  spdlog::set_level(CAOS_SEVERITY_LEVEL_BEFORE_LOG_START);
-
   SPDLOG_TRACE("Ready to instance caos");
 
   // Crea l'istanza

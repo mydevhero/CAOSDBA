@@ -21,9 +21,9 @@
 #pragma once
 
 // Default values ----------------------------------------------------------------------------------
-// #define CAOS_DEFAULT_THREADS_VALUE                            4
-// #define DEFAULT_UNPRIVILEGED_PORT_MIN                         1024
-// #define DEFAULT_UNPRIVILEGED_PORT_MAX                         49151
+// #define CAOS_DEFAULT_THREADS                                        0                               // Leave to zero for getMaxHWThreads()
+// #define CAOS_DEFAULT_UNPRIVILEGED_PORT_MIN                          1024
+// #define CAOS_DEFAULT_UNPRIVILEGED_PORT_MAX                          49151
 //--------------------------------------------------------------------------------------------------
 
 
@@ -35,117 +35,263 @@
 
 
 
-// LOG Severity ------------------------------------------------------------------------------------
-// #define CAOS_ENV_LOG_SEVERITY_NAME                            "CAOS_SEVERITY"
-// #define CAOS_OPT_LOG_SEVERITY_NAME                            "severity"
+/***************************************************************************************************
+ * Configuration in release environment
+ **************************************************************************************************/
 
-// Log levels:
-// trace = SPDLOG_LEVEL_TRACE
-// debug = SPDLOG_LEVEL_DEBUG
-// info = SPDLOG_LEVEL_INFO
-// warn = SPDLOG_LEVEL_WARN
-// err = SPDLOG_LEVEL_ERROR
-// critical = SPDLOG_LEVEL_CRITICAL
-// off = SPDLOG_LEVEL_OFF
 
-#define CAOS_SEVERITY_LEVEL_BEFORE_LOG_START                  spdlog::level::trace
 
-// #define CAOS_LOG_SEVERITY                                     "trace"
+// LOG common config -------------------------------------------------------------------------------
 
-// #define CAOS_LOG_QUEUE                                        8192
-// #define CAOS_LOG_THREAD_COUNT                                 1
-// #define CAOS_LOG_FILE                                         "/var/log/caos.log"
-// #define CAOS_LOG_FILE_DIMENSION                               1024*1024*5
-// #define CAOS_LOG_NUMBER                                       5
+// Set spdlog level before log init
+// #define SPDLOG_ACTIVE_LEVEL                                         SPDLOG_LEVEL_TRACE
 
-// #define CAOS_LOG_TERMINAL_PATTERN                             "[%Y-%m-%d %H:%M:%S.%e] [%l] [%n:%P] %v"
-// #define CAOS_LOG_ROTATING_PATTERN                             "[%Y-%m-%d %H:%M:%S.%e] [%l] %v"
-// #define CAOS_LOG_SYSLOG_PATTERN                               "[%l] %v"
+/*
+ * Log levels:
+ * trace    = SPDLOG_LEVEL_TRACE
+ * debug    = SPDLOG_LEVEL_DEBUG
+ * info     = SPDLOG_LEVEL_INFO
+ * warn     = SPDLOG_LEVEL_WARN
+ * err      = SPDLOG_LEVEL_ERROR
+ * critical = SPDLOG_LEVEL_CRITICAL
+ * off      = SPDLOG_LEVEL_OFF
+*/
+
+// #define CAOS_LOG_SEVERITY                                           "trace"
+
+// #define CAOS_LOG_QUEUE                                              8192
+// #define CAOS_LOG_THREAD_COUNT                                       1
+// #define CAOS_LOG_FILE                                               "/var/log/caos.log"
+// #define CAOS_LOG_FILE_DIMENSION                                     1024*1024*5
+// #define CAOS_LOG_NUMBER                                             5
+
+// #define CAOS_LOG_TERMINAL_PATTERN                                   "[%Y-%m-%d %H:%M:%S.%e] [%l] [%n:%P] %v"
+// #define CAOS_LOG_ROTATING_PATTERN                                   "[%Y-%m-%d %H:%M:%S.%e] [%l] %v"
+// #define CAOS_LOG_SYSLOG_PATTERN                                     "[%l] %v"
 //--------------------------------------------------------------------------------------------------
 
+// CrowCpp release config --------------------------------------------------------------------------
+#ifdef CAOS_USE_CROWCPP
+// #define CAOS_CROWCPP_HOST                                           "127.0.0.1"
+// #define CAOS_CROWCPP_PORT                                           18080
+// #define CAOS_CROWCPP_THREADS                                        CAOS_DEFAULT_THREADS
+#endif
+//--------------------------------------------------------------------------------------------------
+
+// Cache release config ----------------------------------------------------------------------------
+#ifdef CAOS_USE_CACHE
+// #define CAOS_CACHEUSER                                              ""
+// #define CAOS_CACHEPASS                                              ""
+// #define CAOS_CACHEHOST                                              "127.0.0.1"
+// #define CAOS_CACHEPORT                                              6379
+// #define CAOS_CACHECLIENTNAME                                        ""
+// #define CAOS_CACHEINDEX                                             0
+// #define CAOS_CACHECOMMANDTIMEOUT                                    0                               // milliseconds
+// #define CAOS_CACHEPOOLSIZEMIN                                       10
+// #define CAOS_CACHEPOOLSIZEMAX                                       20
+// #define CAOS_CACHEPOOLWAIT                                          100                             // milliseconds
+// #define CAOS_CACHEPOOLCONNECTIONTIMEOUT                             100                             // milliseconds
+// #define CAOS_CACHEPOOLCONNECTIONLIFETIME                            10                              // seconds
+// #define CAOS_CACHEPOOLCONNECTIONIDLETIME                            10000                           // milliseconds
+#endif
+//--------------------------------------------------------------------------------------------------
+
+// Database release config -------------------------------------------------------------------------
+// #define CAOS_DBUSER                                                 "caos_u"
+// #define CAOS_DBPASS                                                 "verystrongpassword"
+// #define CAOS_DBHOST                                                 "127.0.0.1"
+// #define CAOS_DBPORT                                                 /* Override here or get defaults set in config_validation.hpp according to database definition */
+// #define CAOS_DBNAME                                                 "my_caos_aweseome_app"
+// #define CAOS_DBPOOLSIZEMIN                                          10
+// #define CAOS_DBPOOLSIZEMAX                                          20
+// #define CAOS_DBPOOLWAIT                                             5000                            /* milliseconds */
+// #define CAOS_DBPOOLTIMEOUT                                          15000                           /* milliseconds */
+// #define CAOS_DBCONNECT_TIMEOUT                                      30                              /* seconds */
+// #define CAOS_DBMAXWAIT                                              5000                            /* milliseconds */
+// #define CAOS_DBHEALTHCHECKINTERVAL                                  30000                           /* milliseconds */
+
+#ifdef CAOS_USE_DB_POSTGRESQL
+// #define CAOS_DBKEEPALIVES                                           1
+// #define CAOS_DBKEEPALIVES_IDLE                                      30
+// #define CAOS_DBKEEPALIVES_INTERVAL                                  10
+// #define CAOS_DBKEEPALIVES_COUNT                                     5
+#endif
+//--------------------------------------------------------------------------------------------------
+
+
+
+/***************************************************************************************************
+ * Configuration in alternative (debug or test) environment
+ **************************************************************************************************/
+
+
+
+// CrowCpp alternative config ----------------------------------------------------------------------
+#ifdef CAOS_USE_CROWCPP
+// #define CAOS_CROWCPP_HOST_ALT                                       "127.0.0.1"
+// #define CAOS_CROWCPP_PORT_ALT                                       18080
+// #define CAOS_CROWCPP_THREADS_ALT                                    0
+#endif
+//--------------------------------------------------------------------------------------------------
+
+// Cache alternative config ------------------------------------------------------------------------
+#ifdef CAOS_USE_CACHE
+// #define CAOS_CACHEUSER_ALT                                          ""
+// #define CAOS_CACHEPASS_ALT                                          ""
+// #define CAOS_CACHEHOST_ALT                                          "127.0.0.1"
+// #define CAOS_CACHEPORT_ALT                                          6379
+// #define CAOS_CACHECLIENTNAME_ALT                                    ""
+// #define CAOS_CACHEINDEX_ALT                                         0
+// #define CAOS_CACHECOMMANDTIMEOUT_ALT                                0                               // milliseconds
+// #define CAOS_CACHEPOOLSIZEMIN_ALT                                   10
+// #define CAOS_CACHEPOOLSIZEMAX_ALT                                   20
+// #define CAOS_CACHEPOOLWAIT_ALT                                      100                             // milliseconds
+// #define CAOS_CACHEPOOLCONNECTIONTIMEOUT_ALT                         100                             // milliseconds
+// #define CAOS_CACHEPOOLCONNECTIONLIFETIME_ALT                        10                              // seconds
+// #define CAOS_CACHEPOOLCONNECTIONIDLETIME_ALT                        10000                           // milliseconds
+#endif
+//--------------------------------------------------------------------------------------------------
+
+// Database alternative config ---------------------------------------------------------------------
+// #define CAOS_DBUSER_ALT                                             "caos_u_alt"
+// #define CAOS_DBPASS_ALT                                             "verystrongpassword_alt"
+// #define CAOS_DBHOST_ALT                                             "127.0.0.1"
+// #define CAOS_DBPORT_ALT                                             5432
+// #define CAOS_DBNAME_ALT                                             "my_caos_aweseome_app_alt"
+// #define CAOS_DBPOOLSIZEMIN_ALT                                      10
+// #define CAOS_DBPOOLSIZEMAX_ALT                                      20
+// #define CAOS_DBPOOLWAIT_ALT                                         5000
+// #define CAOS_DBPOOLTIMEOUT_ALT                                      15000
+// #define CAOS_DBCONNECT_TIMEOUT_ALT                                  30
+// #define CAOS_DBMAXWAIT_ALT                                          5000
+// #define CAOS_DBHEALTHCHECKINTERVAL_ALT                              30000
+// #define CAOS_LOG_THRESHOLD_CONNECTION_LIMIT_EXCEEDED                50
+// #define CAOS_VALIDATE_CONNECTION_BEFORE_ACQUIRE                     1
+// #define CAOS_VALIDATE_USING_TRANSACTION                             0
+
+#ifdef CAOS_USE_DB_POSTGRESQL
+// #define CAOS_DBKEEPALIVES_ALT                                       1
+// #define CAOS_DBKEEPALIVES_IDLE_ALT                                  30
+// #define CAOS_DBKEEPALIVES_INTERVAL_ALT                              10
+// #define CAOS_DBKEEPALIVES_COUNT_ALT                                 5
+#endif
+//--------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+/***************************************************************************************************
+ * Variables name on environment and terminal options
+ **************************************************************************************************/
 
 
 
 #ifdef CAOS_USE_CROWCPP
-// Server Network Address Definitions --------------------------------------------------------------
-// #define CAOS_CROWCPP_HOST_ENV_NAME                     "CAOS_ADDRESS"
-// #define CAOS_CROWCPP_PORT_ENV_NAME                        "CAOS_PORT"
-// #define CAOS_CROWCPP_THREADS_ENV_NAME                           "CAOS_THREADS"
+// CrowCpp env var name ----------------------------------------------------------------------------
+// #define CAOS_CROWCPP_HOST_ENV_NAME                                  "CAOS_ADDRESS"
+// #define CAOS_CROWCPP_PORT_ENV_NAME                                  "CAOS_PORT"
+// #define CAOS_CROWCPP_THREADS_ENV_NAME                               "CAOS_THREADS"
+//--------------------------------------------------------------------------------------------------
 
-// #define CAOS_CROWCPP_HOST_OPT_NAME                     "address"
-// #define CAOS_CROWCPP_PORT_OPT_NAME                        "port"
-// #define CAOS_CROWCPP_THREADS_OPT_NAME                           "threads"
-
-// #define CAOS_CROWCPP_HOST                              "127.0.0.1"
-// #define CAOS_CROWCPP_PORT                         18080
-// #define CAOS_CROWCPP_THREADS                            CAOS_DEFAULT_THREADS_VALUE
-
-// #define CAOS_CROWCPP_HOST_ALT                          CAOS_CROWCPP_HOST
-// #define CAOS_CROWCPP_PORT_ALT                     CAOS_CROWCPP_PORT
-// #define CAOS_CROWCPP_THREADS_ALT                        2
+// CrowCpp terminal options var name ---------------------------------------------------------------
+// #define CAOS_CROWCPP_HOST_OPT_NAME                                  "address"
+// #define CAOS_CROWCPP_PORT_OPT_NAME                                  "port"
+// #define CAOS_CROWCPP_THREADS_OPT_NAME                               "threads"
 //--------------------------------------------------------------------------------------------------
 #endif
 
 
 
-
-// Cache -------------------------------------------------------------------------------------------
 #ifdef CAOS_USE_CACHE
-// #define CAOS_CACHEUSER_ENV_NAME                                 "CAOS_CACHEUSER"                    // Username (for Redis 6+ with ACL)
-// #define CAOS_CACHEPASS_ENV_NAME                                 "CAOS_CACHEPASS"                    // Authentication password
-// #define CAOS_CACHEHOST_ENV_NAME                                 "CAOS_CACHEHOST"                    // Server address
-// #define CAOS_CACHEPORT_ENV_NAME                                 "CAOS_CACHEPORT"                    // Server port number
-// #define CAOS_CACHECLIENTNAME_ENV_NAME                           "CAOS_CACHECLIENTNAME"              //
-// #define CAOS_CACHEINDEX_ENV_NAME                                "CAOS_CACHEINDEX"                   // Redis database number (0-15)
-// #define CAOS_CACHECOMMANDTIMEOUT_ENV_NAME                       "CAOS_CACHECOMMANDTIMEOUT"          // Timeout for Redis commands
-// #define CAOS_CACHEPOOLSIZEMIN_ENV_NAME                          "CAOS_CACHEPOOLSIZEMIN"             // Minimum number of connections always kept idle
-// #define CAOS_CACHEPOOLSIZEMAX_ENV_NAME                          "CAOS_CACHEPOOLSIZEMAX"             // Maximum number of idle connections in the pool
-// #define CAOS_CACHEPOOLWAIT_ENV_NAME                             "CAOS_CACHEPOOLWAIT"                // Timeout when waiting for connection from exhausted pool
-// #define CAOS_CACHEPOOLCONNECTIONTIMEOUT_ENV_NAME                "CAOS_CACHEPOOLCONNECTIONTIMEOUT"   // Timeout for establishing connection
-// #define CAOS_CACHEPOOLCONNECTIONLIFETIME_ENV_NAME               "CAOS_CACHEPOOLCONNECTIONLIFETIME"  // Absolute maximum lifetime of a connection
-// #define CAOS_CACHEPOOLCONNECTIONIDLETIME_ENV_NAME               "CAOS_CACHEPOOLCONNECTIONIDLETIME"  // Maximum inactivity duration before closing
+// Cache env var name ------------------------------------------------------------------------------
+// #define CAOS_CACHEUSER_ENV_NAME                                     "CAOS_CACHEUSER"                    // Username (for Redis 6+ with ACL)
+// #define CAOS_CACHEPASS_ENV_NAME                                     "CAOS_CACHEPASS"                    // Authentication password
+// #define CAOS_CACHEHOST_ENV_NAME                                     "CAOS_CACHEHOST"                    // Server address
+// #define CAOS_CACHEPORT_ENV_NAME                                     "CAOS_CACHEPORT"                    // Server port number
+// #define CAOS_CACHECLIENTNAME_ENV_NAME                               "CAOS_CACHECLIENTNAME"              //
+// #define CAOS_CACHEINDEX_ENV_NAME                                    "CAOS_CACHEINDEX"                   // Redis database number (0-15)
+// #define CAOS_CACHECOMMANDTIMEOUT_ENV_NAME                           "CAOS_CACHECOMMANDTIMEOUT"          // Timeout for Redis commands
+// #define CAOS_CACHEPOOLSIZEMIN_ENV_NAME                              "CAOS_CACHEPOOLSIZEMIN"             // Minimum number of connections always kept idle
+// #define CAOS_CACHEPOOLSIZEMAX_ENV_NAME                              "CAOS_CACHEPOOLSIZEMAX"             // Maximum number of idle connections in the pool
+// #define CAOS_CACHEPOOLWAIT_ENV_NAME                                 "CAOS_CACHEPOOLWAIT"                // Timeout when waiting for connection from exhausted pool
+// #define CAOS_CACHEPOOLCONNECTIONTIMEOUT_ENV_NAME                    "CAOS_CACHEPOOLCONNECTIONTIMEOUT"   // Timeout for establishing connection
+// #define CAOS_CACHEPOOLCONNECTIONLIFETIME_ENV_NAME                   "CAOS_CACHEPOOLCONNECTIONLIFETIME"  // Absolute maximum lifetime of a connection
+// #define CAOS_CACHEPOOLCONNECTIONIDLETIME_ENV_NAME                   "CAOS_CACHEPOOLCONNECTIONIDLETIME"  // Maximum inactivity duration before closing
+//--------------------------------------------------------------------------------------------------
 
-// #define CAOS_CACHEUSER_OPT_NAME                                 "cacheuser"
-// #define CAOS_CACHEPASS_OPT_NAME                                 "cachepass"
-// #define CAOS_CACHEHOST_OPT_NAME                                 "cachehost"
-// #define CAOS_CACHEPORT_OPT_NAME                                 "cacheport"
-// #define CAOS_CACHECLIENTNAME_OPT_NAME                           "cacheclientname"
-// #define CAOS_CACHEINDEX_OPT_NAME                                "cacheindex"
-// #define CAOS_CACHECOMMANDTIMEOUT_OPT_NAME                       "cachecommandtimeout"
-// #define CAOS_CACHEPOOLSIZEMIN_OPT_NAME                          "cachepoolsizemin"
-// #define CAOS_CACHEPOOLSIZEMAX_OPT_NAME                          "cachepoolsizemax"
-// #define CAOS_CACHEPOOLWAIT_OPT_NAME                             "cachepoolwait"
-// #define CAOS_CACHEPOOLCONNECTIONTIMEOUT_OPT_NAME                "cachepoolconnectiontimeout"
-// #define CAOS_CACHEPOOLCONNECTIONLIFETIME_OPT_NAME               "cachepoolconnectionlifetime"
-// #define CAOS_CACHEPOOLCONNECTIONIDLETIME_OPT_NAME               "cachepoolconnectionidletime"
+// Cache terminal options var name -----------------------------------------------------------------
+// #define CAOS_CACHEUSER_OPT_NAME                                     "cacheuser"
+// #define CAOS_CACHEPASS_OPT_NAME                                     "cachepass"
+// #define CAOS_CACHEHOST_OPT_NAME                                     "cachehost"
+// #define CAOS_CACHEPORT_OPT_NAME                                     "cacheport"
+// #define CAOS_CACHECLIENTNAME_OPT_NAME                               "cacheclientname"
+// #define CAOS_CACHEINDEX_OPT_NAME                                    "cacheindex"
+// #define CAOS_CACHECOMMANDTIMEOUT_OPT_NAME                           "cachecommandtimeout"
+// #define CAOS_CACHEPOOLSIZEMIN_OPT_NAME                              "cachepoolsizemin"
+// #define CAOS_CACHEPOOLSIZEMAX_OPT_NAME                              "cachepoolsizemax"
+// #define CAOS_CACHEPOOLWAIT_OPT_NAME                                 "cachepoolwait"
+// #define CAOS_CACHEPOOLCONNECTIONTIMEOUT_OPT_NAME                    "cachepoolconnectiontimeout"
+// #define CAOS_CACHEPOOLCONNECTIONLIFETIME_OPT_NAME                   "cachepoolconnectionlifetime"
+// #define CAOS_CACHEPOOLCONNECTIONIDLETIME_OPT_NAME                   "cachepoolconnectionidletime"
+#endif
+//--------------------------------------------------------------------------------------------------
 
-// #define CAOS_CACHEUSER                                  ""
-// #define CAOS_CACHEPASS                                  ""
-// #define CAOS_CACHEHOST                                  "127.0.0.1"
-// #define CAOS_CACHEPORT                                  6379
-// #define CAOS_CACHECLIENTNAME                            ""
-// #define CAOS_CACHEINDEX                                 0
-// #define CAOS_CACHECOMMANDTIMEOUT                        0                                   // milliseconds
-// #define CAOS_CACHEPOOLSIZEMIN                           10
-// #define CAOS_CACHEPOOLSIZEMAX                           20
-// #define CAOS_CACHEPOOLWAIT                              100                                 // milliseconds
-// #define CAOS_CACHEPOOLCONNECTIONTIMEOUT                 0                                   // milliseconds
-// #define CAOS_CACHEPOOLCONNECTIONLIFETIME                10                                  // seconds
-// #define CAOS_CACHEPOOLCONNECTIONIDLETIME                0                                   // milliseconds
 
-// #define CAOS_CACHEUSER_ALT                   ""
-// #define CAOS_CACHEPASS_ALT                   ""
-// #define CAOS_CACHEHOST_ALT                   CAOS_CACHEHOST
-// #define CAOS_CACHEPORT_ALT                   CAOS_CACHEPORT
-// #define CAOS_CACHECLIENTNAME_ALT             CAOS_CACHECLIENTNAME
-// #define CAOS_CACHEINDEX_ALT                  CAOS_CACHEINDEX
-// #define CAOS_CACHECOMMANDTIMEOUT_ALT         CAOS_CACHECOMMANDTIMEOUT                                   // milliseconds
-// #define CAOS_CACHEPOOLSIZEMIN_ALT            CAOS_CACHEPOOLSIZEMIN
-// #define CAOS_CACHEPOOLSIZEMAX_ALT            CAOS_CACHEPOOLSIZEMAX
-// #define CAOS_CACHEPOOLWAIT_ALT               CAOS_CACHEPOOLWAIT                                 // milliseconds
-// #define CAOS_CACHEPOOLCONNECTIONTIMEOUT_ALT  CAOS_CACHEPOOLCONNECTIONTIMEOUT                                   // milliseconds
-// #define CAOS_CACHEPOOLCONNECTIONLIFETIME_ALT CAOS_CACHEPOOLCONNECTIONLIFETIME                                  // seconds
-// #define CAOS_CACHEPOOLCONNECTIONIDLETIME_ALT CAOS_CACHEPOOLCONNECTIONIDLETIME                                  // milliseconds
+
+// Database env var name ---------------------------------------------------------------------------
+// #define CAOS_DBUSER_ENV_NAME                                        "CAOS_DBUSER"
+// #define CAOS_DBPASS_ENV_NAME                                        "CAOS_DBPASS"
+// #define CAOS_DBHOST_ENV_NAME                                        "CAOS_DBHOST"
+// #define CAOS_DBPORT_ENV_NAME                                        "CAOS_DBPORT"
+// #define CAOS_DBNAME_ENV_NAME                                        "CAOS_DBNAME"
+// #define CAOS_DBPOOLSIZEMIN_ENV_NAME                                 "CAOS_DBPOOLSIZEMIN"
+// #define CAOS_DBPOOLSIZEMAX_ENV_NAME                                 "CAOS_DBPOOLSIZEMAX"
+// #define CAOS_DBPOOLWAIT_ENV_NAME                                    "CAOS_DBPOOLWAIT"
+// #define CAOS_DBPOOLTIMEOUT_ENV_NAME                                 "CAOS_DBPOOLTIMEOUT"
+// #define CAOS_DBCONNECT_TIMEOUT_ENV_NAME                             "CAOS_DBCONNECT_TIMEOUT"
+// #define CAOS_DBMAXWAIT_ENV_NAME                                     "CAOS_DBMAXWAIT"
+// #define CAOS_DBHEALTHCHECKINTERVAL_ENV_NAME                         "CAOS_DBHEALTHCHECKINTERVAL"
+// #define CAOS_LOG_THRESHOLD_CONNECTION_LIMIT_EXCEEDED_ENV_NAME       "CAOS_LOG_THRESHOLD_CONNECTION_LIMIT_EXCEEDED"
+// #define CAOS_VALIDATE_CONNECTION_BEFORE_ACQUIRE_ENV_NAME            "CAOS_VALIDATE_CONNECTION_BEFORE_ACQUIRE"
+// #define CAOS_VALIDATE_USING_TRANSACTION_ENV_NAME                    "CAOS_VALIDATE_USING_TRANSACTION"
+
+#ifdef CAOS_USE_DB_POSTGRESQL
+// #define CAOS_DBKEEPALIVES_ENV_NAME                                  "CAOS_DBKEEPALIVES"
+// #define CAOS_DBKEEPALIVES_IDLE_ENV_NAME                             "CAOS_DBKEEPALIVES_IDLE"
+// #define CAOS_DBKEEPALIVES_INTERVAL_ENV_NAME                         "CAOS_DBKEEPALIVES_INTERVAL"
+// #define CAOS_DBKEEPALIVES_COUNT_ENV_NAME                            "CAOS_DBKEEPALIVES_COUNT"
+#endif
+//--------------------------------------------------------------------------------------------------
+
+// Database terminal options var name --------------------------------------------------------------
+// #define CAOS_DBUSER_OPT_NAME                                        "dbuser"
+// #define CAOS_DBPASS_OPT_NAME                                        "dbpass"
+// #define CAOS_DBHOST_OPT_NAME                                        "dbhost"
+// #define CAOS_DBPORT_OPT_NAME                                        "dbport"
+// #define CAOS_DBNAME_OPT_NAME                                        "dbname"
+// #define CAOS_DBPOOLSIZEMIN_OPT_NAME                                 "dbpoolsizemin"
+// #define CAOS_DBPOOLSIZEMAX_OPT_NAME                                 "dbpoolsizemax"
+// #define CAOS_DBPOOLWAIT_OPT_NAME                                    "dbpoolwait"
+// #define CAOS_DBPOOLTIMEOUT_OPT_NAME                                 "dbpooltimeout"
+// #define CAOS_DBCONNECT_TIMEOUT_OPT_NAME                             "dbconnect_timeout"
+// #define CAOS_DBMAXWAIT_OPT_NAME                                     "dbmaxwait"
+// #define CAOS_DBHEALTHCHECKINTERVAL_OPT_NAME                         "dbhealthcheckinterval"
+// #define CAOS_LOG_THRESHOLD_CONNECTION_LIMIT_EXCEEDED_OPT_NAME       "log_threshold_connection_limit_exceeded"
+// #define CAOS_VALIDATE_CONNECTION_BEFORE_ACQUIRE_OPT_NAME            "validate_connection_before_acquire"
+// #define CAOS_VALIDATE_USING_TRANSACTION_OPT_NAME                    "validate_using_transaction"
+
+#ifdef CAOS_USE_DB_POSTGRESQL
+// #define CAOS_DBKEEPALIVES_OPT_NAME                                  "dbkeepalives"
+// #define CAOS_DBKEEPALIVES_IDLE_OPT_NAME                             "dbkeepalives_idle"
+// #define CAOS_DBKEEPALIVES_INTERVAL_OPT_NAME                         "dbkeepalives_interval"
+// #define CAOS_DBKEEPALIVES_COUNT_OPT_NAME                            "dbkeepalives_count"
 #endif
 //--------------------------------------------------------------------------------------------------
 
@@ -153,125 +299,9 @@
 
 
 
-// Database ----------------------------------------------------------------------------------------
-// #define CAOS_DBUSER_ENV_NAME                                    "CAOS_DBUSER"
-// #define CAOS_DBPASS_ENV_NAME                                    "CAOS_DBPASS"
-// #define CAOS_DBHOST_ENV_NAME                                    "CAOS_DBHOST"
-// #define CAOS_DBPORT_ENV_NAME                                    "CAOS_DBPORT"
-// #define CAOS_DBNAME_ENV_NAME                                    "CAOS_DBNAME"
-// #define CAOS_DBPOOLSIZEMIN_ENV_NAME                             "CAOS_DBPOOLSIZEMIN"
-// #define CAOS_DBPOOLSIZEMAX_ENV_NAME                             "CAOS_DBPOOLSIZEMAX"
-// #define CAOS_DBPOOLWAIT_ENV_NAME                                "CAOS_DBPOOLWAIT"
-// #define CAOS_DBPOOLTIMEOUT_ENV_NAME                             "CAOS_DBPOOLTIMEOUT"
-
-#ifdef CAOS_USE_DB_POSTGRESQL
-// #define CAOS_DBKEEPALIVES_ENV_NAME                              "CAOS_DBKEEPALIVES"
-// #define CAOS_DBKEEPALIVES_IDLE_ENV_NAME                         "CAOS_DBKEEPALIVES_IDLE"
-// #define CAOS_DBKEEPALIVES_INTERVAL_ENV_NAME                     "CAOS_DBKEEPALIVES_INTERVAL"
-// #define CAOS_DBKEEPALIVES_COUNT_ENV_NAME                        "CAOS_DBKEEPALIVES_COUNT"
-#endif
-
-// #define CAOS_DBCONNECT_TIMEOUT_ENV_NAME                         "CAOS_DBCONNECT_TIMEOUT"
-// #define CAOS_DBMAXWAIT_ENV_NAME                                 "CAOS_DBMAXWAIT"
-// #define CAOS_DBHEALTHCHECKINTERVAL_ENV_NAME                     "CAOS_DBHEALTHCHECKINTERVAL"
-// #define CAOS_LOG_THRESHOLD_CONNECTION_LIMIT_EXCEEDED_ENV_NAME        "CAOS_LOG_THRESHOLD_CONNECTION_LIMIT_EXCEEDED"
-// #define CAOS_VALIDATE_CONNECTION_BEFORE_ACQUIRE_ENV_NAME             "CAOS_VALIDATE_CONNECTION_BEFORE_ACQUIRE"
-// #define CAOS_VALIDATE_USING_TRANSACTION_ENV_NAME                     "CAOS_VALIDATE_USING_TRANSACTION"
 
 
-// #define CAOS_DBUSER_OPT_NAME                                    "dbuser"
-// #define CAOS_DBPASS_OPT_NAME                                    "dbpass"
-// #define CAOS_DBHOST_OPT_NAME                                    "dbhost"
-// #define CAOS_DBPORT_OPT_NAME                                    "dbport"
-// #define CAOS_DBNAME_OPT_NAME                                    "dbname"
-// #define CAOS_DBPOOLSIZEMIN_OPT_NAME                             "dbpoolsizemin"
-// #define CAOS_DBPOOLSIZEMAX_OPT_NAME                             "dbpoolsizemax"
-// #define CAOS_DBPOOLWAIT_OPT_NAME                                "dbpoolwait"
-// #define CAOS_DBPOOLTIMEOUT_OPT_NAME                             "dbpooltimeout"
-
-#ifdef CAOS_USE_DB_POSTGRESQL
-// #define CAOS_DBKEEPALIVES_OPT_NAME                              "dbkeepalives"
-// #define CAOS_DBKEEPALIVES_IDLE_OPT_NAME                         "dbkeepalives_idle"
-// #define CAOS_DBKEEPALIVES_INTERVAL_OPT_NAME                     "dbkeepalives_interval"
-// #define CAOS_DBKEEPALIVES_COUNT_OPT_NAME                        "dbkeepalives_count"
-#endif
-
-// #define CAOS_DBCONNECT_TIMEOUT_OPT_NAME                         "dbconnect_timeout"
-// #define CAOS_DBMAXWAIT_OPT_NAME                                 "dbmaxwait"
-// #define CAOS_DBHEALTHCHECKINTERVAL_OPT_NAME                     "dbhealthcheckinterval"
-
-// #define CAOS_LOG_THRESHOLD_CONNECTION_LIMIT_EXCEEDED_OPT_NAME        "log_threshold_connection_limit_exceeded"
-// #define CAOS_VALIDATE_CONNECTION_BEFORE_ACQUIRE_OPT_NAME             "validate_connection_before_acquire"
-// #define CAOS_VALIDATE_USING_TRANSACTION_OPT_NAME                     "validate_using_transaction"
-
-// #define CAOS_DBUSER                                     "caos_u"
-// #define CAOS_DBPASS                                     "verystrongpassword"
-// #define CAOS_DBHOST                                     "127.0.0.1"
-
-#ifdef CAOS_USE_DB_POSTGRESQL
-// #define CAOS_DBPORT                                     5432
-#endif
-
-#if (defined(CAOS_USE_DB_MYSQL) || defined(CAOS_USE_DB_MARIADB))
-// #define CAOS_DBPORT                                     3306
-#endif
-
-// #define CAOS_DBNAME                                     "my_caos_aweseome_app"
-// #define CAOS_DBPOOLSIZEMIN                              10
-// #define CAOS_DBPOOLSIZEMAX                              20
-// #define CAOS_DBPOOLWAIT                                 5000                                /* milliseconds */
-// #define CAOS_DBPOOLTIMEOUT                              15000                               /* milliseconds */
-
-#ifdef CAOS_USE_DB_POSTGRESQL
-// #define CAOS_DBKEEPALIVES                               1
-// #define CAOS_DBKEEPALIVES_IDLE                          30
-// #define CAOS_DBKEEPALIVES_INTERVAL                      10
-// #define CAOS_DBKEEPALIVES_COUNT                         5
-#endif
-
-// #define CAOS_DBCONNECT_TIMEOUT                          30
-// #define CAOS_DBMAXWAIT                                  5000                                /* milliseconds */
-// #define CAOS_DBHEALTHCHECKINTERVAL                      30000                               /* milliseconds */
-
-// #define CAOS_DBUSER_ALT                      "caos_u_alt"
-// #define CAOS_DBPASS_ALT                      "verystrongpassword_alt"
-// #define CAOS_DBHOST_ALT                      "127.0.0.1"
-// #define CAOS_DBPORT_ALT                      5432
-// #define CAOS_DBNAME_ALT                      "my_caos_aweseome_app_alt"
-
-// #define CAOS_DBPOOLSIZEMIN_ALT               CAOS_DBPOOLSIZEMIN
-// #define CAOS_DBPOOLSIZEMAX_ALT               CAOS_DBPOOLSIZEMAX
-// #define CAOS_DBPOOLWAIT_ALT                  CAOS_DBPOOLWAIT
-// #define CAOS_DBPOOLTIMEOUT_ALT               CAOS_DBPOOLTIMEOUT
-
-#ifdef CAOS_USE_DB_POSTGRESQL
-// #define CAOS_DBKEEPALIVES_ALT                CAOS_DBKEEPALIVES
-// #define CAOS_DBKEEPALIVES_IDLE_ALT           CAOS_DBKEEPALIVES_IDLE
-// #define CAOS_DBKEEPALIVES_INTERVAL_ALT       CAOS_DBKEEPALIVES_INTERVAL
-// #define CAOS_DBKEEPALIVES_COUNT_ALT          CAOS_DBKEEPALIVES_COUNT
-#endif
-
-// #define CAOS_DBCONNECT_TIMEOUT_ALT           CAOS_DBCONNECT_TIMEOUT
-// #define CAOS_DBMAXWAIT_ALT                   CAOS_DBMAXWAIT
-// #define CAOS_DBHEALTHCHECKINTERVAL_ALT       CAOS_DBHEALTHCHECKINTERVAL
-
-// #define CAOS_LOG_THRESHOLD_CONNECTION_LIMIT_EXCEEDED            50
-// #define CAOS_VALIDATE_CONNECTION_BEFORE_ACQUIRE                      1
-// #define CAOS_VALIDATE_USING_TRANSACTION                              0
-//--------------------------------------------------------------------------------------------------
 
 
-#include <libcaos/version.hpp>
-#include <thread>
-#include <stdexcept>
-#include <memory>
-#include <string>
-#include <cstring>
-#include <unordered_map>
-#include <iostream>
-#include <cstdint>
-#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
-#include "spdlog/spdlog.h"
-#include "config_validation.hpp"
+
 #include <common.hpp>
-#include "logo.hpp"

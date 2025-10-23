@@ -36,12 +36,6 @@
 // #include <chrono>
 // #include <sstream> // Required for logging non-arithmetic types (if spdlog doesn't support them directly)
 
-static inline std::size_t getHwMaxThreads()
-{
-  static std::size_t threadsCount = std::thread::hardware_concurrency() * 2;
-  return threadsCount;
-}
-
 namespace detail                                                                                    // Type Check Utility for std::chrono::duration
 {
   template <typename T>                                                                             // Helper to check if T is a specialization of std::chrono::duration
@@ -110,29 +104,69 @@ namespace Policy
 
   class PortValidator
   {
+    private:
+      std::string shortVarName {"Policy::PortValidator::shortVarName undefined"};
+
     public:
+      PortValidator(const std::string& shortVarName_) : shortVarName(shortVarName_){}
+
       void operator()(const std::uint16_t& port) const
       {
-        // Deadly check --------------------------------------------------------------------------------
+        // Deadly check ----------------------------------------------------------------------------
         if(port < unprivileged_port_min || port > unprivileged_port_max)
         {
-          throw std::out_of_range(std::to_string(port));
+          throw std::out_of_range(
+            this->shortVarName
+            + " = "
+            + std::to_string(port)
+            + " (Allowed values between "
+            + std::to_string (unprivileged_port_min)
+            + " and "
+            + std::to_string (unprivileged_port_max)
+            + ")"
+          );
         }
-        // ---------------------------------------------------------------------------------------------
+        // -----------------------------------------------------------------------------------------
       }
   };
 
   class ThreadsValidator
   {
+    private:
+      std::string shortVarName {"Policy::ThreadsValidator::shortVarName undefined"};
+
     public:
-      void operator()(const std::size_t& threads) const
+      ThreadsValidator(const std::string& shortVarName_) : shortVarName(shortVarName_){}
+
+      void operator()(std::size_t& threads) const
       {
-        // Deadly check ------------------------------------------------------------------------------
-        if (threads < 1 || threads > getHwMaxThreads())
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wtype-limits"
+        if (threads == 0)
         {
-          throw std::out_of_range(std::to_string(threads));
+          threads = getHwMaxThreads();                                                              // Set thread count to max hardware value
+          spdlog::info(
+            "{} default value was zero, overriding with max hardware thread count ({})",
+            this->shortVarName,
+            threads
+          );
         }
-        // -------------------------------------------------------------------------------------------
+        // Deadly check ----------------------------------------------------------------------------
+        else if (threads < CAOS_DEFAULT_THREADS_LIMIT_MIN || threads > getHwMaxThreads())
+#pragma GCC diagnostic pop
+        {
+          throw std::out_of_range(
+            this->shortVarName
+            + " = "
+            + std::to_string(threads)
+            + " (Allowed values between "
+            + std::to_string (CAOS_DEFAULT_THREADS_LIMIT_MIN)
+            + " and "
+            + std::to_string (getHwMaxThreads())
+            + ")"
+          );
+        }
+        // -----------------------------------------------------------------------------------------
       }
   };
 

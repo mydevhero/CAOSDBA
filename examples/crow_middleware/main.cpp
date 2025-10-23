@@ -37,8 +37,6 @@ int main(int argc, char* argv[])
   // std::signal(SIGINT, signal_handler);
   // std::signal(SIGTERM, signal_handler);
 
-  spdlog::set_level(CAOS_SEVERITY_LEVEL_BEFORE_LOG_START);
-
   middleware::Repository middleware{argc, argv};
   crow::App<middleware::Repository> app{middleware};
 

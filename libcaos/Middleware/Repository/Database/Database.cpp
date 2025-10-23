@@ -33,7 +33,7 @@
 #include "MariaDB/MariaDB.hpp"
 #endif
 
-constexpr const char* defaultFinal = "{} : Setting database {} to {} in {}  environment";
+constexpr const char* defaultFinal = "{} : Setting database {} to {} in {} environment";
 
 
 
@@ -230,7 +230,7 @@ void Database::Pool::setPort()
   const char* fieldName = "DBPORT"                                  ;
   using       dataType  = std::uint16_t                             ;
 
-  Policy::PortValidator validator                                   ;
+  Policy::PortValidator validator("DBPORT")                         ;
 
   configureValue<dataType>(
     this->config.port,                                              // configField
