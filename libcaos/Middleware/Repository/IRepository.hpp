@@ -231,6 +231,52 @@ namespace Policy
       }
   };
 
+  class LogLevelValidator
+  {
+    private:
+      std::string shortVarName {"Policy::LogLevelValidator::shortVarName undefined"};
+      LogSeverity& level;
+
+    public:
+      LogLevelValidator(const std::string& shortVarName_, LogSeverity& level_)
+        : shortVarName(shortVarName_),
+          level(level_)
+      {}
+
+      void operator()(std::string& name) const
+      {
+        // Deadly check ----------------------------------------------------------------------------
+        if (name.empty())
+        {
+          throw std::invalid_argument(this->shortVarName + " empty!");
+        }
+        // -----------------------------------------------------------------------------------------
+
+
+
+        // Validation ------------------------------------------------------------------------------
+        bool conversionFailed = false;
+
+        try
+        {
+          this->level = String2LogSeverity(name);
+        }
+        catch(const std::out_of_range&)
+        {
+          conversionFailed = true;
+        }
+
+        if(conversionFailed)
+        {
+          throw std::invalid_argument(
+            this->shortVarName  +
+            R"( error! Allowed log severity is "trace", "debug", "info", "warn", "err", "critical", "off")"
+          );
+        }
+        // -----------------------------------------------------------------------------------------
+      }
+  };
+
   /**
    * @brief Validation Policy that performs no operation.
    * Used when no specific validation is required for a configuration field.

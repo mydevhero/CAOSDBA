@@ -5,6 +5,8 @@ enable_testing()
 
 include(../cmake/CPM.cmake)
 
+project(test LANGUAGES CXX)
+
 CPMAddPackage(
   Catch2
   VERSION 3.9.0
@@ -17,20 +19,19 @@ CPMAddPackage(
 
 message(STATUS "Configuring tests...")
 
-add_executable(test
+add_executable(${PROJECT_NAME}
   test_main.cpp
   tests/terminal_options.hpp
+  tests/log.hpp
 )
 
-# add_executable(terminal_options_test terminal_options.test.cpp)
-
-target_link_libraries(test PRIVATE
+target_link_libraries(${PROJECT_NAME} PRIVATE
   spdlog::spdlog
   libcaos
   Catch2::Catch2WithMain
 )
 
-target_compile_definitions(test PRIVATE
+target_compile_definitions(${PROJECT_NAME} PRIVATE
   CAOS_USE_CACHE
   CAOS_CACHE_BACKEND
   CAOS_DB_BACKEND
@@ -38,11 +39,11 @@ target_compile_definitions(test PRIVATE
   CAOS_BUILD_EXAMPLES
 )
 
-target_include_directories(test PRIVATE
+target_include_directories(${PROJECT_NAME} PRIVATE
   ${CMAKE_SOURCE_DIR}/src/include
 )
 
 add_test(
-  NAME test
-  COMMAND test
+  NAME ${PROJECT_NAME}
+  COMMAND ${PROJECT_NAME}
 )

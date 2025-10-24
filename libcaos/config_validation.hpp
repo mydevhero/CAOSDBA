@@ -118,24 +118,24 @@ static_assert(is_number_non_null_and_at_least<CAOS_DEFAULT_UNPRIVILEGED_PORT_MAX
 static_assert(is_valid_env(CAOS_ENV), "CMAKE_BUILD_TYPE must be equal to \"debug\", \"test\" or \"release\" (case sensitive!). Add -DCMAKE_BUILD_TYPE:STRING=${ENV} on cmake");
 //--------------------------------------------------------------------------------------------------
 
-// CAOS_ENV_LOG_SEVERITY_NAME ----------------------------------------------------------------------
-#ifndef CAOS_ENV_LOG_SEVERITY_NAME
-  #define CAOS_ENV_LOG_SEVERITY_NAME "CAOS_SEVERITY"
+// CAOS_LOG_SEVERITY_ENV_NAME ----------------------------------------------------------------------
+#ifndef CAOS_LOG_SEVERITY_ENV_NAME
+  #define CAOS_LOG_SEVERITY_ENV_NAME "CAOS_SEVERITY"
 #endif
 
-#define CAOS_ENV_LOG_SEVERITY_NAME_ERRMSG "CAOS_ENV_LOG_SEVERITY_NAME " APPEND_ERRMSG_NON_EMPTY
-static_assert(is_non_null_and_non_empty_string(CAOS_ENV_LOG_SEVERITY_NAME), CAOS_ENV_LOG_SEVERITY_NAME_ERRMSG);
+#define CAOS_LOG_SEVERITY_ENV_NAME_ERRMSG "CAOS_LOG_SEVERITY_ENV_NAME " APPEND_ERRMSG_NON_EMPTY
+static_assert(is_non_null_and_non_empty_string(CAOS_LOG_SEVERITY_ENV_NAME), CAOS_LOG_SEVERITY_ENV_NAME_ERRMSG);
 //--------------------------------------------------------------------------------------------------
 
 
 
-// CAOS_OPT_LOG_SEVERITY_NAME ----------------------------------------------------------------------
-#ifndef CAOS_OPT_LOG_SEVERITY_NAME
-  #define CAOS_OPT_LOG_SEVERITY_NAME "severity"
+// CAOS_LOG_SEVERITY_OPT_NAME ----------------------------------------------------------------------
+#ifndef CAOS_LOG_SEVERITY_OPT_NAME
+  #define CAOS_LOG_SEVERITY_OPT_NAME "severity"
 #endif
 
-#define CAOS_OPT_LOG_SEVERITY_NAME_ERRMSG "CAOS_OPT_LOG_SEVERITY_NAME " APPEND_ERRMSG_NON_EMPTY
-static_assert(is_non_null_and_non_empty_string(CAOS_OPT_LOG_SEVERITY_NAME), CAOS_OPT_LOG_SEVERITY_NAME_ERRMSG);
+#define CAOS_LOG_SEVERITY_OPT_NAME_ERRMSG "CAOS_LOG_SEVERITY_OPT_NAME " APPEND_ERRMSG_NON_EMPTY
+static_assert(is_non_null_and_non_empty_string(CAOS_LOG_SEVERITY_OPT_NAME), CAOS_LOG_SEVERITY_OPT_NAME_ERRMSG);
 //--------------------------------------------------------------------------------------------------
 
 

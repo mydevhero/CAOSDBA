@@ -101,16 +101,10 @@ class Caos
 
         void setSeverity();
 
-        static constexpr std::array<const char*, static_cast<std::size_t>(LogSeverity::n_levels)>
-          SeverityChar = { "trace", "debug", "info", "warn", "error", "critical", "off" };
-
-        static const std::unordered_map<std::string, LogSeverity> LogSeverityMapToString;
-        static constexpr inline const char* LogSeverity2String(LogSeverity severity);
-        static inline LogSeverity String2LogSeverity(const std::string& severityStr);
-
-        inline void init();
       public:
          Log();
+         LogSeverity getLevel(){ return this->logger.combined.severity.level; }
+         std::string getName(){ return this->logger.combined.severity.name;}
     };
     /* ---------------------------------------------------------------------------------------------
      *

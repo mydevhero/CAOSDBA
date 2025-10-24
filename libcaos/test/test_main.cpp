@@ -1,7 +1,9 @@
 #define CATCH_CONFIG_ENABLE_SOURCELINE_INFO
 #define CATCH_CONFIG_MAIN
 #define CATCH_CONFIG_FAST_COMPILE
-
+// #define CATCH_CONFIG_DISABLE
+// oppure
+#define CATCH_CONFIG_NO_POSIX_SIGNALS
 #include <iostream>
 #include <vector>
 #include <catch2/catch_test_macros.hpp>
@@ -10,8 +12,20 @@
 #include "libcaos/config.hpp"
 #include "libcaos.hpp"
 #include "tests/terminal_options.hpp"
+#include "tests/log.hpp"
 
 
+// class GlobalTestSetup
+// {
+//   public:
+//     GlobalTestSetup()
+//     {
+//       char* argv[] = {(char*)"test", nullptr};
+//       TerminalOptions::get_instance(1, argv);
+//     }
+// };
+
+// GlobalTestSetup global_setup;
 
 
 // -------------------------------------------------------------------------------------------------

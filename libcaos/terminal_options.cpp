@@ -34,7 +34,7 @@ TerminalOptions::TerminalOptions(int argc, char** argv) : argc(argc), argv(argv)
     ("version"                                        , "Get build version&timestamp"                                                                                                                     )
 
     // Log
-    (CAOS_OPT_LOG_SEVERITY_NAME                       , "Log Terminal Severity"           , cxxopts::value<std::string>()->default_value(CAOS_LOG_SEVERITY)                                )
+    (CAOS_LOG_SEVERITY_OPT_NAME                       , "Log Terminal Severity"           , cxxopts::value<std::string>()->default_value(CAOS_LOG_SEVERITY)                                )
 
     // CrowCpp
 #ifdef CAOS_USE_CROWCPP

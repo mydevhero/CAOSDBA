@@ -28,7 +28,7 @@ std::atomic<bool> running = true;
 
 
 
-
+constexpr const char* defaultFinalLog = "{} : Setting Caos::Log {} to {} in {} environment";
 
 
 
@@ -40,70 +40,27 @@ std::atomic<bool> running = true;
 /* +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  * class Caos::Log
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-const std::unordered_map<std::string, LogSeverity> Caos::Log::LogSeverityMapToString =
+Caos::Log::Log()
 {
-  { "trace"   , LogSeverity::trace    },
-  { "debug"   , LogSeverity::debug    },
-  { "info"    , LogSeverity::info     },
-  { "warn"    , LogSeverity::warn     },
-  { "error"   , LogSeverity::err      },
-  { "critical", LogSeverity::critical },
-  { "off"     , LogSeverity::off      }
-};
+  this->setSeverity();
 
+  spdlog::set_level(spdlog::level::trace);
 
-
-constexpr const char* Caos::Log::LogSeverity2String(LogSeverity severity)
-{
-  if (severity < LogSeverity::n_levels)
-  {
-    return SeverityChar.at(static_cast<size_t>(severity));
-  }
-
-  throw std::out_of_range("Log severity is unnknown");
-}
-
-
-
-inline LogSeverity Caos::Log::String2LogSeverity(const std::string& severityStr)
-{
-  auto it = LogSeverityMapToString.find(severityStr);
-
-  if (it != LogSeverityMapToString.end())
-  {
-    return it->second;
-  }
-
-  throw std::out_of_range("Invalid log severity string: " + severityStr);
-}
-
-
-
-inline void Caos::Log::init()
-{
   logger.terminal.pattern = CAOS_LOG_TERMINAL_PATTERN;
   logger.rotating.pattern = CAOS_LOG_ROTATING_PATTERN;
   logger.syslog.pattern   = CAOS_LOG_SYSLOG_PATTERN;
 
+  static std::size_t logCount = 0;
+  std::string loggerName = libname + std::to_string(logCount++);
+
+
   try
   {
-    // SPDLOG_TRACE("Init logs");
-
-    // auto default_logger = spdlog::default_logger();
-
-    // if (default_logger) {
-    //   SPDLOG_TRACE("Logger already initialized");
-    //   return;
-    // }
-
-    //  spdlog::shutdown();
-
     spdlog::init_thread_pool(CAOS_LOG_QUEUE, CAOS_LOG_THREAD_COUNT);
 
     // Terminal
     logger.terminal.sink= std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     logger.terminal.sink->set_pattern (logger.terminal.pattern);
-    SPDLOG_TRACE("Terminal sink created");
 
     // Rotating file
     logger.rotating.sink =
@@ -111,17 +68,15 @@ inline void Caos::Log::init()
                                                              CAOS_LOG_FILE_DIMENSION,
                                                              CAOS_LOG_NUMBER);
     logger.rotating.sink->set_pattern (logger.rotating.pattern);
-    SPDLOG_TRACE("Rotating file sink created");
 
     // Syslog
-    logger.syslog.sink= std::make_shared<spdlog::sinks::syslog_sink_mt>(libname, LOG_PID, LOG_USER, true);
+    logger.syslog.sink= std::make_shared<spdlog::sinks::syslog_sink_mt>(loggerName, LOG_PID, LOG_USER, true);
     logger.syslog.sink->set_pattern (logger.syslog.pattern);
-    SPDLOG_TRACE("Syslog sink created");
 
     // Combined
     logger.combined.sink =
       std::make_shared<spdlog::async_logger>(
-        libname,
+        loggerName,
         spdlog::sinks_init_list{logger.terminal.sink,logger.rotating.sink,logger.syslog.sink},
         spdlog::thread_pool(),
         spdlog::async_overflow_policy::block
@@ -134,61 +89,36 @@ inline void Caos::Log::init()
 
     spdlog::flush_every(std::chrono::seconds(3));
 
-spdlog::trace("Combined sink created and set it as default");
+    spdlog::trace("Combined sink created and set it as default");
   }
   catch (const spdlog::spdlog_ex &ex)
   {
-    SPDLOG_CRITICAL("Error while log init: {}", ex.what());
-    std::exit(1);
+    throw;
   }
 }
-
-
-
-Caos::Log::Log()
-{
-  SPDLOG_TRACE("Starting logger");
-
-  this->setSeverity();
-
-  this->init();
-
-  SPDLOG_TRACE("Logger ready");
-}
-
-
 
 void Caos::Log::setSeverity()
 {
-  SPDLOG_TRACE("Setting log severity");
+  const char* fName     = "Caos::Log::setSeverity"                  ;
+  const char* fieldName = "CAOS_LOG_SEVERITY"                       ;
+  using       dataType  = std::string                               ;
 
-  static constexpr const char* fName = "Caos::Log::setSeverity";
+  Policy::LogLevelValidator validator(
+    fieldName,
+    this->logger.combined.severity.level
+  )                                                                 ;
 
-  try
-  {
-    if (const char* severity_name = std::getenv(CAOS_ENV_LOG_SEVERITY_NAME))
-    {
-      this->logger.combined.severity.name = severity_name;
-    }
-    else
-    {
-      this->logger.combined.severity.name = TerminalOptions::get_instance().get<std::string>(CAOS_OPT_LOG_SEVERITY_NAME);
-    }
-
-    SPDLOG_TRACE("Log severity is \"{}\"",this->logger.combined.severity.name);
-    this->logger.combined.severity.level = String2LogSeverity(this->logger.combined.severity.name);
-  }
-  catch(const std::out_of_range& e)
-  {
-    std::string userMsg = R"(Allowed log severity is "trace", "debug", "info", "warn", "error", "critical", "off")";
-    SPDLOG_CRITICAL("[{}] : [{}] : {}", fName, userMsg, e.what());
-    std::exit(1);
-  }
-  catch (const std::exception& e)
-  {
-    SPDLOG_CRITICAL("[{}] : {}", fName, e.what());
-    std::exit(1);
-  }
+  configureValue<dataType>(
+    this->logger.combined.severity.name,                            // configField
+    &TerminalOptions::get_instance(),                               // terminalPtr
+    CAOS_LOG_SEVERITY_ENV_NAME,                                     // envName
+    CAOS_LOG_SEVERITY_OPT_NAME,                                     // optName
+    fieldName,                                                      // fieldName
+    fName,                                                          // callerName
+    validator,                                                      // validator in namespace Policy
+    defaultFinalLog,
+    false                                                           // exitOnError
+  );
 }
 /* -------------------------------------------------------------------------------------------------
  * class Caos::Log
@@ -259,7 +189,7 @@ void Caos::init(initFlags flags)
   if ((static_cast<std::uint8_t>(flags) & static_cast<std::uint8_t>(initFlags::CrowCpp)) != 0)
   {
 #ifdef CAOS_USE_CROWCPP
-      this->crowcpp = std::make_unique<CrowCpp>();
+    this->crowcpp = std::make_unique<CrowCpp>();
 #else
 #error "Can't provide crowcpp object while CAOS_USE_CROWCPP is OFF in CMakeLists.txt"
 #endif

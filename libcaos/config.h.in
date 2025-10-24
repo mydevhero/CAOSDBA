@@ -191,6 +191,13 @@
  * Variables name on environment and terminal options
  **************************************************************************************************/
 
+// CAOS_LOG env ------------------------------------------------------------------------------------
+// #define CAOS_LOG_SEVERITY_ENV_NAME                                  "CAOS_SEVERITY"
+
+// CAOS_LOG terminal options var name --------------------------------------------------------------
+// #define CAOS_LOG_SEVERITY_OPT_NAME                                  "severity"
+//--------------------------------------------------------------------------------------------------
+
 
 
 #ifdef CAOS_USE_CROWCPP
