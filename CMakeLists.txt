@@ -40,10 +40,23 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 # Select CAOS_ENV ----------------------------------------------------------------------------------
 
-option(CAOS_USE_CACHE       "CAOS using Cache"    ON)
-option(CAOS_BUILD_EXAMPLES  "CAOS build examples" ON)
-option(CAOS_USE_CROWCPP     "CAOS use Crow"       ON)
+set(CAOS_USE_CACHE           "CAOS using Cache"          ON)
+set(CAOS_BUILD_EXAMPLES      "CAOS build examples"       ON)
+set(CAOS_USE_CROWCPP         "CAOS use Crow"             ON)
+set(CAOS_BUILD_EXTENSIONS    "CAOS build bindings extension"  ON)
 # option(CAOS_CHECK_COVERAGE  "CAOS check coverage" OFF)
+
+
+
+# EXTENSIONS +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+if(CAOS_BUILD_EXTENSIONS)
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+  set(CAOS_BUILD_PHP_EXTENSION "CAOS build php extension"  ON)
+  add_subdirectory(extensions)
+endif()
+# EXTENSIONS ---------------------------------------------------------------------------------------
+
+
 
 # Select CAOS_DB_BACKEND +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 set(CAOS_DB_BACKEND "POSTGRESQL" CACHE STRING "Database backend to use for CAOS." )
@@ -79,6 +92,5 @@ target_link_libraries(repoexception INTERFACE libcaos)
 # Option CAOS_BUILD_EXAMPLES +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 if(CAOS_BUILD_EXAMPLES)
   add_subdirectory(examples)
-  target_compile_definitions(libcaos PUBLIC CAOS_BUILD_EXAMPLES)
 endif()
 # Option CAOS_BUILD_EXAMPLES -----------------------------------------------------------------------

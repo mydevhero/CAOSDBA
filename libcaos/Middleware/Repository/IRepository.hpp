@@ -27,14 +27,9 @@
 #include "IQuery.hpp"
 #include "Exception.hpp"
 #include <terminal_options.hpp>
-#include <arpa/inet.h>                                                                              // Validate IP address
 
-// #include <string>
-// #include <cstdlib>
-// #include <stdexcept>
+#include <arpa/inet.h>                                                                              // Validate IP address
 #include <type_traits>
-// #include <chrono>
-// #include <sstream> // Required for logging non-arithmetic types (if spdlog doesn't support them directly)
 
 namespace detail                                                                                    // Type Check Utility for std::chrono::duration
 {
