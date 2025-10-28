@@ -51,7 +51,9 @@ set(CAOS_BUILD_EXTENSIONS    "CAOS build bindings extension"  ON)
 # EXTENSIONS +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 if(CAOS_BUILD_EXTENSIONS)
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-  set(CAOS_BUILD_PHP_EXTENSION "CAOS build php extension"  ON)
+  set(CAOS_BUILD_PHP_EXTENSION    "CAOS build php extension"      ON)
+  set(CAOS_BUILD_NODE_EXTENSION   "CAOS build node.js extension"  ON)
+  set(CAOS_BUILD_PYTHON_EXTENSION "CAOS build node.js extension"  ON)
   add_subdirectory(extensions)
 endif()
 # EXTENSIONS ---------------------------------------------------------------------------------------
