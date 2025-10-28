@@ -6,7 +6,7 @@ extern "C" {
 }
 
 #include <libcaos.hpp>
-// #include <cstdlib>
+
 
 std::unique_ptr<Caos>& libcaos()
 {
@@ -65,7 +65,6 @@ static const zend_function_entry caos_functions[] =
 PHP_MINIT_FUNCTION(caos)
 {
   try {
-    // Forza l'inizializzazione
     auto repo = fromRepository();
     if (!repo) {
       return FAILURE;
