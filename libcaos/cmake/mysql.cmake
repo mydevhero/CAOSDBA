@@ -9,4 +9,4 @@ endif()
 
 include_directories(/usr/include/mysql)
 
-target_link_libraries(${PROJECT_NAME} PUBLIC ${MYSQL_CONN_LIB})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${MYSQL_CONN_LIB})

@@ -45,6 +45,6 @@ add_custom_command(
 add_custom_target(mariadbcpp DEPENDS ${MARIADB_LIB_DIR}/libmariadbcpp.so)
 add_dependencies(${PROJECT_NAME} mariadbcpp)
 
-target_include_directories(${PROJECT_NAME} PUBLIC ${INSTALL_DIR}/include)
-target_link_directories(${PROJECT_NAME} PUBLIC ${MARIADB_LIB_DIR})
-target_link_libraries(${PROJECT_NAME} PUBLIC ${MARIADB_LIB_DIR}/libmariadbcpp.so)
+target_include_directories(${PROJECT_NAME} PRIVATE ${INSTALL_DIR}/include)
+target_link_directories(${PROJECT_NAME} PRIVATE ${MARIADB_LIB_DIR})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${MARIADB_LIB_DIR}/libmariadbcpp.so)

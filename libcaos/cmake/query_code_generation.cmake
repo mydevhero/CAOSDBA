@@ -40,6 +40,6 @@ add_custom_target(generate_queries ALL
 
 add_dependencies(${PROJECT_NAME} generate_queries)
 
-target_include_directories(${PROJECT_NAME} PUBLIC
+target_include_directories(${PROJECT_NAME} PRIVATE
     ${GENERATED_QUERIES_DIR}
 )

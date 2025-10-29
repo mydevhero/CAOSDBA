@@ -1,12 +1,18 @@
 cmake_minimum_required(VERSION 3.5)
 
 cmake_policy(SET CMP0066 NEW)
+cmake_policy(SET CMP0077 NEW)
 cmake_policy(SET CMP0102 NEW)
 cmake_policy(SET CMP0126 NEW)
 cmake_policy(SET CMP0128 NEW)
 
 set(CMAKE_C_COMPILER "gcc")
 set(CMAKE_CXX_COMPILER "g++")
+
+# We want static libs
+set(BUILD_SHARED_LIBS OFF)
+set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+set(CMAKE_EXE_LINKER_FLAGS "-static-libstdc++ -static-libgcc")
 
 # set(CMAKE_C_COMPILER "clang")
 # set(CMAKE_CXX_COMPILER "clang++")

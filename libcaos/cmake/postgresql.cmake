@@ -1,5 +1,7 @@
 target_compile_definitions(${PROJECT_NAME} PUBLIC CAOS_USE_DB_POSTGRESQL)
 
+set(PQXX_STATIC ON)
+
 message(STATUS "Fetching PostgreSQL from GitHub.")
 
 set(PQXX_BUILD_DOC OFF CACHE BOOL "Build documentation")
@@ -12,4 +14,4 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(libpqxx)
 
-target_link_libraries(${PROJECT_NAME} PUBLIC pqxx)
+target_link_libraries(${PROJECT_NAME} PRIVATE pqxx)
