@@ -1,13 +1,13 @@
-set(SPDLOG_FMT_EXTERNAL ON FORCE)
-set(SPDLOG_BUILD_EXAMPLE OFF)
-set(SPDLOG_BUILD_TESTS OFF)
+set(SPDLOG_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vendor/spdlog")
 
-FetchContent_Declare(
-  spdlog
-  GIT_REPOSITORY https://github.com/gabime/spdlog
-  GIT_TAG v1.15.3
-)
+message(STATUS "🔨 Configuring spdlog via add_subdirectory")
 
-FetchContent_MakeAvailable(spdlog)
+set(SPDLOG_FMT_EXTERNAL ON CACHE BOOL "" FORCE)
+set(SPDLOG_BUILD_EXAMPLE OFF CACHE BOOL "" FORCE)
+set(SPDLOG_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+
+add_subdirectory(${SPDLOG_SOURCE_DIR})
 
 target_link_libraries(${PROJECT_NAME} PUBLIC spdlog::spdlog)
+
+message(STATUS "✅ spdlog configured successfully")

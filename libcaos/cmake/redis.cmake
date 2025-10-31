@@ -1,56 +1,77 @@
 target_compile_definitions(${PROJECT_NAME} PUBLIC CAOS_USE_CACHE_REDIS)
 
-include(ExternalProject)
+# --------------------------------------------------------------------------------------------------
+# 1. DETECT OR BUILD HIREDIS
+# --------------------------------------------------------------------------------------------------
+set(REDIS_PREBUILT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vendor/prebuilt/")
+set(HIREDIS_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vendor/hiredis")
 
-set(${CMAKE_BINARY_DIR} ${CMAKE_BINARY_DIR})
+if(EXISTS ${REDIS_PREBUILT_DIR}/hiredis/lib/libhiredis.a)
+  message(STATUS "📦 Using pre-built hiredis")
+  set(HIREDIS_INSTALL_DIR ${REDIS_PREBUILT_DIR}/hiredis)
+else()
+  message(STATUS "🔨 Building hiredis from submodule...")
+  execute_process(
+    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/vendor/build-scripts/build_hiredis.sh
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    RESULT_VARIABLE hiredis_build_result
+  )
+  if(NOT hiredis_build_result EQUAL 0)
+    message(FATAL_ERROR "❌ hiredis build failed")
+  endif()
+  set(HIREDIS_INSTALL_DIR ${CMAKE_BINARY_DIR}/hiredis-install)
+endif()
 
-ExternalProject_Add(hiredis_project
-  GIT_REPOSITORY https://github.com/redis/hiredis.git
-  GIT_TAG v1.3.0
+# --------------------------------------------------------------------------------------------------
+# 2. DETECT OR BUILD REDIS++
+# --------------------------------------------------------------------------------------------------
+set(REDISPP_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vendor/redis-plus-plus")
 
-  CONFIGURE_COMMAND ""
+if(EXISTS ${REDIS_PREBUILT_DIR}/redispp/lib/libredis++.a)
+  message(STATUS "📦 Using pre-built redis-plus-plus")
+  set(REDISPP_INSTALL_DIR ${REDIS_PREBUILT_DIR}/redispp)
+else()
+  message(STATUS "🔨 Building redis-plus-plus from submodule...")
+  execute_process(
+    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/vendor/build-scripts/build_redispp.sh ${HIREDIS_INSTALL_DIR}
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    RESULT_VARIABLE redispp_build_result
+  )
+  if(NOT redispp_build_result EQUAL 0)
+    message(FATAL_ERROR "❌ redis-plus-plus build failed")
+  endif()
+  set(REDISPP_INSTALL_DIR ${CMAKE_BINARY_DIR}/redispp-install)
+endif()
 
-  BUILD_COMMAND make ENABLE_STATIC=1 USE_SSL=1
-
-  INSTALL_COMMAND make install PREFIX=${CMAKE_BINARY_DIR} ENABLE_STATIC=1
-
-  BUILD_IN_SOURCE 1
-
-  BUILD_BYPRODUCTS ${CMAKE_BINARY_DIR}/lib/libhiredis.a
-)
-
-ExternalProject_Add(redis_pp_project
-  GIT_REPOSITORY https://github.com/sewenew/redis-plus-plus.git
-  GIT_TAG 1.3.15
-
-  CMAKE_ARGS
-    -DCMAKE_BUILD_TYPE=Release
-    -DREDIS_PLUS_PLUS_BUILD_STATIC=ON
-    -DREDIS_PLUS_PLUS_BUILD_SHARED=OFF
-    -DCMAKE_PREFIX_PATH=${CMAKE_BINARY_DIR}
-    -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}
-
-  INSTALL_COMMAND ${CMAKE_COMMAND} --build . --target install
-
-  DEPENDS hiredis_project
-
-  BUILD_BYPRODUCTS ${CMAKE_BINARY_DIR}/lib/libredis++.a
-)
-
-file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/include)
-
+# --------------------------------------------------------------------------------------------------
+# 3. TARGETS IMPORT
+# --------------------------------------------------------------------------------------------------
+# hiredis
 add_library(hiredis_static STATIC IMPORTED GLOBAL)
 set_target_properties(hiredis_static PROPERTIES
-  IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/lib/libhiredis.a
-  INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_BINARY_DIR}/include
+  IMPORTED_LOCATION ${HIREDIS_INSTALL_DIR}/lib/libhiredis.a
+  INTERFACE_INCLUDE_DIRECTORIES ${HIREDIS_INSTALL_DIR}/include
 )
-add_dependencies(hiredis_static hiredis_project)
 
+# redis++
 add_library(redispp_static STATIC IMPORTED GLOBAL)
 set_target_properties(redispp_static PROPERTIES
-  IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/lib/libredis++.a
-  INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_BINARY_DIR}/include
+  IMPORTED_LOCATION ${REDISPP_INSTALL_DIR}/lib/libredis++.a
+  INTERFACE_INCLUDE_DIRECTORIES ${REDISPP_INSTALL_DIR}/include
+  INTERFACE_LINK_LIBRARIES "hiredis_static"
 )
-add_dependencies(redispp_static redis_pp_project)
 
-target_link_libraries(${PROJECT_NAME} PUBLIC redispp_static hiredis_static)
+# --------------------------------------------------------------------------------------------------
+# 4. LINK
+# --------------------------------------------------------------------------------------------------
+target_link_libraries(${PROJECT_NAME} PRIVATE redispp_static hiredis_static)
+
+target_include_directories(${PROJECT_NAME} PUBLIC
+  ${HIREDIS_INSTALL_DIR}/include
+  ${REDISPP_INSTALL_DIR}/include
+)
+
+message(STATUS "✅ Redis setup complete")
+message(STATUS "Redis include paths:")
+message(STATUS "  hiredis: ${HIREDIS_INSTALL_DIR}/include")
+message(STATUS "  redis++: ${REDISPP_INSTALL_DIR}/include")
