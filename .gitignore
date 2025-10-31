@@ -3,6 +3,7 @@
 
 build/*
 docs
+libcaos/vendor/prebuilt
 # qtcreator generated files
 *.pro.user*
 CMakeLists.txt.user*
