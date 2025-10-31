@@ -25,7 +25,6 @@ if(PHP_CONFIG)
   message(STATUS "  Include Flags: ${PHP_INCLUDE_FLAGS}")
   message(STATUS "  Libraries: ${PHP_LIBRARIES}")
 
-  # Controllo versione minima (opzionale)
   if(PHP_VERSION VERSION_LESS "8.0")
     message(FATAL_ERROR "PHP version ${PHP_VERSION} is quite old. Consider upgrading to 8.0+")
   endif()
@@ -45,11 +44,9 @@ if(PHP_CONFIG)
   target_compile_definitions(caos_php PUBLIC CAOS_BUILD_PHP_EXTENSION)
 
 
-  # Generazione file caos.ini
   set(CAOS_INI_CONTENT "extension=caos_php.so\n")
   file(WRITE ${CMAKE_BINARY_DIR}/caos.ini "${CAOS_INI_CONTENT}")
 
-  # Directory di test locale
   set(PHP_EXT_INSTALL_DIR ${CMAKE_BINARY_DIR}/php-ext)
   file(MAKE_DIRECTORY ${PHP_EXT_INSTALL_DIR})
 
@@ -59,10 +56,8 @@ if(PHP_CONFIG)
       COMMENT "Copying PHP extension and ini to local test folder"
   )
 
-  # Directory conf.d su Debian/Ubuntu dinamica
   set(PHP_CONF_D_DIR "/etc/php/${PHP_VERSION}/cli/conf.d")
 
-  # Installazione con variabili
   install(TARGETS caos_php LIBRARY DESTINATION ${PHP_EXTENSION_DIR})
   install(FILES ${CMAKE_BINARY_DIR}/caos.ini DESTINATION ${PHP_CONF_D_DIR})
 

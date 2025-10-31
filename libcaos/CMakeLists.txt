@@ -131,9 +131,6 @@ add_dependencies(${PROJECT_NAME} generate_version)
 
 include(cmake/debug.cmake)
 
-
-include(FetchContent)
-
 # cxxopts
 include(cmake/cxxopts.cmake)
 

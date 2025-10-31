@@ -60,7 +60,14 @@ if(CAOS_BUILD_EXTENSIONS)
   set(CAOS_BUILD_PHP_EXTENSION    "CAOS build php extension"      ON)
   set(CAOS_BUILD_NODE_EXTENSION   "CAOS build node.js extension"  ON)
   set(CAOS_BUILD_PYTHON_EXTENSION "CAOS build node.js extension"  ON)
+
+  set(CAOS_BUILD_PHP_PACKAGE_DEB  "CAOS build php package Debian" ON)
+
   add_subdirectory(extensions)
+
+  if(CAOS_BUILD_PHP_PACKAGE_DEB)
+    include(extensions/php/cmake/package_deb.cmake)
+  endif()
 endif()
 # EXTENSIONS ---------------------------------------------------------------------------------------
 
