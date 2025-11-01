@@ -1,6 +1,5 @@
 message(STATUS "Building CAOS as PHP extension")
 
-# find_package(PHP)
 find_program(PHP_CONFIG php-config)
 
 if(PHP_CONFIG)
@@ -22,8 +21,7 @@ if(PHP_CONFIG)
 
   message(STATUS "✓ PHP development package found")
   message(STATUS "  Version: ${PHP_VERSION}")
-  message(STATUS "  Include Flags: ${PHP_INCLUDE_FLAGS}")
-  message(STATUS "  Libraries: ${PHP_LIBRARIES}")
+  message(STATUS "  Extension Dir: ${PHP_EXTENSION_DIR}")
 
   if(PHP_VERSION VERSION_LESS "8.0")
     message(FATAL_ERROR "PHP version ${PHP_VERSION} is quite old. Consider upgrading to 8.0+")
@@ -31,37 +29,56 @@ if(PHP_CONFIG)
 
   separate_arguments(PHP_INCLUDE_FLAGS)
 
-  add_library(caos_php MODULE bindings.cpp)
+  add_library(caos MODULE bindings.cpp)
 
-    set_target_properties(caos_php PROPERTIES
-      PREFIX ""
-      OUTPUT_NAME "caos_php"
-      SUFFIX ".so"
-    )
-
-  target_link_libraries(caos_php PRIVATE libcaos ${PHP_LIBRARIES})
-  target_compile_options(caos_php PRIVATE ${PHP_INCLUDE_FLAGS})
-  target_compile_definitions(caos_php PUBLIC CAOS_BUILD_PHP_EXTENSION)
-
-
-  set(CAOS_INI_CONTENT "extension=caos_php.so\n")
-  file(WRITE ${CMAKE_BINARY_DIR}/caos.ini "${CAOS_INI_CONTENT}")
-
-  set(PHP_EXT_INSTALL_DIR ${CMAKE_BINARY_DIR}/php-ext)
-  file(MAKE_DIRECTORY ${PHP_EXT_INSTALL_DIR})
-
-  add_custom_command(TARGET caos_php POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:caos_php> ${PHP_EXT_INSTALL_DIR}
-      COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/caos.ini ${PHP_EXT_INSTALL_DIR}/20-caos.ini
-      COMMENT "Copying PHP extension and ini to local test folder"
+  set_target_properties(caos PROPERTIES
+    PREFIX ""
+    OUTPUT_NAME "caos"
+    SUFFIX ".so"
   )
 
-  set(PHP_CONF_D_DIR "/etc/php/${PHP_VERSION}/cli/conf.d")
+  target_link_libraries(caos PRIVATE libcaos ${PHP_LIBRARIES})
+  target_compile_options(caos PRIVATE ${PHP_INCLUDE_FLAGS})
+  target_compile_definitions(caos PUBLIC CAOS_BUILD_PHP_EXTENSION)
 
-  install(TARGETS caos_php LIBRARY DESTINATION ${PHP_EXTENSION_DIR})
-  install(FILES ${CMAKE_BINARY_DIR}/caos.ini DESTINATION ${PHP_CONF_D_DIR})
+  string(REGEX REPLACE "^([0-9]+\\.[0-9]+).*" "\\1" PHP_VERSION_SHORT "${PHP_VERSION}")
+  message(STATUS "PHP Version Short: ${PHP_VERSION_SHORT}")
 
-  target_compile_definitions(caos_php PUBLIC CAOS_BUILD_PHP_EXTENSION)
+  set(PHP_MODS_AVAILABLE_DIR "/etc/php/${PHP_VERSION_SHORT}/mods-available")
+  set(PHP_CLI_CONF_D_DIR "/etc/php/${PHP_VERSION_SHORT}/cli/conf.d")
+  set(PHP_FPM_CONF_D_DIR "/etc/php/${PHP_VERSION_SHORT}/fpm/conf.d")
+  set(PHP_APACHE_CONF_D_DIR "/etc/php/${PHP_VERSION_SHORT}/apache2/conf.d")
+
+
+  set(CAOS_INI_CONTENT "extension=caos.so\n")
+  file(WRITE ${CMAKE_BINARY_DIR}/caos.ini "${CAOS_INI_CONTENT}")
+
+  install(TARGETS caos
+          LIBRARY
+          DESTINATION ${PHP_EXTENSION_DIR}
+          COMPONENT php)
+
+  install(FILES ${CMAKE_BINARY_DIR}/caos.ini
+          DESTINATION ${PHP_MODS_AVAILABLE_DIR}
+          RENAME caos.ini
+          COMPONENT php)
+
+  install(CODE "message(STATUS \"\")
+                message(STATUS \"✓ PHP extension installed to: ${PHP_EXTENSION_DIR}/caos.so\")
+                message(STATUS \"✓ PHP ini file installed to: ${PHP_MODS_AVAILABLE_DIR}/caos.ini\")
+                message(STATUS \"\")
+                message(STATUS \"⚠ To enable the extension, run:\")
+                message(STATUS \"  sudo phpenmod -v ${PHP_VERSION_SHORT} caos\")
+                message(STATUS \"\")
+                message(STATUS \"  Or enable for specific SAPI:\")
+                message(STATUS \"  sudo phpenmod -v ${PHP_VERSION_SHORT} -s cli caos\")
+                message(STATUS \"  sudo phpenmod -v ${PHP_VERSION_SHORT} -s fpm caos\")
+                message(STATUS \"  sudo phpenmod -v ${PHP_VERSION_SHORT} -s apache2 caos\")
+                message(STATUS \"\")"
+          COMPONENT php)
+
+  message(STATUS "✓ PHP extension will be installed to: ${PHP_EXTENSION_DIR}/caos.so")
+  message(STATUS "✓ PHP ini file will be installed to: ${PHP_MODS_AVAILABLE_DIR}/caos.ini")
 
 else()
   message(FATAL_ERROR "
@@ -70,7 +87,7 @@ else()
 Required for building CAOS PHP extension.
 
 Installation commands:
-• Ubuntu/Debian:    sudo apt-get install php-dev libsodium-dev libargon2-dev
+• Ubuntu/Debian:    sudo apt-get install php-dev
 • CentOS/RHEL:      sudo yum install php-devel
 • Fedora:           sudo dnf install php-devel
 • macOS (Homebrew): brew install php

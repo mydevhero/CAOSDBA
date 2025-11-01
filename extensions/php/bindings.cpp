@@ -6,11 +6,16 @@ extern "C" {
 }
 
 #include <libcaos.hpp>
+#include <optional>
 
-
-std::unique_ptr<Caos>& libcaos()
+std::unique_ptr<Caos>& libcaos(bool check=false)
 {
   static std::unique_ptr<Caos> caos = nullptr;
+
+  if (check)
+  {
+    return caos;
+  }
 
   if (!caos)
   {
@@ -38,6 +43,7 @@ std::unique_ptr<Caos>& libcaos()
 Cache* fromRepository()
 {
   auto& caos = libcaos();
+
   return caos ? caos->repository.get() : nullptr;
 }
 
@@ -64,25 +70,26 @@ static const zend_function_entry caos_functions[] =
 // Init
 PHP_MINIT_FUNCTION(caos)
 {
-  try {
-    auto repo = fromRepository();
-    if (!repo) {
-      return FAILURE;
-    }
-    return SUCCESS;
-  }
-  catch (const std::exception& e) {
-    php_error_docref(NULL, E_ERROR, "CAOS initialization failed: %s", e.what());
-    return FAILURE;
-  }
+  // try {
+  //   auto repo = fromRepository();
+  //   if (!repo) {
+  //     return FAILURE;
+  //   }
+  //   return SUCCESS;
+  // }
+  // catch (const std::exception& e) {
+  //   php_error_docref(NULL, E_ERROR, "CAOS initialization failed: %s", e.what());
+  //   return FAILURE;
+  // }
+  return SUCCESS;
 }
 
 // Shutdown - cleanup
 PHP_MSHUTDOWN_FUNCTION(caos)
 {
   try {
-    auto& caos = libcaos();
-    if (caos)
+    auto& caos = libcaos(true);
+    if (caos != nullptr)
     {
       caos.reset();
     }
@@ -94,6 +101,8 @@ PHP_MSHUTDOWN_FUNCTION(caos)
     php_error_docref(NULL, E_ERROR, "CAOS shutdown failed: %s", e.what());
     return FAILURE;
   }
+
+  return SUCCESS;
 }
 
 // phpinfo()
