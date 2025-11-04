@@ -8,12 +8,12 @@ INSTALL_DIR="$(pwd)/libpqxx-install"
 PREBUILT_DIR="$(cd $(dirname $0)/../prebuilt && pwd)"
 
 if [ -z "$POSTGRES_INSTALL_DIR" ] || [ ! -d "$POSTGRES_INSTALL_DIR" ]; then
-    echo "❌ PostgreSQL install directory not provided or invalid: $POSTGRES_INSTALL_DIR"
+    echo "PostgreSQL install directory not provided or invalid: $POSTGRES_INSTALL_DIR"
     echo "Usage: $0 <postgres_install_dir>"
     exit 1
 fi
 
-echo "🔨 Building libpqxx static library..."
+echo "Building libpqxx static library..."
 echo "• Source: $LIBPQXX_SOURCE_DIR"
 echo "• PostgreSQL: $POSTGRES_INSTALL_DIR"
 echo "• Build: $BUILD_DIR"
@@ -43,10 +43,10 @@ cmake $LIBPQXX_SOURCE_DIR \
 cmake --build . --target pqxx
 cmake --build . --target install
 
-echo "✅ libpqxx built successfully in $INSTALL_DIR"
+echo "libpqxx built successfully in $INSTALL_DIR"
 
 if [ -d "$PREBUILT_DIR" ]; then
-    echo "📦 Copying to vendor/prebuilt..."
+    echo "Copying to vendor/prebuilt..."
 
     LIBPQXX_PREBUILT="$PREBUILT_DIR/libpqxx"
     mkdir -p $LIBPQXX_PREBUILT/lib $LIBPQXX_PREBUILT/include
@@ -54,10 +54,10 @@ if [ -d "$PREBUILT_DIR" ]; then
     cp -r $INSTALL_DIR/lib/* $LIBPQXX_PREBUILT/lib/
     cp -r $INSTALL_DIR/include/* $LIBPQXX_PREBUILT/include/
 
-    echo "✅ Copied to vendor/prebuilt/libpqxx"
+    echo "Copied to vendor/prebuilt/libpqxx"
 else
-    echo "⚠️  vendor/prebuilt directory not found, skipping copy"
+    echo "vendor/prebuilt directory not found, skipping copy"
 fi
 
-echo "📁 Libraries:"
+echo "Libraries:"
 ls -la $INSTALL_DIR/lib/

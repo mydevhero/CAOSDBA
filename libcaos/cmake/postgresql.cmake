@@ -7,10 +7,10 @@ set(PG_PREBUILT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vendor/prebuilt/")
 set(PG_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vendor/postgres")
 
 if(EXISTS ${PG_PREBUILT_DIR}/postgres/lib/libpq.a)
-  message(STATUS "📦 Using pre-built PostgreSQL libraries")
+  message(STATUS "Using pre-built PostgreSQL libraries")
   set(PG_INSTALL_DIR ${PG_PREBUILT_DIR}/postgres)
 else()
-  message(STATUS "🔨 Building PostgreSQL from submodule...")
+  message(STATUS "Building PostgreSQL from submodule...")
 
   execute_process(
     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/vendor/build-scripts/build_postgres.sh
@@ -19,7 +19,7 @@ else()
   )
 
   if(NOT pg_build_result EQUAL 0)
-    message(FATAL_ERROR "❌ PostgreSQL build failed")
+    message(FATAL_ERROR "PostgreSQL build failed")
   endif()
 
   set(PG_INSTALL_DIR ${CMAKE_BINARY_DIR}/postgres-install)
@@ -31,10 +31,10 @@ endif()
 set(PQXX_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vendor/libpqxx")
 
 if(EXISTS ${PG_PREBUILT_DIR}/libpqxx/lib/libpqxx.a)
-  message(STATUS "📦 Using pre-built libpqxx")
+  message(STATUS "Using pre-built libpqxx")
   set(PQXX_INSTALL_DIR ${PG_PREBUILT_DIR}/libpqxx)
 else()
-  message(STATUS "🔨 Building libpqxx from submodule...")
+  message(STATUS "Building libpqxx from submodule...")
 
   execute_process(
     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/vendor/build-scripts/build_libpqxx.sh ${PG_INSTALL_DIR}
@@ -43,7 +43,7 @@ else()
   )
 
   if(NOT pqxx_build_result EQUAL 0)
-    message(FATAL_ERROR "❌ libpqxx build failed")
+    message(FATAL_ERROR "libpqxx build failed")
   endif()
 
   set(PQXX_INSTALL_DIR ${CMAKE_BINARY_DIR}/libpqxx-install)
@@ -88,4 +88,4 @@ target_include_directories(${PROJECT_NAME} PRIVATE
   ${PQXX_INSTALL_DIR}/include
 )
 
-message(STATUS "✅ PostgreSQL+libpqxx setup complete")
+message(STATUS "PostgreSQL+libpqxx setup complete")

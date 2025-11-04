@@ -6,12 +6,12 @@ if(CMAKE_BUILD_TYPE STREQUAL "debug")
 
   if(ENABLE_TSAN)
     message(STATUS "Enabled Thread Sanitizer (TSan). ASan and LSan disabled.")
-    target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=thread -fsanitize=undefined)
-    target_link_libraries(libcaos PUBLIC -fsanitize=thread)
+    target_compile_options(libcaos PRIVATE -fsanitize=thread -fsanitize=undefined)
+    target_link_libraries(libcaos PRIVATE -fsanitize=thread)
 
   elseif(ENABLE_ASAN)
       message(STATUS "Enabled Address Sanitizer (ASan/LSan). TSan disabled.")
-      target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=address -fsanitize=leak -fsanitize=undefined)
+      target_compile_options(libcaos PRIVATE -fsanitize=address -fsanitize=leak -fsanitize=undefined)
   endif()
 
 endif()

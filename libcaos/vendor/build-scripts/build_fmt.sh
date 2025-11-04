@@ -6,7 +6,7 @@ BUILD_DIR="$(pwd)/fmt-build"
 INSTALL_DIR="$(pwd)/fmt-install"
 PREBUILT_DIR="$(cd $(dirname $0)/../prebuilt && pwd)"
 
-echo "🔨 Configuring fmt..."
+echo "Configuring fmt..."
 echo "• Source: $FMT_SOURCE_DIR"
 echo "• Build: $BUILD_DIR"
 echo "• Install: $INSTALL_DIR"
@@ -28,10 +28,10 @@ cmake --build .
 # Install
 cmake --build . --target install
 
-echo "✅ fmt configured successfully in $INSTALL_DIR"
+echo "fmt configured successfully in $INSTALL_DIR"
 
 if [ -d "$PREBUILT_DIR" ]; then
-    echo "📦 Copying to vendor/prebuilt..."
+    echo "Copying to vendor/prebuilt..."
 
     FMT_PREBUILT="$PREBUILT_DIR/fmt"
     mkdir -p $FMT_PREBUILT/include $FMT_PREBUILT/lib
@@ -49,10 +49,10 @@ if [ -d "$PREBUILT_DIR" ]; then
     # Copia anche dalla source dir
     cp -r $FMT_SOURCE_DIR/include/* $FMT_PREBUILT/include/ 2>/dev/null || true
 
-    echo "✅ Copied to vendor/prebuilt/fmt"
+    echo "Copied to vendor/prebuilt/fmt"
 else
-    echo "⚠️  vendor/prebuilt directory not found, skipping copy"
+    echo "vendor/prebuilt directory not found, skipping copy"
 fi
 
-echo "📁 Files installed:"
+echo "Files installed:"
 find $INSTALL_DIR -type f 2>/dev/null || echo "No files in install directory"
