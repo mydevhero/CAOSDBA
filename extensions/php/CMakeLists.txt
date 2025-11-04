@@ -1,37 +1,36 @@
-message(STATUS "Building CAOS as PHP extension")
+if(CMAKE_BUILD_TYPE STREQUAL "debug") #FIXME
+  message(WARNING "PHP extension disabled in Debug build (sanitizer conflict)")
+  message(STATUS "Use: cmake -B build/release -DCMAKE_BUILD_TYPE=release")
+else()
+  message(STATUS "Building CAOS as PHP extension")
 
-find_program(PHP_CONFIG php-config)
+  find_program(PHP_CONFIG php-config)
 
-if(PHP_CONFIG)
-  execute_process(COMMAND ${PHP_CONFIG} --includes
-    OUTPUT_VARIABLE PHP_INCLUDE_FLAGS
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  if(PHP_CONFIG)
+    execute_process(COMMAND ${PHP_CONFIG} --includes
+      OUTPUT_VARIABLE PHP_INCLUDE_FLAGS
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-  execute_process(COMMAND ${PHP_CONFIG} --libs
-    OUTPUT_VARIABLE PHP_LIBRARIES
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
+    execute_process(COMMAND ${PHP_CONFIG} --libs
+      OUTPUT_VARIABLE PHP_LIBRARIES
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-  execute_process(COMMAND ${PHP_CONFIG} --version
-    OUTPUT_VARIABLE PHP_VERSION
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
+    execute_process(COMMAND ${PHP_CONFIG} --version
+      OUTPUT_VARIABLE PHP_VERSION
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-  execute_process(COMMAND ${PHP_CONFIG} --extension-dir
-    OUTPUT_VARIABLE PHP_EXTENSION_DIR
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
+    execute_process(COMMAND ${PHP_CONFIG} --extension-dir
+      OUTPUT_VARIABLE PHP_EXTENSION_DIR
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-  message(STATUS "PHP development package found")
-  message(STATUS "  Version: ${PHP_VERSION}")
-  message(STATUS "  Extension Dir: ${PHP_EXTENSION_DIR}")
+    message(STATUS "PHP development package found")
+    message(STATUS "  Version: ${PHP_VERSION}")
+    message(STATUS "  Extension Dir: ${PHP_EXTENSION_DIR}")
 
-  if(PHP_VERSION VERSION_LESS "8.0")
-    message(FATAL_ERROR "PHP version ${PHP_VERSION} is too old. Required: 8.0+")
-  endif()
+    if(PHP_VERSION VERSION_LESS "8.0")
+      message(FATAL_ERROR "PHP version ${PHP_VERSION} is too old. Required: 8.0+")
+    endif()
 
-  if(CMAKE_BUILD_TYPE STREQUAL "debug") #FIXME
-    message(STATUS "⚠️  PHP extension disabled in Debug build (sanitizer conflict)")
-    message(STATUS "   Use: cmake -B build/release -DCMAKE_BUILD_TYPE=Release")
-    message(STATUS "   Or: cmake -B build/relwithdebinfo -DCMAKE_BUILD_TYPE=RelWithDebInfo")
-  else()
     separate_arguments(PHP_INCLUDE_FLAGS)
 
     add_library(caos_php MODULE bindings.cpp)
@@ -94,17 +93,18 @@ if(PHP_CONFIG)
         )
       endif()
     endif()
+
+
+  else()
+    message(FATAL_ERROR "
+  PHP development packages not found!
+
+  Required for building CAOS PHP extension.
+
+  Installation commands:
+  Ubuntu/Debian: sudo apt-get install php-dev
+
+  After installation, re-run: cmake -DCAOS_BUILD_PHP_EXTENSION=ON .
+  ")
   endif()
-
-else()
-  message(FATAL_ERROR "
-PHP development packages not found!
-
-Required for building CAOS PHP extension.
-
-Installation commands:
-• Ubuntu/Debian: sudo apt-get install php-dev
-
-After installation, re-run: cmake -DCAOS_BUILD_PHP_EXTENSION=ON .
-")
 endif()

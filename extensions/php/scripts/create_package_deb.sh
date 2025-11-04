@@ -4,14 +4,23 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../" && pwd)"
 BUILD_DIR="$PROJECT_ROOT/build/release"
 PACKAGE_BASE_NAME="caos-php"
-VERSION="1.0.0"
+
+if [ -f "$BUILD_DIR/libcaos/build_counter.txt" ]; then
+    CAOS_BUILD_COUNTER=$(cat "$BUILD_DIR/libcaos/build_counter.txt")
+    VERSION="1.0.0+${CAOS_BUILD_COUNTER}"
+else
+    VERSION="1.0.0+1"
+    echo "WARNING: $BUILD_DIR/libcaos/build_counter.txt not found, using default version"
+fi
+
 REPO_DIR="/opt/caos/repository"
 
 # Fixed list of all target PHP versions (>=8.0)
 PHP_VERSIONS=("8.0" "8.1" "8.2" "8.3" "8.4")
 META_PACKAGES=()
 
-echo "Building DEB packages for ALL PHP versions (8.0+)..."
+echo "Building DEB packages for ALL PHP versions (8.0+)"
+echo "Version: $VERSION"
 
 # Map PHP versions to API version (e.g.: 8.3 -> 20230831)
 get_php_api_version() {
@@ -98,7 +107,7 @@ create_structure() {
 
 copy_files() {
     local deb_dir=$1
-    echo "Copying files for PHP $PHP_VERSION..."
+    echo "Copying files for PHP $PHP_VERSION"
 
     # Use the same binary for all versions
     cp "$BUILD_DIR/extensions/php/caos.so" "$deb_dir/$PHP_EXT_DIR/"
@@ -119,17 +128,17 @@ PHP_EXT_DIR="$PHP_EXT_DIR"
 MODS_AVAILABLE_DIR="$MODS_AVAILABLE_DIR"
 
 echo ""
-echo "Processing CAOS PHP extension for PHP \$PHP_VERSION..."
+echo "Processing CAOS PHP extension for PHP \$PHP_VERSION"
 echo ""
 
 # Check if this PHP version is installed on target system
 if [ ! -d "/etc/php/\$PHP_VERSION" ]; then
     echo "INFO: PHP \$PHP_VERSION not installed on this system"
-    echo "      Extension will be automatically enabled if PHP \$PHP_VERSION is installed later"
+    echo "Extension will be automatically enabled if PHP \$PHP_VERSION is installed later"
     exit 0
 fi
 
-echo "PHP \$PHP_VERSION is installed - enabling extension..."
+echo "PHP \$PHP_VERSION is installed - enabling extension"
 
 # Set owner and permissions (handled automatically by dpkg, but just in case)
 chown root:root "\$PHP_EXT_DIR/caos.so" 2>/dev/null || true
@@ -139,7 +148,7 @@ chmod 644 "\$MODS_AVAILABLE_DIR/caos.ini" 2>/dev/null || true
 
 # Enable the extension
 if command -v phpenmod >/dev/null 2>&1; then
-    echo "Enabling CAOS extension for PHP \$PHP_VERSION..."
+    echo "Enabling CAOS extension for PHP \$PHP_VERSION"
     phpenmod -v \$PHP_VERSION -s cli caos 2>/dev/null && echo "Enabled for CLI" || echo "WARNING: Could not enable for CLI"
     phpenmod -v \$PHP_VERSION -s fpm caos 2>/dev/null && echo "Enabled for FPM" || echo "WARNING: Could not enable for FPM"
     phpenmod -v \$PHP_VERSION -s apache2 caos 2>/dev/null && echo "Enabled for Apache" || echo "WARNING: Could not enable for Apache"
@@ -152,7 +161,7 @@ else
 fi
 
 echo ""
-echo "CAOS PHP extension for PHP \$PHP_VERSION ready!"
+echo "CAOS PHP extension for PHP \$PHP_VERSION ready"
 echo "TIP: Run: php\$PHP_VERSION -m | grep caos  to verify"
 echo ""
 EOF
@@ -172,24 +181,24 @@ PHP_EXT_DIR="$PHP_EXT_DIR"
 MODS_AVAILABLE_DIR="$MODS_AVAILABLE_DIR"
 
 echo ""
-echo "Disabling CAOS PHP extension for PHP \$PHP_VERSION before removal..."
+echo "Disabling CAOS PHP extension for PHP \$PHP_VERSION before removal"
 echo ""
 
 # Disable extension for all SAPI if this PHP version is installed
 if [ -d "/etc/php/\$PHP_VERSION" ] && command -v phpdismod >/dev/null 2>&1; then
-    echo "Disabling extension for all SAPI..."
+    echo "Disabling extension for all SAPI"
     phpdismod -v \$PHP_VERSION -s cli caos 2>/dev/null && echo "Disabled for CLI" || echo "WARNING: Could not disable for CLI"
     phpdismod -v \$PHP_VERSION -s fpm caos 2>/dev/null && echo "Disabled for FPM" || echo "WARNING: Could not disable for FPM"
     phpdismod -v \$PHP_VERSION -s apache2 caos 2>/dev/null && echo "Disabled for Apache" || echo "WARNING: Could not disable for Apache"
 
     # Reload services if running
     if systemctl is-active --quiet "php\$PHP_VERSION-fpm" 2>/dev/null; then
-        echo "Reloading PHP-FPM..."
+        echo "Reloading PHP-FPM"
         systemctl reload "php\$PHP_VERSION-fpm" 2>/dev/null || true
     fi
 
     if systemctl is-active --quiet "apache2" 2>/dev/null; then
-        echo "Reloading Apache..."
+        echo "Reloading Apache"
         systemctl reload "apache2" 2>/dev/null || true
     fi
 
@@ -214,7 +223,7 @@ Package: $package_name
 Version: $VERSION
 Architecture: $architecture
 Maintainer: Alessandro Bianco <mydevhero@gmail.com>
-Description: CAOS - Extension for PHP $php_version
+Description: CAOS - Cache App On Steroids extension for PHP $php_version
  High-performance database access extension (Cache App On Steroids).
  Supports: CLI, FPM, Apache, Nginx for PHP $php_version
 Depends: php$php_version-common
@@ -277,7 +286,7 @@ Package: caos-php
 Version: $VERSION
 Architecture: all
 Maintainer: Alessandro Bianco <mydevhero@gmail.com>
-Description: CAOS - Extension for PHP (metapackage)
+Description: CAOS - Cache App On Steroids PHP extension (metapackage)
  High-performance database access extension (Cache App On Steroids).
  Automatically selects the correct version for your PHP installation.
 Depends: $depends_clause
@@ -289,22 +298,22 @@ EOF
     rm -rf "$deb_dir"
 
     echo "Meta-package built: caos-php_${VERSION}_all.deb"
-    echo "   Depends on: ${META_PACKAGES[*]}"
+    echo "Depends on: ${META_PACKAGES[*]}"
 }
 
 setup_local_repository() {
     echo ""
-    echo "Setting up local repository in $REPO_DIR..."
+    echo "Setting up local repository in $REPO_DIR"
 
     # Copy all .deb files to repository
-    echo "Copying .deb packages to repository..."
+    echo "Copying .deb packages to repository"
     cp "$BUILD_DIR"/*.deb "$REPO_DIR/" 2>/dev/null || true
 
     local copied_count=$(ls -1 "$REPO_DIR"/*.deb 2>/dev/null | wc -l)
     echo "Copied $copied_count package(s)"
 
     # Generate repository index
-    echo "Generating repository index..."
+    echo "Generating repository index"
     cd "$REPO_DIR"
 
     # Create directory conf and override file
@@ -334,7 +343,7 @@ Codename: caos
 Version: 1.0
 Architectures: amd64
 Components: main
-Description: CAOS - High performance database access extension
+Description: CAOS - Cache App On Steroids PHP extension
 Date: $(date -Ru)
 Acquire-By-Hash: no
 No-Support-for-Architecture-all: false
@@ -372,7 +381,7 @@ REPO_DIR="/opt/caos/repository"
 CONF_DIR="$REPO_DIR/conf"
 OVERRIDE_FILE="$CONF_DIR/override"
 
-echo "Updating CAOS repository index..."
+echo "Updating CAOS repository index"
 
 # Create conf directory if it doesn't exist
 mkdir -p "$CONF_DIR"
@@ -407,7 +416,7 @@ Codename: caos
 Version: 1.0
 Architectures: amd64
 Components: main
-Description: CAOS - High performance database access extension
+Description: CAOS - Cache App On Steroids PHP extension
 Date: $(date -Ru)
 MD5Sum:
  $(md5sum Packages | cut -d' ' -f1) $(stat -c %s Packages) Packages
@@ -430,7 +439,7 @@ else
 fi
 EOF
     chmod +x "$REPO_DIR/update-repo.sh"
-    echo "   Created: update-repo.sh"
+    echo "Created: update-repo.sh"
 }
 
 create_setup_repo_script() {
@@ -447,7 +456,7 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-echo "Setting up CAOS local repository for APT..."
+echo "Setting up CAOS local repository for APT"
 
 # Verify repository exists
 if [ ! -d "$REPO_DIR" ]; then
@@ -478,7 +487,7 @@ if [ $? -eq 0 ]; then
     echo "APT source configured: $APT_SOURCE_FILE"
     echo "APT preferences configured: $APT_PREFERENCES_FILE"
     echo ""
-    echo "Updating APT cache..."
+    echo "Updating APT cache"
     apt update
     echo ""
     echo "Setup completed"
@@ -492,7 +501,7 @@ else
 fi
 EOF
     chmod +x "$REPO_DIR/setup-apt-source.sh"
-    echo "   Created: setup-apt-source.sh"
+    echo "Created: setup-apt-source.sh"
 }
 
 create_repo_readme() {
@@ -503,20 +512,18 @@ This directory contains the CAOS PHP extension packages and serves as a local AP
 
 ## Available Packages
 
-- \`caos-php\` - Meta-package (installs for all detected PHP versions)
-- \`caos-php-8.0\` - CAOS extension for PHP 8.0
-- \`caos-php-8.1\` - CAOS extension for PHP 8.1
-- \`caos-php-8.2\` - CAOS extension for PHP 8.2
-- \`caos-php-8.3\` - CAOS extension for PHP 8.3
-- \`caos-php-8.4\` - CAOS extension for PHP 8.4
+- caos-php - Meta-package (installs for all detected PHP versions)
+- caos-php-8.0 - CAOS extension for PHP 8.0
+- caos-php-8.1 - CAOS extension for PHP 8.1
+- caos-php-8.2 - CAOS extension for PHP 8.2
+- caos-php-8.3 - CAOS extension for PHP 8.3
+- caos-php-8.4 - CAOS extension for PHP 8.4
 
 ## Initial Setup
 
 ### 1. Configure APT to use this repository
 
-\`\`\`bash
 sudo ./setup-apt-source.sh
-\`\`\`
 
 This script will:
 - Add the repository to APT sources at /etc/apt/sources.list.d/caos-local.list
@@ -525,48 +532,40 @@ This script will:
 
 ### 2. Install packages
 
-\`\`\`bash
-# Install meta-package (recommended - installs for all detected PHP versions)
+Install meta-package (recommended - installs for all detected PHP versions):
 sudo apt install caos-php
 
-# Or install specific version
+Or install specific version:
 sudo apt install caos-php-8.3
-\`\`\`
 
 ## Updating the Repository
 
 When you add or update .deb packages in this directory, run:
 
-\`\`\`bash
 ./update-repo.sh
 sudo apt update
-\`\`\`
 
-The \`update-repo.sh\` script regenerates the package index (Packages.gz) that APT uses.
+The update-repo.sh script regenerates the package index (Packages.gz) that APT uses.
 
 ## Manual Installation (without APT)
 
 If you prefer not to use APT:
 
-\`\`\`bash
 sudo dpkg -i caos-php-8.3_*.deb
 sudo apt-get install -f  # Fix any missing dependencies
-\`\`\`
 
 ## Uninstalling
 
-\`\`\`bash
-# Remove specific version
+Remove specific version:
 sudo apt remove caos-php-8.3
 
-# Remove all versions
+Remove all versions:
 sudo apt remove caos-php-*
-\`\`\`
 
 ## Repository Information
 
-- Repository location: \`$REPO_DIR\`
-- APT source file: \`/etc/apt/sources.list.d/caos-local.list\`
+- Repository location: $REPO_DIR
+- APT source file: /etc/apt/sources.list.d/caos-local.list
 - Repository owner: $USER
 - Repository is marked as trusted (no GPG signature required)
 
@@ -574,20 +573,20 @@ sudo apt remove caos-php-*
 
 To add new packages:
 1. Copy .deb files to this directory
-2. Run \`./update-repo.sh\` to regenerate the index
-3. Run \`sudo apt update\` to refresh APT cache
+2. Run ./update-repo.sh to regenerate the index
+3. Run sudo apt update to refresh APT cache
 4. Install or upgrade packages as needed
 
 ## Scripts
 
-- \`setup-apt-source.sh\` - One-time setup to configure APT (requires sudo)
-- \`update-repo.sh\` - Regenerate repository index after adding/updating packages (no sudo required)
+- setup-apt-source.sh - One-time setup to configure APT (requires sudo)
+- update-repo.sh - Regenerate repository index after adding/updating packages (no sudo required)
 
 ---
 
 Generated by CAOS build system v$VERSION
 EOF
-    echo "   Created: README.md"
+    echo "Created: README.md"
 }
 
 verify_packages() {
