@@ -19,27 +19,44 @@ if(PHP_CONFIG)
     OUTPUT_VARIABLE PHP_EXTENSION_DIR
     OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-  message(STATUS "✓ PHP development package found")
+  message(STATUS "PHP development package found")
   message(STATUS "  Version: ${PHP_VERSION}")
   message(STATUS "  Extension Dir: ${PHP_EXTENSION_DIR}")
 
   if(PHP_VERSION VERSION_LESS "8.0")
-    message(FATAL_ERROR "PHP version ${PHP_VERSION} is quite old. Consider upgrading to 8.0+")
+    message(FATAL_ERROR "PHP version ${PHP_VERSION} is too old. Required: 8.0+")
   endif()
 
   separate_arguments(PHP_INCLUDE_FLAGS)
 
-  add_library(caos MODULE bindings.cpp)
+  add_library(caos_php MODULE bindings.cpp)
 
-  set_target_properties(caos PROPERTIES
+  set_target_properties(caos_php PROPERTIES
     PREFIX ""
     OUTPUT_NAME "caos"
     SUFFIX ".so"
   )
 
-  target_link_libraries(caos PRIVATE libcaos ${PHP_LIBRARIES})
-  target_compile_options(caos PRIVATE ${PHP_INCLUDE_FLAGS})
-  target_compile_definitions(caos PUBLIC CAOS_BUILD_PHP_EXTENSION)
+  target_link_libraries(caos_php PRIVATE libcaos ${PHP_LIBRARIES})
+  target_compile_options(caos_php PRIVATE ${PHP_INCLUDE_FLAGS})
+  target_compile_definitions(caos_php PUBLIC CAOS_BUILD_PHP_EXTENSION)
+
+  if(CMAKE_BUILD_TYPE STREQUAL "debug")
+    message(STATUS "Sanitizer on build Debug")
+
+    target_compile_options(caos_php PRIVATE
+      -fsanitize=address
+      -fsanitize=undefined
+      -fsanitize=leak
+      -fno-omit-frame-pointer
+    )
+
+    target_link_options(caos_php PRIVATE
+      -fsanitize=address
+      -fsanitize=undefined
+      -fsanitize=leak
+    )
+  endif()
 
   string(REGEX REPLACE "^([0-9]+\\.[0-9]+).*" "\\1" PHP_VERSION_SHORT "${PHP_VERSION}")
   message(STATUS "PHP Version Short: ${PHP_VERSION_SHORT}")
@@ -49,11 +66,10 @@ if(PHP_CONFIG)
   set(PHP_FPM_CONF_D_DIR "/etc/php/${PHP_VERSION_SHORT}/fpm/conf.d")
   set(PHP_APACHE_CONF_D_DIR "/etc/php/${PHP_VERSION_SHORT}/apache2/conf.d")
 
-
   set(CAOS_INI_CONTENT "extension=caos.so\n")
   file(WRITE ${CMAKE_BINARY_DIR}/caos.ini "${CAOS_INI_CONTENT}")
 
-  install(TARGETS caos
+  install(TARGETS caos_php
           LIBRARY
           DESTINATION ${PHP_EXTENSION_DIR}
           COMPONENT php)
@@ -64,34 +80,40 @@ if(PHP_CONFIG)
           COMPONENT php)
 
   install(CODE "message(STATUS \"\")
-                message(STATUS \"✓ PHP extension installed to: ${PHP_EXTENSION_DIR}/caos.so\")
-                message(STATUS \"✓ PHP ini file installed to: ${PHP_MODS_AVAILABLE_DIR}/caos.ini\")
+                message(STATUS \"PHP extension installed to: ${PHP_EXTENSION_DIR}/caos.so\")
+                message(STATUS \"PHP ini file installed to: ${PHP_MODS_AVAILABLE_DIR}/caos.ini\")
                 message(STATUS \"\")
-                message(STATUS \"⚠ To enable the extension, run:\")
+                message(STATUS \"To enable the extension, run:\")
                 message(STATUS \"  sudo phpenmod -v ${PHP_VERSION_SHORT} caos\")
                 message(STATUS \"\")
-                message(STATUS \"  Or enable for specific SAPI:\")
+                message(STATUS \"Or enable for specific SAPI:\")
                 message(STATUS \"  sudo phpenmod -v ${PHP_VERSION_SHORT} -s cli caos\")
                 message(STATUS \"  sudo phpenmod -v ${PHP_VERSION_SHORT} -s fpm caos\")
                 message(STATUS \"  sudo phpenmod -v ${PHP_VERSION_SHORT} -s apache2 caos\")
                 message(STATUS \"\")"
           COMPONENT php)
 
-  message(STATUS "✓ PHP extension will be installed to: ${PHP_EXTENSION_DIR}/caos.so")
-  message(STATUS "✓ PHP ini file will be installed to: ${PHP_MODS_AVAILABLE_DIR}/caos.ini")
+  message(STATUS "PHP extension will be installed to: ${PHP_EXTENSION_DIR}/caos.so")
+  message(STATUS "PHP ini file will be installed to: ${PHP_MODS_AVAILABLE_DIR}/caos.ini")
 
+  if(CAOS_BUILD_PHP_PACKAGE_DEB)
+    if(CAOS_BUILD_PHP_EXTENSION)
+      add_custom_target(php_package_deb
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/scripts/create_package_deb.sh
+        DEPENDS caos
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMENT "Building DEB package for PHP extension"
+      )
+    endif()
+  endif()
 else()
   message(FATAL_ERROR "
-✗ PHP development packages not found!
+PHP development packages not found!
 
 Required for building CAOS PHP extension.
 
 Installation commands:
-• Ubuntu/Debian:    sudo apt-get install php-dev
-• CentOS/RHEL:      sudo yum install php-devel
-• Fedora:           sudo dnf install php-devel
-• macOS (Homebrew): brew install php
-• Windows:          Download PHP SDK or use WSL
+• Ubuntu/Debian: sudo apt-get install php-dev
 
 After installation, re-run: cmake -DCAOS_BUILD_PHP_EXTENSION=ON .
 ")
