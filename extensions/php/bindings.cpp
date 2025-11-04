@@ -57,7 +57,7 @@ ZEND_BEGIN_ARG_INFO(arginfolibcaos_hello, 0)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO(arginfolibcaos_echoString, 0)
-    ZEND_ARG_INFO(0, str)
+ZEND_ARG_INFO(0, str)
 ZEND_END_ARG_INFO()
 
 // Exposed functions
