@@ -3,7 +3,6 @@
 #include <memory>
 #include <vector>
 
-// Stesso singleton di CAOS (puoi riutilizzare lo stesso codice)
 std::unique_ptr<Caos>& libcaos()
 {
   static std::unique_ptr<Caos> caos = nullptr;
@@ -56,7 +55,7 @@ static void caos_shutdown()
 // -------------------------------------------------------------------------------------------------
 // caos_hello()
 // -------------------------------------------------------------------------------------------------
-static PyObject* caos_hello(PyObject* self, PyObject* args)
+static PyObject* caos_hello(PyObject*, PyObject*)
 {
   return PyUnicode_FromString("Hello from CAOS!\n");
 }
@@ -64,7 +63,7 @@ static PyObject* caos_hello(PyObject* self, PyObject* args)
 // -------------------------------------------------------------------------------------------------
 // caos_echoString()
 // -------------------------------------------------------------------------------------------------
-static PyObject* caos_echoString(PyObject* self, PyObject* args)
+static PyObject* caos_echoString(PyObject*, PyObject* args)
 {
   const char* input;
 
@@ -104,7 +103,7 @@ static PyMethodDef CaosMethods[] = {
   {
     "hello",
     caos_hello,
-    METH_VARARGS,
+    METH_NOARGS,
     "Return a hello message from CAOS"
   },
   {
@@ -116,12 +115,16 @@ static PyMethodDef CaosMethods[] = {
   {NULL, NULL, 0, NULL}  // Sentinel
 };
 
-static struct PyModuleDef caosmodule = {
-  PyModuleDef_HEAD_INIT,
-  "caos_native",
-  "Native CAOS bindings for Python",
-  -1,
-  CaosMethods
+static PyModuleDef caosmodule = {
+    PyModuleDef_HEAD_INIT,
+    "caos",
+    "CAOS Python bindings",
+    -1,
+    CaosMethods,
+    NULL,  // m_slots
+    NULL,  // m_traverse
+    NULL,  // m_clear
+    NULL   // m_free
 };
 
 

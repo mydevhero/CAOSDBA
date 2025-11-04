@@ -1,4 +1,5 @@
 extern "C" {
+#pragma GCC diagnostic ignored "-Wc++20-extensions"
 #include <php.h>
 #include <zend_API.h>
 #include <zend_modules.h>
@@ -70,23 +71,17 @@ static const zend_function_entry caos_functions[] =
 // Init
 PHP_MINIT_FUNCTION(caos)
 {
-  // try {
-  //   auto repo = fromRepository();
-  //   if (!repo) {
-  //     return FAILURE;
-  //   }
-  //   return SUCCESS;
-  // }
-  // catch (const std::exception& e) {
-  //   php_error_docref(NULL, E_ERROR, "CAOS initialization failed: %s", e.what());
-  //   return FAILURE;
-  // }
+  (void)type;
+  (void)module_number;
   return SUCCESS;
 }
 
 // Shutdown - cleanup
 PHP_MSHUTDOWN_FUNCTION(caos)
 {
+  (void)type;
+  (void)module_number;
+
   try {
     auto& caos = libcaos(true);
     if (caos != nullptr)
@@ -108,9 +103,11 @@ PHP_MSHUTDOWN_FUNCTION(caos)
 // phpinfo()
 PHP_MINFO_FUNCTION(caos)
 {
-    php_info_print_table_start();
-    php_info_print_table_header(2, "CAOS PHP Extension", "enabled");
-    php_info_print_table_end();
+  (void)zend_module;
+
+  php_info_print_table_start();
+  php_info_print_table_header(2, "CAOS PHP Extension", "enabled");
+  php_info_print_table_end();
 }
 
 // Module
@@ -141,6 +138,8 @@ extern "C"
 // -------------------------------------------------------------------------------------------------
 PHP_FUNCTION(caos_hello)
 {
+  (void)execute_data;
+
   RETURN_STRING("Hello from CAOS!\n");
 }
 
@@ -149,6 +148,8 @@ PHP_FUNCTION(caos_hello)
 // -------------------------------------------------------------------------------------------------
 PHP_FUNCTION(caos_echoString)
 {
+  (void)execute_data;
+
   char *str;
   size_t str_length;
 

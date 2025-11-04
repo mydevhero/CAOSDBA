@@ -17,7 +17,7 @@ if(NODE_EXECUTABLE AND NPM_EXECUTABLE)
     OUTPUT_VARIABLE NODE_ARCH
     OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-  message(STATUS "✓ Node.js development package found")
+  message(STATUS "Node.js development package found")
   message(STATUS "  Version: ${NODE_VERSION}")
   message(STATUS "  Platform: ${NODE_PLATFORM}")
   message(STATUS "  Arch: ${NODE_ARCH}")
@@ -43,9 +43,9 @@ foreach(HEADER_PATH ${NODE_HEADERS_PATHS})
 endforeach()
 
 if(NODE_HEADERS_DIR)
-  message(STATUS "✓ Node.js headers found: ${NODE_HEADERS_DIR}")
+  message(STATUS "Node.js headers found: ${NODE_HEADERS_DIR}")
 else()
-  message(FATAL_ERROR "✗ Node.js headers not found. Tried: ${NODE_HEADERS_PATHS}")
+  message(FATAL_ERROR "Node.js headers not found. Tried: ${NODE_HEADERS_PATHS}")
 endif()
 
 execute_process(
@@ -61,10 +61,10 @@ if(NAPI_CHECK_RESULT EQUAL 0 AND NAPI_INCLUDE_DIR_RAW)
   string(REPLACE "\n" "" NAPI_INCLUDE_DIR "${NAPI_INCLUDE_DIR}")
   string(REPLACE "\"" "" NAPI_INCLUDE_DIR "${NAPI_INCLUDE_DIR}")
 
-  message(STATUS "✓ node-addon-api found")
+  message(STATUS "node-addon-api found")
   message(STATUS "  N-API Include: ${NAPI_INCLUDE_DIR}")
 else()
-  message(STATUS "⏳ node-addon-api not found - installing automatically...")
+  message(STATUS "node-addon-api not found - installing automatically...")
 
   execute_process(
     COMMAND ${NPM_EXECUTABLE} install node-addon-api
@@ -75,7 +75,7 @@ else()
   )
 
 if(NPM_INSTALL_RESULT EQUAL 0)
-  message(STATUS "✓ node-addon-api installed successfully")
+  message(STATUS "node-addon-api installed successfully")
 
   execute_process(
     COMMAND ${NODE_EXECUTABLE} -p "require('node-addon-api').include"
@@ -91,13 +91,13 @@ if(NAPI_RECHECK_RESULT EQUAL 0 AND NAPI_INCLUDE_DIR_RAW)
   string(REPLACE "\n" "" NAPI_INCLUDE_DIR "${NAPI_INCLUDE_DIR}")
   string(REPLACE "\"" "" NAPI_INCLUDE_DIR "${NAPI_INCLUDE_DIR}")
 
-  message(STATUS "✓ node-addon-api verified after installation")
+  message(STATUS "node-addon-api verified after installation")
   message(STATUS "  N-API Include: ${NAPI_INCLUDE_DIR}")
 else()
-  message(FATAL_ERROR "✗ node-addon-api installation failed - please install manually: npm install node-addon-api")
+  message(FATAL_ERROR "node-addon-api installation failed - please install manually: npm install node-addon-api")
 endif()
 else()
-  message(FATAL_ERROR "✗ Failed to install node-addon-api automatically. Please install manually: npm install node-addon-api")
+  message(FATAL_ERROR "Failed to install node-addon-api automatically. Please install manually: npm install node-addon-api")
 endif()
 endif()
 
@@ -116,13 +116,13 @@ endif()
 if(NOT EXISTS "${NODE_HEADERS_DIR}/node_api.h")
   message(FATAL_ERROR "node_api.h not found in: ${NODE_HEADERS_DIR}")
 else()
-  message(STATUS "✓ node_api.h found in Node.js headers")
+  message(STATUS "node_api.h found in Node.js headers")
 endif()
 
 if(NOT EXISTS "${NAPI_INCLUDE_DIR}/napi.h")
   message(FATAL_ERROR "napi.h not found in: ${NAPI_INCLUDE_DIR}")
 else()
-  message(STATUS "✓ napi.h found in node-addon-api")
+  message(STATUS "napi.h found in node-addon-api")
 endif()
 
 set(NODE_EXT_INSTALL_DIR ${CMAKE_BINARY_DIR}/node-ext)
@@ -182,16 +182,12 @@ install(TARGETS caos_node LIBRARY DESTINATION lib/node_modules/caos-native)
 
 else()
   message(FATAL_ERROR "
-    ✗ Node.js development packages not found!
+    Node.js development packages not found!
 
     Required for building CAOS Node.js extension.
 
     Installation commands:
     • Ubuntu/Debian:    sudo apt-get install nodejs npm
-    • CentOS/RHEL:      sudo yum install nodejs npm
-    • Fedora:           sudo dnf install nodejs npm
-    • macOS (Homebrew): brew install node
-    • Windows:          Download Node.js from nodejs.org
 
     After installation, re-run: cmake -DCAOS_BUILD_NODE_EXTENSION=ON .
     ")

@@ -4,7 +4,7 @@ message(STATUS "Building CAOS as Python extension")
 find_package(Python3 REQUIRED COMPONENTS Development)
 
 if(Python3_FOUND)
-    message(STATUS "✓ Python development package found")
+    message(STATUS "Python development package found")
     message(STATUS "  Version: ${Python3_VERSION}")
     message(STATUS "  Include: ${Python3_INCLUDE_DIRS}")
     message(STATUS "  Library: ${Python3_LIBRARIES}")
@@ -61,16 +61,12 @@ __all__ = ['hello', 'echo_string']")
 
 else()
     message(FATAL_ERROR "
-✗ Python development packages not found!
+Python development packages not found!
 
 Required for building CAOS Python extension.
 
 Installation commands:
 • Ubuntu/Debian:    sudo apt-get install python3-dev
-• CentOS/RHEL:      sudo yum install python3-devel
-• Fedora:           sudo dnf install python3-devel
-• macOS (Homebrew): brew install python3
-• Windows:          Install Python from python.org
 
 After installation, re-run: cmake -DCAOS_BUILD_PYTHON_EXTENSION=ON .
 ")

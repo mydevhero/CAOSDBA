@@ -40,7 +40,7 @@ Cache* fromRepository()
 // -------------------------------------------------------------------------------------------------
 // Cleanup function
 // -------------------------------------------------------------------------------------------------
-static void caos_shutdown(void* arg)
+static void caos_shutdown(void*)
 {
   try {
     auto& caos = libcaos();
@@ -60,8 +60,7 @@ static void caos_shutdown(void* arg)
 // -------------------------------------------------------------------------------------------------
 Napi::String caos_hello(const Napi::CallbackInfo& info)
 {
-  Napi::Env env = info.Env();
-  return Napi::String::New(env, "Hello from CAOS!\n");
+  return Napi::String::New(info.Env(), "Hello from CAOS!\n");
 }
 
 // -------------------------------------------------------------------------------------------------
