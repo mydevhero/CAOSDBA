@@ -306,8 +306,52 @@ setup_local_repository() {
     # Generate repository index
     echo "Generating repository index..."
     cd "$REPO_DIR"
-    dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz
-    echo "Repository index created"
+
+    # Create directory conf and override file
+    mkdir -p "$REPO_DIR/conf"
+    if [ ! -f "$REPO_DIR/conf/override" ]; then
+        cat > "$REPO_DIR/conf/override" << EOF
+caos-php optional php
+caos-php-8.0 optional php
+caos-php-8.1 optional php
+caos-php-8.2 optional php
+caos-php-8.3 optional php
+caos-php-8.4 optional php
+EOF
+        echo "Created override file: $REPO_DIR/conf/override"
+    fi
+
+    # Use dpkg-scanpackages with override file
+    dpkg-scanpackages --multiversion . "$REPO_DIR/conf/override" > Packages
+    gzip -k -f Packages
+
+    # Create complete Release file
+    cat > Release << EOF
+Origin: CAOS Repository
+Label: CAOS
+Suite: stable
+Codename: caos
+Version: 1.0
+Architectures: amd64
+Components: main
+Description: CAOS - High performance database access extension
+Date: $(date -Ru)
+Acquire-By-Hash: no
+No-Support-for-Architecture-all: false
+EOF
+
+    # Create empty Release.gpg file (signed optional)
+    touch Release.gpg
+
+    # Create empty translation files
+    mkdir -p "$REPO_DIR/i18n"
+    for lang in it_IT en_US en it; do
+        echo "# Empty translation file" > "$REPO_DIR/i18n/Translation-$lang"
+        echo "# Empty translation file" > "$REPO_DIR/i18n/Translation-$lang.gz"
+    done
+
+    echo "Repository index updated successfully"
+    echo ""
 
     # Create utility scripts
     create_update_repo_script
@@ -325,16 +369,58 @@ create_update_repo_script() {
 # Script to update local CAOS repository index
 
 REPO_DIR="/opt/caos/repository"
+CONF_DIR="$REPO_DIR/conf"
+OVERRIDE_FILE="$CONF_DIR/override"
 
 echo "Updating CAOS repository index..."
 
+# Create conf directory if it doesn't exist
+mkdir -p "$CONF_DIR"
+
+# Create override file if it doesn't exist
+if [ ! -f "$OVERRIDE_FILE" ]; then
+    cat > "$OVERRIDE_FILE" << OVERRIDE_CONTENT
+caos-php optional php
+caos-php-8.0 optional php
+caos-php-8.1 optional php
+caos-php-8.2 optional php
+caos-php-8.3 optional php
+caos-php-8.4 optional php
+OVERRIDE_CONTENT
+    echo "Created override file: $OVERRIDE_FILE"
+fi
+
 cd "$REPO_DIR" || exit 1
 
-# Regenerate index
-dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz
+# Remove GPG file
+rm -f Release.gpg InRelease
+
+dpkg-scanpackages --multiversion . "$OVERRIDE_FILE" > Packages
+gzip -k -f Packages
+
+# Create Release file without GPG references
+cat > Release << RELEASE_CONTENT
+Origin: CAOS Repository
+Label: CAOS
+Suite: stable
+Codename: caos
+Version: 1.0
+Architectures: amd64
+Components: main
+Description: CAOS - High performance database access extension
+Date: $(date -Ru)
+MD5Sum:
+ $(md5sum Packages | cut -d' ' -f1) $(stat -c %s Packages) Packages
+ $(md5sum Packages.gz | cut -d' ' -f1) $(stat -c %s Packages.gz) Packages.gz
+SHA256:
+ $(sha256sum Packages | cut -d' ' -f1) $(stat -c %s Packages) Packages
+ $(sha256sum Packages.gz | cut -d' ' -f1) $(stat -c %s Packages.gz) Packages.gz
+RELEASE_CONTENT
 
 if [ $? -eq 0 ]; then
     echo "Repository index updated successfully"
+    echo ""
+    echo "Packages in repository: $(grep "^Package:" Packages | wc -l)"
     echo ""
     echo "TIP: Now run: sudo apt update"
     echo "     to refresh APT cache"
@@ -354,6 +440,7 @@ create_setup_repo_script() {
 
 REPO_DIR="/opt/caos/repository"
 APT_SOURCE_FILE="/etc/apt/sources.list.d/caos-local.list"
+APT_PREFERENCES_FILE="/etc/apt/preferences.d/caos-local"
 
 if [ "$EUID" -ne 0 ]; then
     echo "ERROR: This script must be run as root (use sudo)"
@@ -373,11 +460,23 @@ if [ ! -f "$REPO_DIR/Packages.gz" ]; then
     exit 1
 fi
 
-# Create APT configuration file
+# Create APT source file without GPG verification
 echo "deb [trusted=yes] file:$REPO_DIR ./" > "$APT_SOURCE_FILE"
+
+# Create preferences file giving priority to local packages
+cat > "$APT_PREFERENCES_FILE" << PREFERENCES
+Package: *
+Pin: origin ""
+Pin-Priority: 1000
+
+Package: caos-php*
+Pin: origin ""
+Pin-Priority: 1001
+PREFERENCES
 
 if [ $? -eq 0 ]; then
     echo "APT source configured: $APT_SOURCE_FILE"
+    echo "APT preferences configured: $APT_PREFERENCES_FILE"
     echo ""
     echo "Updating APT cache..."
     apt update
@@ -388,7 +487,7 @@ if [ $? -eq 0 ]; then
     echo "     sudo apt install caos-php"
     echo "     sudo apt install caos-php-8.3"
 else
-    echo "ERROR: Failed to create APT source file"
+    echo "ERROR: Failed to create APT configuration"
     exit 1
 fi
 EOF
