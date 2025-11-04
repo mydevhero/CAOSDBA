@@ -14,6 +14,12 @@ configure_file(
 
 file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/libcaos")
 
+add_custom_target(increment_build ALL
+  COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/increment_build_counter.cmake
+  BYPRODUCTS "${CMAKE_BINARY_DIR}/build_counter.txt"
+  COMMENT "Incrementing build counter"
+)
+
 # configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_BINARY_DIR}/${PROJECT_NAME}/config.hpp)
 
 if(CAOS_DB_BACKEND STREQUAL "POSTGRESQL")
