@@ -15,16 +15,19 @@ def parse_definitions(file_path):
 
             # Split by pipe
             parts = [part.strip() for part in line.split('|')]
-            if len(parts) != 4:
-                print(f"Warning: Line {line_num} malformed, expected 4 fields, got {len(parts)}: {line}")
+            if len(parts) != 7:
+                print(f"Warning: Line {line_num} malformed, expected 7 fields, got {len(parts)}: {line}")
                 continue
 
-            return_type, method_name, full_params, call_params = parts
+            return_type, method_name, full_params, call_params, auth_type, env_var_name, key_behavior = parts
             queries.append({
                 'return_type': return_type,
                 'method_name': method_name,
                 'full_params': full_params,
-                'call_params': call_params
+                'call_params': call_params,
+                'auth_type': auth_type,
+                'env_var_name': env_var_name,
+                'key_behavior': key_behavior
             })
 
     return queries
@@ -115,6 +118,58 @@ def generate_database_forwarding(queries):
     lines.append("#endif // DATABASE_QUERY_FORWARDING_HPP")
     return '\n'.join(lines)
 
+def generate_auth_config(queries):
+    """Generate authentication configuration"""
+    lines = []
+    lines.append("// Auto-generated file - DO NOT EDIT MANUALLY")
+    lines.append("#ifndef AUTH_CONFIG_HPP")
+    lines.append("#define AUTH_CONFIG_HPP")
+    lines.append("")
+    lines.append("#include <string>")
+    lines.append("#include <unordered_map>")
+    lines.append("#include <array>")
+    lines.append("")
+    lines.append("enum class AuthType { TOKEN };")
+    lines.append("")
+    lines.append("struct AuthConfig {")
+    lines.append("    AuthType type;")
+    lines.append("    std::string envVar;")
+    lines.append("};")
+    lines.append("")
+
+    # Generate AutoToken array
+    auto_token_vars = []
+    for query in queries:
+        if query['auth_type'] == 'TOKEN' and query['key_behavior'] == 'AUTO':
+            auto_token_vars.append(query['env_var_name'])
+
+    if auto_token_vars:
+        lines.append(f"static constexpr std::array<const char*, {len(auto_token_vars)}> AutoToken = {{")
+        for i, env_var in enumerate(auto_token_vars):
+            line = f'    "{env_var}"'
+            if i < len(auto_token_vars) - 1:
+                line += ","
+            lines.append(line)
+        lines.append("};")
+        lines.append("")
+
+    # Generate QUERY_AUTH_MAP
+    lines.append("static std::unordered_map<std::string, AuthConfig> QUERY_AUTH_MAP = {")
+
+    for i, query in enumerate(queries):
+        if query['auth_type']:  # Only add if auth_type is specified
+            auth_type_enum = f"AuthType::{query['auth_type']}"
+            env_var = query['env_var_name']
+            line = f'    {{"{query["method_name"]}", {{{auth_type_enum}, "{env_var}"}}}}'
+            if i < len(queries) - 1:
+                line += ","
+            lines.append(line)
+
+    lines.append("};")
+    lines.append("")
+    lines.append("#endif // AUTH_CONFIG_HPP")
+    return '\n'.join(lines)
+
 def main():
     parser = argparse.ArgumentParser(description='Generate query interfaces from definitions')
     parser.add_argument('--definitions', required=True, help='Query definitions file')
@@ -134,6 +189,10 @@ def main():
 
     print(f"Found {len(queries)} queries to generate")
 
+    # Count auto tokens
+    auto_tokens = [q for q in queries if q['auth_type'] == 'TOKEN' and q['key_behavior'] == 'AUTO']
+    print(f"Found {len(auto_tokens)} auto-generated tokens")
+
     # Create output directory
     output_dir = Path(args.output_dir)
     output_dir.mkdir(exist_ok=True)
@@ -143,6 +202,7 @@ def main():
     (output_dir / "Query_Override.hpp").write_text(generate_query_override(queries))
     (output_dir / "Cache_Query_Forwarding.hpp").write_text(generate_cache_forwarding(queries))
     (output_dir / "Database_Query_Forwarding.hpp").write_text(generate_database_forwarding(queries))
+    (output_dir / "AuthConfig.hpp").write_text(generate_auth_config(queries))
 
     print(f"Files generated in: {output_dir}")
     return 0
