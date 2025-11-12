@@ -22,6 +22,7 @@
 
 #include <libcaos/config.hpp>
 #include <terminal_options.hpp>
+#include <Filter.hpp>
 
 #include "IRepository.hpp"
 #include "Cache/Cache.hpp"

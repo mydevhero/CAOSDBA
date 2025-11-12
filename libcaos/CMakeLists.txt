@@ -6,21 +6,13 @@ project(libcaos VERSION ${PROJECT_VERSION} LANGUAGES CXX)
 
 include_directories("${CMAKE_BINARY_DIR}")
 
-configure_file(
-  "${CMAKE_CURRENT_SOURCE_DIR}/version.h.in"
-  "${CMAKE_CURRENT_BINARY_DIR}/version.hpp"
-  @ONLY
-)
-
 file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/libcaos")
 
 add_custom_target(increment_build ALL
-  COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/increment_build_counter.cmake
+  COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/build_counter_and_version.cmake
   BYPRODUCTS "${CMAKE_BINARY_DIR}/build_counter.txt"
   COMMENT "Incrementing build counter"
 )
-
-# configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_BINARY_DIR}/${PROJECT_NAME}/config.hpp)
 
 if(CAOS_DB_BACKEND STREQUAL "POSTGRESQL")
   list(APPEND POSTGRESQL_SOURCES
@@ -71,8 +63,16 @@ if(CAOS_USE_CACHE)
 endif()
 
 add_library(${PROJECT_NAME} STATIC ${PROJECT_NAME}.cpp
+  config_validation.hpp
+  logo.hpp
+  common.hpp
+
   terminal_options.cpp
   include/terminal_options.hpp
+  include/Filter.hpp
+  include/Filter/Auth.hpp
+  include/Filter/Auth/Token.hpp
+
   Middleware/Repository/Exception.hpp
   Middleware/Repository/IRepository.hpp
   Middleware/Repository.hpp
@@ -86,9 +86,6 @@ add_library(${PROJECT_NAME} STATIC ${PROJECT_NAME}.cpp
   ${CROWCPP_SOURCES}
   ${CACHE_SOURCES}
   ${REDIS_SOURCES}
-  config_validation.hpp
-  logo.hpp
-  common.hpp
 )
 include(cmake/compiler.cmake)
 include(cmake/query_code_generation.cmake)
@@ -167,6 +164,9 @@ if(CAOS_USE_CACHE)
 endif()
 # --------------------------------------------------------------------------------------------------
 
+if(CAOS_BUILD_PHP_EXTENSION)
+  target_compile_definitions(${PROJECT_NAME} PUBLIC CAOS_BUILD_PHP_EXTENSION)
+endif()
 
 
 # --------------------------------------------------------------------------------------------------
