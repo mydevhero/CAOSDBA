@@ -62,8 +62,6 @@ if(CAOS_BUILD_EXTENSIONS)
   set(CAOS_BUILD_NODE_EXTENSION   "CAOS build node.js extension"  ON)
   set(CAOS_BUILD_PYTHON_EXTENSION "CAOS build node.js extension"  ON)
 
-
-
   add_subdirectory(extensions)
 
 endif()

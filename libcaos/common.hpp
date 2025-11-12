@@ -19,7 +19,7 @@
  */
 
 #pragma once
-#include <libcaos/version.hpp>
+#include <libcaos/build_info.h>
 #include <thread>
 #include <stdexcept>
 #include <memory>
@@ -44,7 +44,8 @@ enum class initFlags:std::uint8_t {
   None        = 0,
   Repository  = 1 << 0,
   CrowCpp     = 1 << 1,
-  All         = Repository | CrowCpp
+  PHP_EXT     = 1 << 2,
+  All         = Repository | CrowCpp | PHP_EXT
 };
 
 
