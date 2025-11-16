@@ -1,21 +1,6 @@
-[submodule "libcaos/vendor/fmt"]
-	path = libcaos/vendor/fmt
-	url = https://github.com/fmtlib/fmt.git
-[submodule "libcaos/vendor/spdlog"]
-	path = libcaos/vendor/spdlog
-	url = https://github.com/gabime/spdlog.git
 [submodule "libcaos/vendor/crow"]
 	path = libcaos/vendor/crow
 	url = https://github.com/CrowCpp/Crow.git
-[submodule "libcaos/vendor/postgres"]
-	path = libcaos/vendor/postgres
-	url = https://github.com/postgres/postgres.git
-[submodule "libcaos/vendor/libpqxx"]
-	path = libcaos/vendor/libpqxx
-	url = https://github.com/jtv/libpqxx.git
-[submodule "libcaos/vendor/hiredis"]
-	path = libcaos/vendor/hiredis
-	url = https://github.com/redis/hiredis.git
 [submodule "libcaos/vendor/redis-plus-plus"]
 	path = libcaos/vendor/redis-plus-plus
 	url = https://github.com/sewenew/redis-plus-plus.git
