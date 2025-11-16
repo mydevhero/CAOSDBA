@@ -60,7 +60,7 @@ if(CAOS_BUILD_EXTENSIONS)
   set(CAOS_BUILD_PHP_EXTENSION    "CAOS build php extension"      ON)
   set(CAOS_BUILD_PHP_PACKAGE_DEB  "CAOS build php package Debian" ON)
   set(CAOS_BUILD_NODE_EXTENSION   "CAOS build node.js extension"  ON)
-  set(CAOS_BUILD_PYTHON_EXTENSION "CAOS build node.js extension"  ON)
+  set(CAOS_BUILD_PYTHON_EXTENSION "CAOS build python extension"   ON)
 
   add_subdirectory(extensions)
 
@@ -70,7 +70,7 @@ endif()
 
 
 # Select CAOS_DB_BACKEND +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-set(CAOS_DB_BACKEND "POSTGRESQL" CACHE STRING "Database backend to use for CAOS." )
+set(CAOS_DB_BACKEND "MYSQL" CACHE STRING "Database backend to use for CAOS." )
 set_property(CACHE CAOS_DB_BACKEND PROPERTY STRINGS
   "POSTGRESQL"
   "MYSQL"
