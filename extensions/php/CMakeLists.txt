@@ -86,14 +86,22 @@ else()
     if(CAOS_BUILD_PHP_PACKAGE_DEB)
       if(CAOS_BUILD_PHP_EXTENSION)
         add_custom_target(php_package_deb
-          COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/scripts/create_package_deb.sh
-          DEPENDS caos_php
+          COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/scripts/create_package_deb.sh ${CAOS_DB_BACKEND}
+          DEPENDS libcaos caos_php
           WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-          COMMENT "Building DEB package for PHP extension"
+          COMMENT "Building DEB package for PHP extension with ${CAOS_DB_BACKEND} backend"
         )
       endif()
     endif()
 
+    if(CAOS_BUILD_PHP_EXTENSION)
+      add_custom_target(php_distribution_tarball
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/scripts/create_distribution_tarball.sh ${CAOS_DB_BACKEND}
+        DEPENDS php_package_deb
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMENT "Creating distribution tarball with ${CAOS_DB_BACKEND} backend"
+      )
+    endif()
 
   else()
     message(FATAL_ERROR "
