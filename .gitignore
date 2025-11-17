@@ -2,6 +2,7 @@
 # ----------------------------------------------------------------------------
 
 build/*
+dist/*
 docs
 libcaos/vendor/prebuilt/*
 !libcaos/vendor/prebuilt/.gitkeep
