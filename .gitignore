@@ -4,6 +4,9 @@
 build/*
 dist/*
 docs
+libcaos/cmake/*_from_source.cmake
+libcaos/cmake/*.old
+libcaos/vendor/build-scripts/*.old
 libcaos/vendor/prebuilt/*
 !libcaos/vendor/prebuilt/.gitkeep
 # qtcreator generated files
