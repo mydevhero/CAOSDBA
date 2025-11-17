@@ -4,3 +4,9 @@
 [submodule "libcaos/vendor/redis-plus-plus"]
 	path = libcaos/vendor/redis-plus-plus
 	url = https://github.com/sewenew/redis-plus-plus.git
+[submodule "libcaos/vendor/libpqxx"]
+	path = libcaos/vendor/libpqxx
+	url = https://github.com/jtv/libpqxx.git
+[submodule "libcaos/vendor/postgres"]
+	path = libcaos/vendor/postgres
+	url = https://github.com/postgres/postgres.git

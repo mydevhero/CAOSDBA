@@ -1,152 +1,113 @@
 target_compile_definitions(${PROJECT_NAME} PUBLIC CAOS_USE_DB_POSTGRESQL)
 
 # --------------------------------------------------------------------------------------------------
-# 1. FIND SYSTEM POSTGRESQL LIBPQ LIBRARY
+# 1. DETECT OR BUILD POSTGRESQL
 # --------------------------------------------------------------------------------------------------
-message(STATUS "Looking for PostgreSQL libpq library on the system...")
+set(PG_PREBUILT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vendor/prebuilt/")
+set(PG_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vendor/postgres")
 
-# Prova a trovare con CMake
-find_package(PostgreSQL QUIET)
-
-# Se non trovato con CMake, prova con pkg-config
-if(NOT PostgreSQL_FOUND)
-    pkg_check_modules(LIBPQ QUIET libpq)
-    if(LIBPQ_FOUND)
-        message(STATUS "Found libpq via pkg-config")
-        set(PostgreSQL_FOUND TRUE)
-        set(PostgreSQL_INCLUDE_DIRS ${LIBPQ_INCLUDE_DIRS})
-        set(PostgreSQL_LIBRARY_DIRS ${LIBPQ_LIBRARY_DIRS})
-    endif()
-endif()
-
-if(PostgreSQL_FOUND)
-    message(STATUS "Using system PostgreSQL libpq library")
-
-    # Crea target importato per libpq
-    add_library(libpq INTERFACE IMPORTED)
-    if(TARGET PostgreSQL::PostgreSQL)
-        # Se CMake fornisce un target importato
-        set_target_properties(libpq PROPERTIES
-            INTERFACE_LINK_LIBRARIES "PostgreSQL::PostgreSQL"
-        )
-    elseif(LIBPQ_FOUND)
-        # Se trovato via pkg-config
-        set_target_properties(libpq PROPERTIES
-            INTERFACE_LINK_LIBRARIES "${LIBPQ_LINK_LIBRARIES}"
-            INTERFACE_INCLUDE_DIRECTORIES "${LIBPQ_INCLUDE_DIRS}"
-            INTERFACE_COMPILE_OPTIONS "${LIBPQ_CFLAGS_OTHER}"
-        )
-    else()
-        # Fallback generico
-        set_target_properties(libpq PROPERTIES
-            INTERFACE_LINK_LIBRARIES "pq"
-        )
-    endif()
-
+if(EXISTS ${PG_PREBUILT_DIR}/postgres/lib/libpq.a)
+  message(STATUS "Using pre-built PostgreSQL libraries")
+  set(PG_INSTALL_DIR ${PG_PREBUILT_DIR}/postgres)
 else()
-    message(FATAL_ERROR "\n"
-        "===========================================================================\n"
-        "POSTGRESQL LIBPQ LIBRARY NOT FOUND\n"
-        "===========================================================================\n"
-        "PostgreSQL libpq library is required but was not found on your system.\n\n"
-        "Please install PostgreSQL development packages using one of the following methods:\n\n"
-        "Ubuntu/Debian:\n"
-        "    sudo apt-get install libpq-dev postgresql-server-dev-all\n\n"
-        "RedHat/Fedora/CentOS:\n"
-        "    sudo dnf install libpq-devel postgresql-devel\n"
-        "    # or for older versions:\n"
-        "    sudo yum install libpq-devel postgresql-devel\n\n"
-        "Arch Linux:\n"
-        "    sudo pacman -S postgresql-libs\n\n"
-        "macOS (Homebrew):\n"
-        "    brew install postgresql\n\n"
-        "Windows (vcpkg):\n"
-        "    vcpkg install libpq\n\n"
-        "From source:\n"
-        "    Download from: https://www.postgresql.org/download/\n\n"
-        "After installation, run CMake again.\n"
-        "===========================================================================\n"
-    )
+  message(STATUS "Building PostgreSQL from submodule...")
+
+  execute_process(
+    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/vendor/build-scripts/build_postgres.sh
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    RESULT_VARIABLE pg_build_result
+  )
+
+  if(NOT pg_build_result EQUAL 0)
+    message(FATAL_ERROR "PostgreSQL build failed")
+  endif()
+
+  set(PG_INSTALL_DIR "${CMAKE_BINARY_DIR}/postgres-install")
 endif()
 
 # --------------------------------------------------------------------------------------------------
-# 2. FIND SYSTEM LIBPQXX LIBRARY
+# 2. DETECT OR BUILD LIBPQXX
 # --------------------------------------------------------------------------------------------------
-message(STATUS "Looking for libpqxx library on the system...")
+set(PQXX_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vendor/libpqxx")
 
-# Prova a trovare con CMake
-find_package(libpqxx QUIET)
-
-# Se non trovato con CMake, prova con pkg-config
-if(NOT libpqxx_FOUND)
-    pkg_check_modules(LIBPQXX QUIET libpqxx)
-    if(LIBPQXX_FOUND)
-        message(STATUS "Found libpqxx via pkg-config (version: ${LIBPQXX_VERSION})")
-        set(libpqxx_FOUND TRUE)
-    endif()
-endif()
-
-if(libpqxx_FOUND)
-    message(STATUS "Using system libpqxx library")
-
-    # Crea target importato per libpqxx
-    add_library(pqxx INTERFACE IMPORTED)
-    if(TARGET libpqxx::pqxx)
-        # Se CMake fornisce un target importato
-        set_target_properties(pqxx PROPERTIES
-            INTERFACE_LINK_LIBRARIES "libpqxx::pqxx"
-        )
-    elseif(LIBPQXX_FOUND)
-        # Se trovato via pkg-config
-        set_target_properties(pqxx PROPERTIES
-            INTERFACE_LINK_LIBRARIES "${LIBPQXX_LINK_LIBRARIES}"
-            INTERFACE_INCLUDE_DIRECTORIES "${LIBPQXX_INCLUDE_DIRS}"
-            INTERFACE_COMPILE_OPTIONS "${LIBPQXX_CFLAGS_OTHER}"
-        )
-    else()
-        # Fallback generico
-        set_target_properties(pqxx PROPERTIES
-            INTERFACE_LINK_LIBRARIES "pqxx"
-        )
-    endif()
-
-    # Assicurati che libpqxx linki con libpq
-    set_target_properties(pqxx PROPERTIES
-        INTERFACE_LINK_LIBRARIES "libpq"
-    )
-
+if(EXISTS ${PG_PREBUILT_DIR}/libpqxx/lib/libpqxx.a)
+  message(STATUS "Using pre-built libpqxx")
+  set(PQXX_INSTALL_DIR ${PG_PREBUILT_DIR}/libpqxx)
 else()
-    message(FATAL_ERROR "\n"
-        "===========================================================================\n"
-        "LIBPQXX LIBRARY NOT FOUND\n"
-        "===========================================================================\n"
-        "libpqxx library is required but was not found on your system.\n\n"
-        "Please install libpqxx using one of the following methods:\n\n"
-        "Ubuntu/Debian:\n"
-        "    sudo apt-get install libpqxx-dev\n\n"
-        "RedHat/Fedora/CentOS:\n"
-        "    sudo dnf install libpqxx-devel\n"
-        "    # or for EPEL:\n"
-        "    sudo dnf install epel-release && sudo dnf install libpqxx-devel\n\n"
-        "Arch Linux:\n"
-        "    sudo pacman -S libpqxx\n\n"
-        "macOS (Homebrew):\n"
-        "    brew install libpqxx\n\n"
-        "Windows (vcpkg):\n"
-        "    vcpkg install libpqxx\n\n"
-        "From source:\n"
-        "    git clone https://github.com/jtv/libpqxx.git\n"
-        "    cd libpqxx && mkdir build && cd build\n"
-        "    cmake .. && make && sudo make install\n\n"
-        "Note: libpqxx requires PostgreSQL libpq to be installed first.\n"
-        "After installation, run CMake again.\n"
-        "===========================================================================\n"
-    )
+  message(STATUS "Building libpqxx from submodule...")
+
+  execute_process(
+    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/vendor/build-scripts/build_libpqxx.sh ${PG_INSTALL_DIR}
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    RESULT_VARIABLE pqxx_build_result
+  )
+
+  if(NOT pqxx_build_result EQUAL 0)
+    message(FATAL_ERROR "libpqxx build failed")
+  endif()
+
+  set(PQXX_INSTALL_DIR "${CMAKE_BINARY_DIR}/libpqxx-install")
 endif()
 
-# --------------------------------------------------------------------------------------------------
-# 3. LINK ALL
-# --------------------------------------------------------------------------------------------------
-target_link_libraries(${PROJECT_NAME} PRIVATE pqxx libpq)
 
-message(STATUS "PostgreSQL+libpqxx setup complete using system libraries")
+# libpq
+add_library(libpq STATIC IMPORTED GLOBAL)
+set_target_properties(libpq PROPERTIES
+  IMPORTED_LOCATION ${PG_INSTALL_DIR}/lib/libpq.a
+  INTERFACE_INCLUDE_DIRECTORIES ${PG_INSTALL_DIR}/include
+)
+
+# libpgcommon
+add_library(pgcommon STATIC IMPORTED GLOBAL)
+set_target_properties(pgcommon PROPERTIES
+    IMPORTED_LOCATION ${PG_INSTALL_DIR}/lib/libpgcommon.a
+)
+
+# libpgcommon_shlib
+add_library(pgcommon_shlib STATIC IMPORTED GLOBAL)
+set_target_properties(pgcommon_shlib PROPERTIES
+    IMPORTED_LOCATION ${PG_INSTALL_DIR}/lib/libpgcommon_shlib.a
+)
+
+# libpgport
+add_library(pgport STATIC IMPORTED GLOBAL)
+set_target_properties(pgport PROPERTIES
+    IMPORTED_LOCATION ${PG_INSTALL_DIR}/lib/libpgport.a
+)
+
+# libpgport_shlib
+add_library(pgport_shlib STATIC IMPORTED GLOBAL)
+set_target_properties(pgport_shlib PROPERTIES
+    IMPORTED_LOCATION ${PG_INSTALL_DIR}/lib/libpgport_shlib.a
+)
+
+add_library(pqxx STATIC IMPORTED GLOBAL)
+set_target_properties(pqxx PROPERTIES
+    IMPORTED_LOCATION ${PQXX_INSTALL_DIR}/lib/libpqxx.a
+    INTERFACE_INCLUDE_DIRECTORIES ${PQXX_INSTALL_DIR}/include
+    INTERFACE_LINK_LIBRARIES
+        libpq
+        pgcommon
+        pgport
+        pgcommon_shlib
+        pgport_shlib
+)
+
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${PG_INSTALL_DIR}/include
+    ${PQXX_INSTALL_DIR}/include
+)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    pqxx
+    libpq
+    pgcommon
+    pgport
+    pgcommon_shlib
+    pgport_shlib
+)
+
+
+
+
+message(STATUS "PostgreSQL+libpqxx setup complete")

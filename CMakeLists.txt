@@ -53,24 +53,8 @@ set(CAOS_BUILD_EXTENSIONS    "CAOS build bindings extension"  ON)
 # option(CAOS_CHECK_COVERAGE  "CAOS check coverage" OFF)
 
 
-
-# EXTENSIONS +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-if(CAOS_BUILD_EXTENSIONS)
-  set(CMAKE_POSITION_INDEPENDENT_CODE                             ON)
-  set(CAOS_BUILD_PHP_EXTENSION    "CAOS build php extension"      ON)
-  set(CAOS_BUILD_PHP_PACKAGE_DEB  "CAOS build php package Debian" ON)
-  set(CAOS_BUILD_NODE_EXTENSION   "CAOS build node.js extension"  ON)
-  set(CAOS_BUILD_PYTHON_EXTENSION "CAOS build python extension"   ON)
-
-  add_subdirectory(extensions)
-
-endif()
-# EXTENSIONS ---------------------------------------------------------------------------------------
-
-
-
 # Select CAOS_DB_BACKEND +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-set(CAOS_DB_BACKEND "MYSQL" CACHE STRING "Database backend to use for CAOS." )
+set(CAOS_DB_BACKEND "POSTGRESQL" CACHE STRING "Database backend to use for CAOS." )
 set_property(CACHE CAOS_DB_BACKEND PROPERTY STRINGS
   "POSTGRESQL"
   "MYSQL"
@@ -91,6 +75,17 @@ endif()
 # Select CAOS_USE_CACHE ----------------------------------------------------------------------------
 
 
+# EXTENSIONS +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+if(CAOS_BUILD_EXTENSIONS)
+  set(CMAKE_POSITION_INDEPENDENT_CODE                             ON)
+  set(CAOS_BUILD_PHP_EXTENSION    "CAOS build php extension"      ON)
+  set(CAOS_BUILD_PHP_PACKAGE_DEB  "CAOS build php package Debian" ON)
+  set(CAOS_BUILD_NODE_EXTENSION   "CAOS build node.js extension"  ON)
+  set(CAOS_BUILD_PYTHON_EXTENSION "CAOS build python extension"   ON)
+endif()
+# EXTENSIONS ---------------------------------------------------------------------------------------
+
+
 # Add libcaos ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 add_subdirectory(libcaos)
 add_library(repoexception INTERFACE)
@@ -98,7 +93,11 @@ target_include_directories(repoexception INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/l
 target_link_libraries(repoexception INTERFACE libcaos)
 # Add libcaos --------------------------------------------------------------------------------------
 
-
+# EXTENSIONS +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+if(CAOS_BUILD_EXTENSIONS)
+  add_subdirectory(extensions)
+endif()
+# EXTENSIONS ---------------------------------------------------------------------------------------
 
 # Option CAOS_BUILD_EXAMPLES +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 if(CAOS_BUILD_EXAMPLES)

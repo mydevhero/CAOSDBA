@@ -1411,16 +1411,5 @@ Database::~Database()
   spdlog::info("Database destroyed");
 }
 
-std::optional<Database::ConnectionWrapper>  Database::acquire()                         { return this->pool->acquire(); }
-void                                        Database::releaseConnection(dboptuniqptr connection) {  this->pool->releaseConnection(connection); }
-
-
-
-
-
-
-
-
-
-
-
+std::optional<Database::ConnectionWrapper>  Database::acquire()                                 { return this->pool->acquire();               }
+void                                        Database::releaseConnection(dboptuniqptr connection){ this->pool->releaseConnection(connection);  }
