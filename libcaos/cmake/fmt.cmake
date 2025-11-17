@@ -1,43 +1,45 @@
 # --------------------------------------------------------------------------------------------------
-# 1. DETECT OR BUILD FMT
+# 1. FIND SYSTEM FMT LIBRARY
 # --------------------------------------------------------------------------------------------------
-set(FMT_PREBUILT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vendor/prebuilt/fmt")
-set(FMT_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vendor/fmt")
+message(STATUS "Looking for fmt library on the system...")
 
-if(EXISTS ${FMT_PREBUILT_DIR}/include/fmt/format.h)
-  message(STATUS "Using pre-built fmt")
+# Cerca il pacchetto fmt usando CMake
+find_package(fmt QUIET)
 
-  message(STATUS "Using fmt via add_subdirectory for CMake compatibility")
-  add_subdirectory(${FMT_SOURCE_DIR})
+if(fmt_FOUND)
+  message(STATUS "Using system fmt library (version: ${fmt_VERSION})")
+
+  # --------------------------------------------------------------------------------------------------
+  # 2. LINK
+  # --------------------------------------------------------------------------------------------------
+  target_link_libraries(${PROJECT_NAME} PRIVATE fmt::fmt)
 
 else()
-  message(STATUS "Building fmt from submodule...")
-
-  execute_process(
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/vendor/build-scripts/build_fmt.sh
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    RESULT_VARIABLE fmt_build_result
-  )
-
-  if(NOT fmt_build_result EQUAL 0)
-    message(FATAL_ERROR "fmt build failed")
-  endif()
-
-  add_subdirectory(${FMT_SOURCE_DIR})
-endif()
-
-# --------------------------------------------------------------------------------------------------
-# 2. LINK
-# --------------------------------------------------------------------------------------------------
-target_link_libraries(${PROJECT_NAME} PRIVATE fmt::fmt)
-
-# --------------------------------------------------------------------------------------------------
-# 3. Build prebuilt
-# --------------------------------------------------------------------------------------------------
-if(NOT EXISTS ${FMT_PREBUILT_DIR}/include/fmt/format.h)
-  message(STATUS "Creating fmt prebuilt libraries...")
-  execute_process(
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/vendor/build-scripts/build_fmt.sh
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+  # Se fmt non è trovato, fornisce istruzioni chiare
+  message(FATAL_ERROR "\n"
+    "===========================================================================\n"
+    "FMT LIBRARY NOT FOUND\n"
+    "===========================================================================\n"
+    "The fmt library is required but was not found on your system.\n\n"
+    "Please install fmt using one of the following methods:\n\n"
+    "Ubuntu/Debian:\n"
+    "    sudo apt-get install libfmt-dev\n\n"
+    "Fedora/RHEL/CentOS:\n"
+    "    sudo dnf install fmt-devel\n"
+    "    # or for older versions:\n"
+    "    sudo yum install fmt-devel\n\n"
+    "Arch Linux:\n"
+    "    sudo pacman -S fmt\n\n"
+    "macOS (Homebrew):\n"
+    "    brew install fmt\n\n"
+    "Windows (vcpkg):\n"
+    "    vcpkg install fmt\n\n"
+    "From source:\n"
+    "    git clone https://github.com/fmtlib/fmt.git\n"
+    "    cd fmt && mkdir build && cd build\n"
+    "    cmake .. && make && sudo make install\n\n"
+    "Alternatively, you can set the FMT_ROOT environment variable to point\n"
+    "to a custom installation directory.\n"
+    "===========================================================================\n"
   )
 endif()
