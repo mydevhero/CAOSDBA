@@ -64,13 +64,6 @@ else()
     "Please install hiredis using one of the following methods:\n\n"
     "Ubuntu/Debian:\n"
     "    sudo apt-get install libhiredis-dev\n\n"
-    "RedHat/Fedora/CentOS:\n"
-    "    sudo dnf install hiredis-devel\n\n"
-    "Arch Linux:\n"
-    "    sudo pacman -S hiredis\n\n"
-    "macOS (Homebrew):\n"
-    "    brew install hiredis\n\n"
-    "After installation, run CMake again.\n"
     "===========================================================================\n"
   )
 endif()

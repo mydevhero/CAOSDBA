@@ -20,7 +20,7 @@ fi
 
 echo "Creating DEB packages tarball"
 echo "Version: $VERSION"
-echo "Database backend: $DB_BACKEND"
+echo "Database backend: $DB_BACKEND_LOWER"
 
 check_prerequisites() {
     # Check if repository was created in dist directory
@@ -67,6 +67,15 @@ create_tarball_structure() {
         exit 1
     fi
 
+    # Copy README.md from dist directory
+    if [ -f "$DIST_DIR/README.md" ]; then
+        echo "Copying README.md from $DIST_DIR"
+        cp "$DIST_DIR/README.md" "$temp_dir$CAOS_OPT_DIR/"
+    else
+        echo "ERROR: $DIST_DIR/README.md not found"
+        exit 1
+    fi
+
     # Copy ENV.md from dist directory
     if [ -f "$DIST_DIR/ENV.md" ]; then
         echo "Copying ENV.md from $DIST_DIR"
@@ -100,17 +109,17 @@ create_tarball_structure() {
 create_install_script() {
     local temp_dir="$DIST_DIR/temp_caos_deb"
 
-    cat > "$temp_dir$CAOS_OPT_DIR/install-repository.sh" << 'EOF'
+    cat > "$temp_dir$CAOS_OPT_DIR/install-repository.sh" << EOF
 #!/bin/bash
 # CAOS Repository Installation Script
 
 set -e
 
 CAOS_OPT_DIR="/opt/caos"
-REPO_DIR="$CAOS_OPT_DIR/repository"
+REPO_DIR="\$CAOS_OPT_DIR/repository"
 
 # Check if running as root
-if [ "$EUID" -ne 0 ]; then
+if [ "\$EUID" -ne 0 ]; then
     echo "ERROR: This script must be run as root (use sudo)"
     exit 1
 fi
@@ -120,21 +129,21 @@ echo "CAOS Repository Installation"
 echo "================================================================"
 
 # Verify we're in the correct location
-if [ ! -d "$REPO_DIR" ]; then
-    echo "ERROR: Repository directory not found: $REPO_DIR"
+if [ ! -d "\$REPO_DIR" ]; then
+    echo "ERROR: Repository directory not found: \$REPO_DIR"
     echo "Make sure the tarball was extracted to /opt/caos"
     exit 1
 fi
 
-echo "Setting up CAOS repository from $REPO_DIR"
+echo "Setting up CAOS repository from \$REPO_DIR"
 
 # Update repository index
 echo "Updating repository index..."
-cd "$REPO_DIR"
+cd "\$REPO_DIR"
 if [ -f "./update-repo.sh" ]; then
     ./update-repo.sh
 else
-    echo "ERROR: update-repo.sh not found in $REPO_DIR"
+    echo "ERROR: update-repo.sh not found in \$REPO_DIR"
     exit 1
 fi
 
@@ -143,7 +152,7 @@ echo "Configuring APT repository..."
 if [ -f "./setup-apt-source.sh" ]; then
     ./setup-apt-source.sh
 else
-    echo "ERROR: setup-apt-source.sh not found in $REPO_DIR"
+    echo "ERROR: setup-apt-source.sh not found in \$REPO_DIR"
     exit 1
 fi
 
@@ -153,12 +162,12 @@ echo "CAOS Repository Installation Completed"
 echo "================================================================"
 echo ""
 echo "You can now install CAOS packages:"
-echo "  sudo apt install caos-php-mysql"
+echo "  sudo apt install caos-php-${DB_BACKEND_LOWER}"
 echo ""
 echo "Or for specific PHP version:"
-echo "  sudo apt install caos-php-mysql-8.3"
+echo "  sudo apt install caos-php-${DB_BACKEND_LOWER}-8.3"
 echo ""
-echo "Repository location: $REPO_DIR"
+echo "Repository location: \$REPO_DIR"
 echo ""
 EOF
 
@@ -168,9 +177,9 @@ EOF
 }
 
 create_readme() {
-    local temp_dir="$DIST_DIR/temp_caos_deb"
+    local readme_file="$DIST_DIR/README.md"
 
-    cat > "$temp_dir$CAOS_OPT_DIR/README.md" << EOF
+    cat > "$readme_file" << EOF
 # CAOS DEB Packages Repository
 
 Version: $VERSION
@@ -407,7 +416,6 @@ export CAOS_DBCONNECT_TIMEOUT="30"
 ### Docker/Container Environment
 
 ```bash
-
 # Set in your Dockerfile or docker-compose.yml
 ENV CAOS_CACHEHOST=redis
 ENV CAOS_CACHEPORT=6379
@@ -434,22 +442,14 @@ EOF
 }
 
 
-
-
-
-
-
-
-
-
 main() {
     echo "Starting DEB repository tarball creation..."
 
     check_prerequisites
-    create_tarball_structure
     create_install_script
     create_readme
     create_env_documentation
+    create_tarball_structure
     create_tarball
     create_deployment_readme
 

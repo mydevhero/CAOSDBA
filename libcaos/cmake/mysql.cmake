@@ -112,14 +112,9 @@ else()
         "MYSQL CONNECTOR/C++ NOT FOUND\n"
         "===========================================================================\n"
         "MySQL Connector/C++ is required but was not found.\n\n"
-        "The error 'undefined reference to `sql::mysql::get_driver_instance()' means\n"
-        "the MySQL C++ connector library is missing.\n\n"
         "Install one of these packages:\n\n"
         "Ubuntu/Debian:\n"
         "    sudo apt-get install libmysqlcppconn-dev\n"
-        "RedHat/Fedora/CentOS:\n"
-        "    sudo dnf install mysql-connector-c++-devel\n\n"
-        "After installation, run CMake again.\n"
         "===========================================================================\n"
     )
 endif()

@@ -176,22 +176,61 @@ EOF
     chmod +x "$deb_dir/DEBIAN/prerm"
 }
 
+#create_control() {
+#    local deb_dir=$1
+#    local package_name=$2
+#    local php_version=$3
+#    local architecture="amd64"
+
+#    cat > "$deb_dir/DEBIAN/control" << EOF
+#Package: $package_name
+#Version: $VERSION
+#Architecture: $architecture
+#Maintainer: Alessandro Bianco <mydevhero@gmail.com>
+#Description: CAOS - Cache App On Steroids extension for PHP $php_version with $DB_BACKEND backend
+# High-performance database access extension (Cache App On Steroids).
+# Supports: CLI, FPM, Apache, Nginx for PHP $php_version with $DB_BACKEND backend.
+#Depends: php$php_version-common, libfmt-dev, libmysqlclient-dev, libmysqlcppconn-dev, libhiredis-dev, libspdlog-dev, caos-php-${DB_BACKEND_LOWER}
+#Recommends: php$php_version-fpm | libapache2-mod-php$php_version
+#Section: php
+#Priority: optional
+#EOF
+#}
+
 create_control() {
     local deb_dir=$1
     local package_name=$2
     local php_version=$3
     local architecture="amd64"
 
+    # Dipendenze comuni a tutti i backend
+    local common_depends="php${php_version}-common, libfmt-dev, libhiredis-dev, libspdlog-dev, caos-php-${DB_BACKEND_LOWER}"
+
+    case "${DB_BACKEND_LOWER}" in
+        "mysql")
+            common_depends="$common_depends, libmysqlclient-dev, libmysqlcppconn-dev"
+            ;;
+        "mariadb")
+#            common_depends="$common_depends, libmariadb-dev"
+            ;;
+        "postgresql")
+#            common_depends="$common_depends, libpq-dev, libpqxx-dev"
+            ;;
+        *)
+            ;;
+    esac
+
     cat > "$deb_dir/DEBIAN/control" << EOF
 Package: $package_name
 Version: $VERSION
 Architecture: $architecture
 Maintainer: Alessandro Bianco <mydevhero@gmail.com>
-Description: CAOS - Cache App On Steroids extension for PHP $php_version with $DB_BACKEND backend
+Description: CAOS - Cache App On Steroids extension for PHP $php_version with $DB_BACKEND_LOWER backend
  High-performance database access extension (Cache App On Steroids).
- Supports: CLI, FPM, Apache, Nginx for PHP $php_version with $DB_BACKEND backend.
-Depends: php$php_version-common, libfmt-dev, libmysqlclient-dev, libmysqlcppconn-dev, libhiredis-dev, libspdlog-dev, caos-php-${DB_BACKEND_LOWER}
+ Supports: CLI, FPM, Apache, Nginx for PHP $php_version with $DB_BACKEND_LOWER backend.
+Depends: $common_depends
 Recommends: php$php_version-fpm | libapache2-mod-php$php_version
+Conflicts: caos-php-mysql-$php_version, caos-php-postgresql-$php_version
 Section: php
 Priority: optional
 EOF
@@ -225,12 +264,74 @@ build_single_package() {
     return 0
 }
 
+#create_meta_package() {
+#    local deb_dir="$BUILD_DIR/deb-staging-meta"
+#    mkdir -p "$deb_dir/DEBIAN"
+
+#    echo "Creating meta-package with version: $VERSION"
+#    echo "Build counter: $CAOS_BUILD_COUNTER"
+
+#    # Il meta-pacchetto raccomanda i pacchetti specifici invece di dipendere da loro
+#    local recommends_clause=""
+#    for version in $PHP_VERSIONS; do
+#        pkg="caos-php-${DB_BACKEND_LOWER}-$version"
+#        recommends_clause="$recommends_clause$pkg (>= $VERSION), "
+#    done
+#    recommends_clause="${recommends_clause%, }"
+
+#    cat > "$deb_dir/DEBIAN/control" << EOF
+#Package: caos-php-${DB_BACKEND_LOWER}
+#Version: $VERSION
+#Architecture: all
+#Maintainer: Alessandro Bianco <mydevhero@gmail.com>
+#Description: CAOS - Cache App On Steroids PHP extension with $DB_BACKEND backend (metapackage)
+# High-performance database access extension (Cache App On Steroids).
+# This metapackage will install the appropriate version for your PHP.
+# Removing this metapackage will also remove the specific PHP version packages.
+#Depends: ${DB_BACKEND_LOWER}-common
+#Recommends: $recommends_clause
+#Section: php
+#Priority: optional
+#EOF
+
+#    echo "Building meta-package deb file..."
+#    dpkg-deb --build "$deb_dir" "$BUILD_DIR/caos-php-${DB_BACKEND_LOWER}_${VERSION}_all.deb"
+
+#    # Verifica che il file sia stato creato
+#    if [ -f "$BUILD_DIR/caos-php-${DB_BACKEND_LOWER}_${VERSION}_all.deb" ]; then
+#        echo "DEBUG: Meta-package successfully created: caos-php-${DB_BACKEND_LOWER}_${VERSION}_all.deb"
+#        ls -la "$BUILD_DIR/caos-php-${DB_BACKEND_LOWER}_${VERSION}_all.deb"
+#    else
+#        echo "DEBUG: ERROR - Meta-package file was not created!"
+#    fi
+
+#    rm -rf "$deb_dir"
+#    echo "Meta-package built: caos-php-${DB_BACKEND_LOWER}_${VERSION}_all.deb"
+#}
+
 create_meta_package() {
     local deb_dir="$BUILD_DIR/deb-staging-meta"
     mkdir -p "$deb_dir/DEBIAN"
 
     echo "Creating meta-package with version: $VERSION"
     echo "Build counter: $CAOS_BUILD_COUNTER"
+
+    # Dipendenze comuni per il meta-pacchetto (SOLO quelle non in conflitto)
+    local meta_common_depends="libfmt-dev, libhiredis-dev, libspdlog-dev"
+
+    case "${DB_BACKEND_LOWER}" in
+        "mysql")
+            meta_common_depends="$meta_common_depends, libmysqlclient-dev, libmysqlcppconn-dev"
+            ;;
+        "mariadb")
+#            meta_common_depends="$meta_common_depends, mariadb-common"
+            ;;
+        "postgresql")
+#            meta_common_depends="$meta_common_depends, postgresql-common, libpq-dev, libpqxx-dev"
+            ;;
+        *)
+            ;;
+    esac
 
     # Il meta-pacchetto raccomanda i pacchetti specifici invece di dipendere da loro
     local recommends_clause=""
@@ -245,12 +346,13 @@ Package: caos-php-${DB_BACKEND_LOWER}
 Version: $VERSION
 Architecture: all
 Maintainer: Alessandro Bianco <mydevhero@gmail.com>
-Description: CAOS - Cache App On Steroids PHP extension with $DB_BACKEND backend (metapackage)
+Description: CAOS - Cache App On Steroids PHP extension with $DB_BACKEND_LOWER backend (metapackage)
  High-performance database access extension (Cache App On Steroids).
  This metapackage will install the appropriate version for your PHP.
  Removing this metapackage will also remove the specific PHP version packages.
-Depends: ${DB_BACKEND_LOWER}-common
+Depends: $meta_common_depends
 Recommends: $recommends_clause
+Conflicts: caos-php-mysql, caos-php-postgresql
 Section: php
 Priority: optional
 EOF
@@ -290,6 +392,18 @@ caos-php-mysql-8.1 optional php
 caos-php-mysql-8.2 optional php
 caos-php-mysql-8.3 optional php
 caos-php-mysql-8.4 optional php
+caos-php-mariadb optional php
+caos-php-mariadb-8.0 optional php
+caos-php-mariadb-8.1 optional php
+caos-php-mariadb-8.2 optional php
+caos-php-mariadb-8.3 optional php
+caos-php-mariadb-8.4 optional php
+caos-php-postgresql optional php
+caos-php-postgresql-8.0 optional php
+caos-php-postgresql-8.1 optional php
+caos-php-postgresql-8.2 optional php
+caos-php-postgresql-8.3 optional php
+caos-php-postgresql-8.4 optional php
 OVERRIDE_CONTENT
     echo "Created override file: $OVERRIDE_FILE"
 fi
@@ -335,45 +449,45 @@ EOF
 }
 
 create_setup_repo_script() {
-    cat > "$REPO_DIR/setup-apt-source.sh" << 'EOF'
+    cat > "$REPO_DIR/setup-apt-source.sh" << EOF
 #!/bin/bash
 
-REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_DIR="\$(cd "\$(dirname "\$0")" && pwd)"
 APT_SOURCE_FILE="/etc/apt/sources.list.d/caos-local.list"
 APT_PREFERENCES_FILE="/etc/apt/preferences.d/caos-local"
 
-if [ "$EUID" -ne 0 ]; then
+if [ "\$EUID" -ne 0 ]; then
     echo "ERROR: This script must be run as root (use sudo)"
     exit 1
 fi
 
 echo "Setting up CAOS local repository for APT"
 
-if [ ! -d "$REPO_DIR" ]; then
-    echo "ERROR: Repository directory not found: $REPO_DIR"
+if [ ! -d "\$REPO_DIR" ]; then
+    echo "ERROR: Repository directory not found: \$REPO_DIR"
     exit 1
 fi
 
-if [ ! -f "$REPO_DIR/Packages.gz" ]; then
+if [ ! -f "\$REPO_DIR/Packages.gz" ]; then
     echo "ERROR: Repository index not found. Run: ./update-repo.sh first"
     exit 1
 fi
 
-echo "deb [trusted=yes] file:$REPO_DIR ./" > "$APT_SOURCE_FILE"
+echo "deb [trusted=yes] file:\$REPO_DIR ./" > "\$APT_SOURCE_FILE"
 
-cat > "$APT_PREFERENCES_FILE" << PREFERENCES
+cat > "\$APT_PREFERENCES_FILE" << PREFERENCES
 Package: *
 Pin: origin ""
 Pin-Priority: 1000
 
-Package: caos-php-mysql*
+Package: caos-php-${DB_BACKEND_LOWER}*
 Pin: origin ""
 Pin-Priority: 1001
 PREFERENCES
 
-if [ $? -eq 0 ]; then
-    echo "APT source configured: $APT_SOURCE_FILE"
-    echo "APT preferences configured: $APT_PREFERENCES_FILE"
+if [ \$? -eq 0 ]; then
+    echo "APT source configured: \$APT_SOURCE_FILE"
+    echo "APT preferences configured: \$APT_PREFERENCES_FILE"
     echo ""
     echo "Updating APT cache"
     apt update
@@ -381,10 +495,10 @@ if [ $? -eq 0 ]; then
     echo "Setup completed"
     echo ""
     echo "Install CAOS PHP extension:"
-    echo "sudo apt install caos-php-mysql"
+    echo "sudo apt install caos-php-${DB_BACKEND_LOWER}"
     echo ""
     echo "Or install for specific PHP version:"
-    echo "sudo apt install caos-php-mysql-8.3"
+    echo "sudo apt install caos-php-${DB_BACKEND_LOWER}-8.3"
 else
     echo "ERROR: Failed to create APT configuration"
     exit 1
@@ -394,16 +508,17 @@ EOF
     echo "Created: $REPO_DIR/setup-apt-source.sh"
 }
 
+
 create_install_repository_script() {
-    cat > "$DIST_DIR/install-repository.sh" << 'EOF'
+    cat > "$DIST_DIR/install-repository.sh" << EOF
 #!/bin/bash
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_DIR="$SCRIPT_DIR/repository"
+SCRIPT_DIR="\$(cd "\$(dirname "\$0")" && pwd)"
+REPO_DIR="\$SCRIPT_DIR/repository"
 
-if [ "$EUID" -ne 0 ]; then
+if [ "\$EUID" -ne 0 ]; then
     echo "ERROR: This script must be run as root (use sudo)"
     exit 1
 fi
@@ -412,20 +527,20 @@ echo "================================================================"
 echo "CAOS Repository Installation"
 echo "================================================================"
 
-if [ ! -d "$REPO_DIR" ]; then
-    echo "ERROR: Repository directory not found: $REPO_DIR"
+if [ ! -d "\$REPO_DIR" ]; then
+    echo "ERROR: Repository directory not found: \$REPO_DIR"
     echo "Make sure this script is in the same directory as the 'repository' folder"
     exit 1
 fi
 
-echo "Setting up CAOS repository from $REPO_DIR"
+echo "Setting up CAOS repository from \$REPO_DIR"
 
 echo "Updating repository index..."
-cd "$REPO_DIR"
+cd "\$REPO_DIR"
 if [ -f "./update-repo.sh" ]; then
     ./update-repo.sh
 else
-    echo "ERROR: update-repo.sh not found in $REPO_DIR"
+    echo "ERROR: update-repo.sh not found in \$REPO_DIR"
     exit 1
 fi
 
@@ -433,7 +548,7 @@ echo "Configuring APT repository..."
 if [ -f "./setup-apt-source.sh" ]; then
     ./setup-apt-source.sh
 else
-    echo "ERROR: setup-apt-source.sh not found in $REPO_DIR"
+    echo "ERROR: setup-apt-source.sh not found in \$REPO_DIR"
     exit 1
 fi
 
@@ -443,12 +558,12 @@ echo "CAOS Repository Installation Completed"
 echo "================================================================"
 echo ""
 echo "You can now install CAOS packages:"
-echo "sudo apt install caos-php-mysql"
+echo "sudo apt install caos-php-${DB_BACKEND_LOWER}"
 echo ""
 echo "Or for specific PHP version:"
-echo "sudo apt install caos-php-mysql-8.3"
+echo "sudo apt install caos-php-${DB_BACKEND_LOWER}-8.3"
 echo ""
-echo "Repository location: $REPO_DIR"
+echo "Repository location: \$REPO_DIR"
 echo ""
 EOF
 

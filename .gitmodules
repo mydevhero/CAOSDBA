@@ -10,3 +10,6 @@
 [submodule "libcaos/vendor/postgres"]
 	path = libcaos/vendor/postgres
 	url = https://github.com/postgres/postgres.git
+[submodule "libcaos/vendor/mariadb-connector-cpp"]
+	path = libcaos/vendor/mariadb-connector-cpp
+	url = https://github.com/mariadb-corporation/mariadb-connector-cpp.git
