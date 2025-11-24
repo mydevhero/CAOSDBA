@@ -12,7 +12,7 @@ endif()
 option(CAOS_USE_CACHE           "CAOS using Cache"          ON)
 option(CAOS_BUILD_EXAMPLES      "CAOS build examples"       ON)
 option(CAOS_USE_CROWCPP         "CAOS use Crow"             ON)
-option(CAOS_BUILD_EXTENSIONS    "CAOS build bindings extension"  ON)
+option(CAOS_BUILD_BINDINGS      "CAOS build bindings extension"  ON)
 # option(CAOS_CHECK_COVERAGE  "CAOS check coverage" OFF)
 
 
@@ -45,30 +45,30 @@ endif()
 
 
 # EXTENSIONS +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-if(CAOS_BUILD_EXTENSIONS)
-  option(CMAKE_POSITION_INDEPENDENT_CODE                             ON)
-  option(CAOS_BUILD_PHP_EXTENSION    "CAOS build php extension"      ON)
-  option(CAOS_BUILD_NODE_EXTENSION   "CAOS build node.js extension"  ON)
-  option(CAOS_BUILD_PYTHON_EXTENSION "CAOS build python extension"   ON)
+if(CAOS_BUILD_BINDINGS)
+  option(CMAKE_POSITION_INDEPENDENT_CODE                           ON)
+  option(CAOS_BUILD_PHP_BINDING    "CAOS build php extension"      ON)
+  option(CAOS_BUILD_NODE_BINDING   "CAOS build node.js extension"  ON)
+  option(CAOS_BUILD_PYTHON_BINDING "CAOS build python extension"   ON)
 endif()
 # EXTENSIONS ---------------------------------------------------------------------------------------
 
 if(CAOS_BUILD_EXAMPLES)
   # PHP
-  if(CAOS_BUILD_PHP_EXTENSION)
-    option(CAOS_BUILD_PHP_EXTENSION_EXAMPLE  "CAOS build php example"        ON)
+  if(CAOS_BUILD_PHP_BINDING)
+    option(CAOS_BUILD_PHP_BINDING_EXAMPLE  "CAOS build php example"        ON)
     option(CAOS_BUILD_PHP_PACKAGE_DEB        "CAOS build php package Debian" ON)
   endif()
 
   # NODE
-  if(CAOS_BUILD_NODE_EXTENSION)
-    option(CAOS_BUILD_NODE_EXTENSION_EXAMPLE  "CAOS build node example"      ON)
+  if(CAOS_BUILD_NODE_BINDING)
+    option(CAOS_BUILD_NODE_BINDING_EXAMPLE  "CAOS build node example"      ON)
     # set(CAOS_BUILD_NODE_PACKAGE_DEB        "CAOS build node package Debian" ON)
   endif()
 
   # PYTHON
-  if(CAOS_BUILD_PYTHON_EXTENSION)
-    option(CAOS_BUILD_PYTHON_EXTENSION_EXAMPLE  "CAOS build python example"  ON)
+  if(CAOS_BUILD_PYTHON_BINDING)
+    option(CAOS_BUILD_PYTHON_BINDING_EXAMPLE  "CAOS build python example"  ON)
     # set(CAOS_BUILD_PYTHON_PACKAGE_DEB        "CAOS build python package Debian" ON)
   endif()
 endif()
@@ -88,11 +88,11 @@ target_include_directories(repoexception INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/l
 target_link_libraries(repoexception INTERFACE libcaos)
 # Add libcaos --------------------------------------------------------------------------------------
 
-# EXTENSIONS +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-if(CAOS_BUILD_EXTENSIONS)
-  add_subdirectory(extensions)
+# BINDINGS +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+if(CAOS_BUILD_BINDINGS)
+  add_subdirectory(bindings)
 endif()
-# EXTENSIONS ---------------------------------------------------------------------------------------
+# BINDINGS -----------------------------------------------------------------------------------------
 
 # Option CAOS_BUILD_EXAMPLES +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 if(CAOS_BUILD_EXAMPLES)

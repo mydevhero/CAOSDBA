@@ -51,8 +51,8 @@ calculate_php_paths() {
 }
 
 check_prerequisites() {
-    if [ ! -f "$BUILD_DIR/extensions/php/caos.so" ]; then
-        echo "ERROR: caos.so not found. Build the extension first at $BUILD_DIR/extensions/php/caos.so"
+    if [ ! -f "$BUILD_DIR/bindings/php/caos.so" ]; then
+        echo "ERROR: caos.so not found. Build the extension first at $BUILD_DIR/bindings/php/caos.so"
         exit 1
     fi
 
@@ -74,7 +74,7 @@ copy_files() {
     local deb_dir=$1
     echo "Copying files for PHP $PHP_VERSION"
 
-    cp "$BUILD_DIR/extensions/php/caos.so" "$deb_dir/$PHP_EXT_DIR/"
+    cp "$BUILD_DIR/bindings/php/caos.so" "$deb_dir/$PHP_EXT_DIR/"
     echo "extension=caos.so" > "$deb_dir/$MODS_AVAILABLE_DIR/caos.ini"
     echo "Files copied successfully"
 }

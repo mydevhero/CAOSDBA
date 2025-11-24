@@ -6,7 +6,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 project(caos_node LANGUAGES CXX)
 
-target_compile_definitions(libcaos PUBLIC CAOS_BUILD_NODE_EXTENSION_EXAMPLE)
+target_compile_definitions(libcaos PUBLIC CAOS_BUILD_NODE_BINDING_EXAMPLE)
 
 # Trova Node.js e npm
 find_program(NODE_EXECUTABLE node)
@@ -159,7 +159,7 @@ target_compile_options(caos_node PRIVATE
   -DNODE_GYP_MODULE_NAME=caos)
 
 target_compile_definitions(caos_node PUBLIC
-  CAOS_BUILD_NODE_EXTENSION
+  CAOS_BUILD_NODE_BINDING
   NAPI_CPP_EXCEPTIONS)
 
 add_custom_command(TARGET caos_node POST_BUILD
@@ -197,6 +197,6 @@ else()
     Installation commands:
     • Ubuntu/Debian:    sudo apt-get install nodejs npm
 
-    After installation, re-run: cmake -DCAOS_BUILD_NODE_EXTENSION=ON .
+    After installation, re-run: cmake -DCAOS_BUILD_NODE_BINDING=ON .
     ")
 endif()

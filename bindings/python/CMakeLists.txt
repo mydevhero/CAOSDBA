@@ -5,7 +5,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 project(caos_python LANGUAGES CXX)
 
-target_compile_definitions(libcaos PUBLIC CAOS_BUILD_PYTHON_EXTENSION_EXAMPLE)
+target_compile_definitions(libcaos PUBLIC CAOS_BUILD_PYTHON_BINDING_EXAMPLE)
 
 # Trova Python
 find_package(Python3 REQUIRED COMPONENTS Development)
@@ -47,7 +47,7 @@ if(Python3_FOUND)
         -std=c++17
     )
 
-    target_compile_definitions(caos_python PUBLIC CAOS_BUILD_PYTHON_EXTENSION)
+    target_compile_definitions(caos_python PUBLIC CAOS_BUILD_PYTHON_BINDING)
 
     # Copia l'estensione
     add_custom_command(TARGET caos_python POST_BUILD
@@ -75,6 +75,6 @@ Required for building CAOS Python extension.
 Installation commands:
 • Ubuntu/Debian:    sudo apt-get install python3-dev
 
-After installation, re-run: cmake -DCAOS_BUILD_PYTHON_EXTENSION=ON .
+After installation, re-run: cmake -DCAOS_BUILD_PYTHON_BINDING=ON .
 ")
 endif()

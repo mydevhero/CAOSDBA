@@ -198,10 +198,10 @@ void Caos::init(initFlags flags)
 
   if ((static_cast<std::uint8_t>(flags) & static_cast<std::uint8_t>(initFlags::PHP_EXT)) != 0)
   {
-#ifdef CAOS_BUILD_PHP_EXTENSION
+#ifdef CAOS_BUILD_PHP_BINDING
     // caosFilter::Auth::Token::setAutoToken();
 #else
-#warning "Can't provide PHP methods while CAOS_BUILD_PHP_EXTENSION is OFF in CMakeLists.txt"
+#warning "Can't provide PHP methods while CAOS_BUILD_PHP_BINDING is OFF in CMakeLists.txt"
 #endif
   }
 

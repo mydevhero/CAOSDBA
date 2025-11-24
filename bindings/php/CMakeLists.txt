@@ -9,7 +9,7 @@ else()
 
   project(caos_php LANGUAGES CXX)
 
-  target_compile_definitions(libcaos PUBLIC CAOS_BUILD_PHP_EXTENSION_EXAMPLE)
+  target_compile_definitions(libcaos PUBLIC CAOS_BUILD_PHP_BINDING_EXAMPLE)
 
   find_program(PHP_CONFIG php-config)
 
@@ -50,7 +50,7 @@ else()
 
     target_link_libraries(caos_php PRIVATE libcaos ${PHP_LIBRARIES})
     target_compile_options(caos_php PRIVATE ${PHP_INCLUDE_FLAGS})
-    target_compile_definitions(caos_php PUBLIC CAOS_BUILD_PHP_EXTENSION)
+    target_compile_definitions(caos_php PUBLIC CAOS_BUILD_PHP_BINDING)
 
     string(REGEX REPLACE "^([0-9]+\\.[0-9]+).*" "\\1" PHP_VERSION_SHORT "${PHP_VERSION}")
     message(STATUS "PHP Version Short: ${PHP_VERSION_SHORT}")
@@ -115,7 +115,7 @@ else()
   Installation commands:
   Ubuntu/Debian: sudo apt-get install php-dev
 
-  After installation, re-run: cmake -DCAOS_BUILD_PHP_EXTENSION=ON .
+  After installation, re-run: cmake -DCAOS_BUILD_PHP_BINDING=ON .
   ")
   endif()
 endif()

@@ -187,8 +187,8 @@ if(CAOS_USE_CACHE)
 endif()
 # --------------------------------------------------------------------------------------------------
 
-if(CAOS_BUILD_PHP_EXTENSION)
-  target_compile_definitions(${PROJECT_NAME} PUBLIC CAOS_BUILD_PHP_EXTENSION)
+if(CAOS_BUILD_PHP_BINDING)
+  target_compile_definitions(${PROJECT_NAME} PUBLIC CAOS_BUILD_PHP_BINDING)
 endif()
 
 
