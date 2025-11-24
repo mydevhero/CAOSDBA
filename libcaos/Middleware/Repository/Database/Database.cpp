@@ -102,7 +102,7 @@ Database::Pool::Pool()
 
 Database::Pool::~Pool()
 {
-  this->printConnectionStats();
+  // this->printConnectionStats();
 
   running.store(false, std::memory_order_release);
 

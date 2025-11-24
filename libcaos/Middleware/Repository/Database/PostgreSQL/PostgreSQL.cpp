@@ -19,7 +19,14 @@
  */
 
 #include "PostgreSQL.hpp"
+
+#ifdef CAOS_BUILD_EXAMPLES
 #include "Query.hpp"
+#endif
+
+#ifdef CAOS_CUSTOM_CODE
+#include "../src/include/Database/PostgreSQL/Query.hpp"
+#endif
 
 constexpr const char* defaultFinal = "{} : Setting database {} to {} in {}  environment";
 

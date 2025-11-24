@@ -5,6 +5,9 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC CAOS_USE_DB_MYSQL)
 # --------------------------------------------------------------------------------------------------
 message(STATUS "Looking for MySQL client library on the system...")
 
+message(STATUS "*************** MYSQLCLIENT_LIBRARY = ${MYSQLCLIENT_LIBRARY}")
+message(STATUS "*************** MYSQLCLIENT_INCLUDE_DIR = ${MYSQLCLIENT_INCLUDE_DIR}")
+
 find_package(PkgConfig REQUIRED)
 
 # Cerca MySQL client

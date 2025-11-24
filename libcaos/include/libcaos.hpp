@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include <libcaos/config.hpp>
+#include <config.hpp>
 #include <terminal_options.hpp>
 #include <Filter.hpp>
 

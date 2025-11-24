@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 
 static_assert(__cplusplus >= 201703L, "Requires C++17");
 

@@ -22,6 +22,7 @@
 
 #include "MySQL.hpp"
 
+#ifdef QUERY_EXISTS_IQuery_Test_echoString
 std::optional<std::string> MySQL::IQuery_Test_echoString(std::string str)
 {
   static constexpr const char* fName = "MySQL::echoString";
@@ -109,3 +110,4 @@ std::optional<std::string> MySQL::IQuery_Test_echoString(std::string str)
 
   return std::nullopt;
 }
+#endif // End of ifdef QUERY_EXISTS_IQuery_Test_echoString

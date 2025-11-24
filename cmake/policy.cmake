@@ -1,0 +1,5 @@
+cmake_policy(SET CMP0066 NEW)
+cmake_policy(SET CMP0077 NEW)
+cmake_policy(SET CMP0102 NEW)
+cmake_policy(SET CMP0126 NEW)
+cmake_policy(SET CMP0128 NEW)

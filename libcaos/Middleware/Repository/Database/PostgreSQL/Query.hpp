@@ -22,6 +22,7 @@
 
 #include "PostgreSQL.hpp"
 
+#ifdef QUERY_EXISTS_IQuery_Test_echoString
 std::optional<std::string> PostgreSQL::IQuery_Test_echoString(std::string str)
 {
   if(!running.load(std::memory_order_relaxed))
@@ -77,6 +78,7 @@ std::optional<std::string> PostgreSQL::IQuery_Test_echoString(std::string str)
 
   return std::nullopt;
 }
+#endif // ifdef QUERY_EXISTS_IQuery_Test_echoString
 
 // std::optional<std::string> PostgreSQL::IQuery_Test_sumInt(const int& int1, const int& int2)
 // {

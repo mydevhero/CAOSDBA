@@ -1,4 +1,12 @@
+
 message(STATUS "Building CAOS as Node.js extension")
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+project(caos_node LANGUAGES CXX)
+
+target_compile_definitions(libcaos PUBLIC CAOS_BUILD_NODE_EXTENSION_EXAMPLE)
 
 # Trova Node.js e npm
 find_program(NODE_EXECUTABLE node)

@@ -22,6 +22,8 @@
 
 #include <libcaos.hpp>
 #include <Exception.hpp>
+
+#ifdef CAOS_USE_CROWCPP
 #include "crow.h"
 
 namespace middleware
@@ -64,3 +66,5 @@ namespace middleware
     }
   };
 }
+
+#endif // End of ifdef CAOS_USE_CROWCPP

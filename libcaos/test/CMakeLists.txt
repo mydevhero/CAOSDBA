@@ -3,7 +3,7 @@ message(STATUS "Testing features enabled - CAOS_BUILD_TEST macro defined")
 include(CTest)
 enable_testing()
 
-include(../cmake/CPM.cmake)
+include(cmake/CPM.cmake)
 
 project(test LANGUAGES CXX)
 
@@ -26,7 +26,7 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
-  spdlog::spdlog
+  # spdlog::spdlog
   libcaos
   Catch2::Catch2WithMain
 )

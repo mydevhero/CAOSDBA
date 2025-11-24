@@ -8,10 +8,8 @@ include_directories("${CMAKE_BINARY_DIR}")
 
 file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/libcaos")
 
-
 message(STATUS "Build counter incremented to: ${CAOS_BUILD_COUNT}-${CAOS_ROOT_DIR}")
-# set(CAOS_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-# include (cmake/build_counter_and_version.cmake)
+
 add_custom_target(increment_build ALL
   COMMAND ${CMAKE_COMMAND}
     -DCAOS_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
@@ -26,37 +24,43 @@ add_custom_target(increment_build ALL
   COMMENT "Incrementing build counter"
 )
 
-
-
 if(CAOS_DB_BACKEND STREQUAL "POSTGRESQL")
   list(APPEND POSTGRESQL_SOURCES
     Middleware/Repository/Database/PostgreSQL/PostgreSQL.cpp
     Middleware/Repository/Database/PostgreSQL/PostgreSQL.hpp
-    Middleware/Repository/Database/PostgreSQL/Query.hpp
   )
+
+  if(CAOS_BUILD_EXAMPLES)
+    list(APPEND POSTGRESQL_SOURCES Middleware/Repository/Database/PostgreSQL/Query.hpp)
+  endif()
 endif()
 
 if(CAOS_DB_BACKEND STREQUAL "MYSQL")
   list(APPEND MYSQL_SOURCES
     Middleware/Repository/Database/MySQL/MySQL.hpp
     Middleware/Repository/Database/MySQL/MySQL.cpp
-    Middleware/Repository/Database/MySQL/Query.hpp
   )
+
+  if(CAOS_BUILD_EXAMPLES)
+    list(APPEND POSTGRESQL_SOURCES Middleware/Repository/Database/MySQL/Query.hpp)
+  endif()
 endif()
 
 if(CAOS_DB_BACKEND STREQUAL "MARIADB")
   list(APPEND MARIADB_SOURCES
     Middleware/Repository/Database/MariaDB/MariaDB.cpp
     Middleware/Repository/Database/MariaDB/MariaDB.hpp
-    Middleware/Repository/Database/MariaDB/Query.hpp
   )
+
+  if(CAOS_BUILD_EXAMPLES)
+    list(APPEND POSTGRESQL_SOURCES Middleware/Repository/Database/MariaDB/Query.hpp)
+  endif()
 endif()
 
 if(CAOS_USE_CROWCPP)
   list(APPEND CROWCPP_SOURCES
     CrowCpp.cpp
     include/CrowCpp.hpp
-    Middleware/Repository.hpp
   )
 endif()
 
@@ -77,6 +81,14 @@ if(CAOS_USE_CACHE)
 endif()
 
 add_library(${PROJECT_NAME} STATIC ${PROJECT_NAME}.cpp
+)
+
+set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")
+
+include(cmake/compiler.cmake)
+include(cmake/query_code_generation.cmake)
+
+target_sources(${PROJECT_NAME} PRIVATE
   config_validation.hpp
   logo.hpp
   common.hpp
@@ -101,10 +113,7 @@ add_library(${PROJECT_NAME} STATIC ${PROJECT_NAME}.cpp
   ${CACHE_SOURCES}
   ${REDIS_SOURCES}
 )
-include(cmake/compiler.cmake)
-include(cmake/query_code_generation.cmake)
 
-set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")
 
 if(CMAKE_BUILD_TYPE STREQUAL "debug")
   target_compile_definitions(${PROJECT_NAME} PUBLIC CAOS_ENV_DEBUG)

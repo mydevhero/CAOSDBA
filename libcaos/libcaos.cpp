@@ -191,7 +191,7 @@ void Caos::init(initFlags flags)
 #ifdef CAOS_USE_CROWCPP
     this->crowcpp = std::make_unique<CrowCpp>();
 #else
-#error "Can't provide crowcpp object while CAOS_USE_CROWCPP is OFF in CMakeLists.txt"
+#warning "Can't provide crowcpp object while CAOS_USE_CROWCPP is OFF in CMakeLists.txt"
 #endif
   }
 
@@ -201,9 +201,9 @@ void Caos::init(initFlags flags)
 #ifdef CAOS_BUILD_PHP_EXTENSION
     // caosFilter::Auth::Token::setAutoToken();
 #else
-#error "Can't provide PHP methods while CAOS_BUILD_PHP_EXTENSION is OFF in CMakeLists.txt"
+#warning "Can't provide PHP methods while CAOS_BUILD_PHP_EXTENSION is OFF in CMakeLists.txt"
 #endif
   }
 
-  Caos::PRINT_HEADER();
+  // Caos::PRINT_HEADER();
 }

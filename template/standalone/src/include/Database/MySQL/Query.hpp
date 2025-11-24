@@ -1,31 +1,11 @@
-/*
- * CAOS - <Cache App On Steroids>
- * Copyright (C) 2025  Alessandro Bianco
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- *
- * For support or inquiries, contact <mydevhero@gmail.com>
- */
-
 #pragma once
 
-#include "MariaDB.hpp"
+#include "Middleware/Repository/Database/MySQL/MySQL.hpp"
 
-#ifdef QUERY_EXISTS_IQuery_Test_echoString
-std::optional<std::string> MariaDB::IQuery_Test_echoString(std::string str)
+#ifdef QUERY_EXISTS_IQuery_Demo_Test_echoString
+std::optional<std::string> MySQL::IQuery_Demo_Test_echoString(std::string str)
 {
-  static constexpr const char* fName = "MariaDB::echoString";
+  static constexpr const char* fName = "MySQL::echoString";
 
   if(!running.load(std::memory_order_relaxed))
   {
@@ -56,7 +36,7 @@ std::optional<std::string> MariaDB::IQuery_Test_echoString(std::string str)
 
         if (result->next())
         {
-          returnValue = result->getString("echoed_string") + " from MariaDB";
+          returnValue = result->getString("echoed_string") + " from MySQL";
         }
 
         // Explicit commit
@@ -80,22 +60,22 @@ std::optional<std::string> MariaDB::IQuery_Test_echoString(std::string str)
   {
     throw;
   }
-  catch (sql::SQLException& e)
+  catch (const sql::SQLException& e)
   {
-    std::uint32_t errorCode = e.getErrorCode();
+    const int errorCode = e.getErrorCode();
 
+    // Mappatura errori di connessione
     if (errorCode == 2002 ||
         errorCode == 2003 ||
         errorCode == 2006 ||
         errorCode == 2013 ||
         errorCode == 1927)
     {
-      throw repository::broken_connection("MariaDB connection broken: " + std::string(e.what()));
+      throw repository::broken_connection("MySQL connection broken: " + std::string(e.what()));
     }
 
-    spdlog::error("[{}] MariaDB error [{}:{}]: {}", fName, errorCode, e.getSQLState(), e.what());
-
-    throw std::runtime_error("MariaDB database error");
+    spdlog::error("[{}] MySQL error [{}:{}]: {}", fName, errorCode, e.getSQLState(), e.what());
+    throw std::runtime_error("MySQL database error");
   }
   catch (const std::exception& e)
   {
@@ -110,4 +90,4 @@ std::optional<std::string> MariaDB::IQuery_Test_echoString(std::string str)
 
   return std::nullopt;
 }
-#endif // End of ifdef QUERY_EXISTS_IQuery_Test_echoString
+#endif // End of ifdef QUERY_EXISTS_IQuery_Demo_Test_echoString

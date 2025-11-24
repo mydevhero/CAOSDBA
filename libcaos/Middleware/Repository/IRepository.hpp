@@ -23,7 +23,7 @@
 #include <optional>
 #include <atomic>
 #include <memory>
-#include "libcaos/config.hpp"
+#include "config.hpp"
 #include "IQuery.hpp"
 #include "Exception.hpp"
 #include <terminal_options.hpp>

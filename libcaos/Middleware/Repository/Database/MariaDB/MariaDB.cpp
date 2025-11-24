@@ -19,7 +19,15 @@
  */
 
 #include "MariaDB.hpp"
+
+#ifdef CAOS_BUILD_EXAMPLES
 #include "Query.hpp"
+#endif
+
+#ifdef CAOS_CUSTOM_CODE
+#include "../src/include/Database/MariaDB/Query.hpp"
+#endif
+
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Init of Database::Pool::setConnectStr()

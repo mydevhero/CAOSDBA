@@ -1,5 +1,12 @@
 message(STATUS "Building CAOS as Python extension")
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+project(caos_python LANGUAGES CXX)
+
+target_compile_definitions(libcaos PUBLIC CAOS_BUILD_PYTHON_EXTENSION_EXAMPLE)
+
 # Trova Python
 find_package(Python3 REQUIRED COMPONENTS Development)
 

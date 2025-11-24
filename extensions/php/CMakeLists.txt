@@ -4,6 +4,13 @@ if(CMAKE_BUILD_TYPE STREQUAL "debug") #FIXME
 else()
   message(STATUS "Building CAOS as PHP extension")
 
+  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+  project(caos_php LANGUAGES CXX)
+
+  target_compile_definitions(libcaos PUBLIC CAOS_BUILD_PHP_EXTENSION_EXAMPLE)
+
   find_program(PHP_CONFIG php-config)
 
   if(PHP_CONFIG)
@@ -84,17 +91,13 @@ else()
     message(STATUS "PHP ini file will be installed to: ${PHP_MODS_AVAILABLE_DIR}/caos.ini")
 
     if(CAOS_BUILD_PHP_PACKAGE_DEB)
-      if(CAOS_BUILD_PHP_EXTENSION)
-        add_custom_target(php_package_deb
-          COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/scripts/create_package_deb.sh ${CAOS_DB_BACKEND}
-          DEPENDS libcaos caos_php
-          WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-          COMMENT "Building DEB package for PHP extension with ${CAOS_DB_BACKEND} backend"
-        )
-      endif()
-    endif()
+      add_custom_target(php_package_deb
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/scripts/create_package_deb.sh ${CAOS_DB_BACKEND}
+        DEPENDS libcaos caos_php
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMENT "Building DEB package for PHP extension with ${CAOS_DB_BACKEND} backend"
+      )
 
-    if(CAOS_BUILD_PHP_EXTENSION)
       add_custom_target(php_distribution_tarball
         COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/scripts/create_distribution_tarball.sh ${CAOS_DB_BACKEND}
         DEPENDS php_package_deb

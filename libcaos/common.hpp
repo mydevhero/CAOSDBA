@@ -19,7 +19,7 @@
  */
 
 #pragma once
-#include <libcaos/build_info.h>
+#include <build_info.h>
 #include <thread>
 #include <stdexcept>
 #include <memory>
@@ -28,9 +28,8 @@
 #include <unordered_map>
 #include <iostream>
 #include <cstdint>
-#include "config_validation.hpp"
-#include "spdlog/spdlog.h"
-#include "logo.hpp"
+#include <spdlog/spdlog.h>
+#include <logo.hpp>
 #include <atomic>
 
 static inline std::size_t getHwMaxThreads()

@@ -22,6 +22,7 @@
 
 #include "Redis.hpp"
 
+#ifdef QUERY_EXISTS_IQuery_Test_echoString
 std::optional<std::string> Redis::IQuery_Test_echoString(std::string str)
 {
   static constexpr const char* fName = "Redis::IQuery_Test_echoString";
@@ -94,6 +95,7 @@ std::optional<std::string> Redis::IQuery_Test_echoString(std::string str)
     throw;
   }
 };
+#endif // End of ifdef QUERY_EXISTS_IQuery_Test_echoString
 
 // std::optional<std::string> Redis::IQuery_Test_sumInt(const int& int1, const int& int2)
 // {

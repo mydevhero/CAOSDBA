@@ -1,0 +1,7 @@
+###################################################################################################################################################
+# return_type                   | method_name               | full_params           | call_params  | authType |name             | key             #
+###################################################################################################################################################
+
+
+#std::optional<std::string>      | IQuery_Test_echoString    | std::string str       | str          | TOKEN    | CAOS_API_TOKEN | ARBJi7cJuOYPXmFPPLVWsGrXmD4SU3LW
+std::optional<std::string>      | IQuery_Demo_Test_echoString    | std::string str       | str          | TOKEN    | CAOS_API_TOKEN | ARBJi7cJuOYPXmFPPLVWsGrXmD4SU3LW

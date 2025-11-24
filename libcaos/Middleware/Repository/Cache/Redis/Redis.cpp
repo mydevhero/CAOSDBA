@@ -19,8 +19,14 @@
  */
 
 #include "Redis.hpp"
-#include "Query.hpp"
 
+#ifdef CAOS_BUILD_EXAMPLES
+#include "Query.hpp"
+#endif
+
+#ifdef CAOS_CUSTOM_CODE
+#include "../src/include/Cache/Redis/Query.hpp"
+#endif
 
 
 
