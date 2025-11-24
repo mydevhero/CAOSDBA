@@ -9,6 +9,11 @@ libcaos/cmake/*.old
 libcaos/vendor/build-scripts/*.old
 libcaos/vendor/prebuilt/*
 !libcaos/vendor/prebuilt/.gitkeep
+libcaos/vendor/crow
+libcaos/vendor/libpqxx
+libcaos/vendor/mariadb-connector-cpp
+libcaos/vendor/postgres
+libcaos/vendor/redis-plus-plus
 # qtcreator generated files
 *.pro.user*
 CMakeLists.txt.user*
