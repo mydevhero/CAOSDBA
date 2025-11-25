@@ -7,3 +7,9 @@
 #define CAOS_VERSION_MAJOR "@PROJECT_VERSION_MAJOR@"
 #define CAOS_VERSION_MINOR "@PROJECT_VERSION_MINOR@"
 #define CAOS_VERSION_PATCH "@PROJECT_VERSION_PATCH@"
+
+[[maybe_unused]]
+static const char* get_build_count_string() {
+  static std::string build_count = std::to_string(CAOS_BUILD_COUNT);
+  return build_count.c_str();
+}
