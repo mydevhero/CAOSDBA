@@ -1,13 +1,15 @@
 #!/bin/bash
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../" && pwd)"
 BUILD_DIR="$PROJECT_ROOT/build/release"
 DIST_DIR="$PROJECT_ROOT/dist"
 CAOS_OPT_DIR="/opt/caos"
 
-# Get database backend from command line or use default
+# Get database backend and project name from command line
 DB_BACKEND=${1:-"MYSQL"}
+PROJECT_NAME=${2:-"caos"}  # Default to 'caos' for backward compatibility
+PROJECT_NAME_SANITIZED=$(echo "$PROJECT_NAME" | tr '_' '-')
 DB_BACKEND_LOWER=$(echo "$DB_BACKEND" | tr '[:upper:]' '[:lower:]')
 
 if [ -f "$BUILD_DIR/build_counter.txt" ]; then
@@ -18,7 +20,7 @@ else
     echo "WARNING: $BUILD_DIR/build_counter.txt not found, using default version"
 fi
 
-echo "Creating DEB packages tarball"
+echo "Creating DEB packages tarball for ${PROJECT_NAME}"
 echo "Version: $VERSION"
 echo "Database backend: $DB_BACKEND_LOWER"
 
@@ -26,15 +28,15 @@ check_prerequisites() {
     # Check if repository was created in dist directory
     if [ ! -d "$DIST_DIR/repository" ]; then
         echo "ERROR: Repository directory not found in $DIST_DIR/repository"
-        echo "Please run the php_package_deb target first:"
-        echo "  cmake --build build/release --target php_package_deb"
+        echo "Please run the ${PROJECT_NAME}_package_deb target first:"
+        echo "  cmake --build build/release --target ${PROJECT_NAME}_package_deb"
         exit 1
     fi
 
     local deb_count=$(ls "$DIST_DIR/repository"/*.deb 2>/dev/null | wc -l)
     if [ "$deb_count" -eq 0 ]; then
         echo "ERROR: No DEB packages found in $DIST_DIR/repository"
-        echo "Please run the php_package_deb target first"
+        echo "Please run the ${PROJECT_NAME}_package_deb target first"
         exit 1
     fi
 
@@ -111,7 +113,7 @@ create_install_script() {
 
     cat > "$temp_dir$CAOS_OPT_DIR/install-repository.sh" << EOF
 #!/bin/bash
-# CAOS Repository Installation Script
+# ${PROJECT_NAME^^} Repository Installation Script
 
 set -e
 
@@ -125,7 +127,7 @@ if [ "\$EUID" -ne 0 ]; then
 fi
 
 echo "================================================================"
-echo "CAOS Repository Installation"
+echo "${PROJECT_NAME^^} Repository Installation"
 echo "================================================================"
 
 # Verify we're in the correct location
@@ -135,7 +137,7 @@ if [ ! -d "\$REPO_DIR" ]; then
     exit 1
 fi
 
-echo "Setting up CAOS repository from \$REPO_DIR"
+echo "Setting up ${PROJECT_NAME^^} repository from \$REPO_DIR"
 
 # Update repository index
 echo "Updating repository index..."
@@ -158,21 +160,21 @@ fi
 
 echo ""
 echo "================================================================"
-echo "CAOS Repository Installation Completed"
+echo "${PROJECT_NAME^^} Repository Installation Completed"
 echo "================================================================"
 echo ""
-echo "You can now install CAOS packages:"
-echo "  sudo apt install caos-php-${DB_BACKEND_LOWER}"
+echo "You can now install ${PROJECT_NAME^^} packages:"
+echo "  sudo apt install ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}"
 echo ""
 echo "Or for specific PHP version:"
-echo "  sudo apt install caos-php-${DB_BACKEND_LOWER}-8.3"
+echo "  sudo apt install ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}-8.3"
 echo ""
 echo "Repository location: \$REPO_DIR"
 echo ""
 EOF
 
     # Questo chmod è solo per il file nella temp directory, non per il contenuto dello script
-    chmod 740 "$temp_dir$CAOS_OPT_DIR/install-repository.sh"
+    chmod 755 "$temp_dir$CAOS_OPT_DIR/install-repository.sh"
     echo "Created install-repository.sh"
 }
 
@@ -180,14 +182,15 @@ create_readme() {
     local readme_file="$DIST_DIR/README.md"
 
     cat > "$readme_file" << EOF
-# CAOS DEB Packages Repository
+# ${PROJECT_NAME^^} DEB Packages Repository
 
 Version: $VERSION
 Database Backend: $DB_BACKEND
+Project: $PROJECT_NAME
 
 ## Contents
 
-This tarball contains the CAOS DEB packages and local APT repository.
+This tarball contains the ${PROJECT_NAME^^} DEB packages and local APT repository.
 
 ### Directory Structure
 
@@ -209,7 +212,7 @@ This tarball contains the CAOS DEB packages and local APT repository.
 
 1. Extract the tarball to /opt:
 \`\`\`bash
-sudo tar -xzf caos-deb-repository-${DB_BACKEND_LOWER}-${VERSION}.tar.gz -C /
+sudo tar -xzf ${PROJECT_NAME_SANITIZED}-deb-repository-${DB_BACKEND_LOWER}-${VERSION}.tar.gz -C /
 \`\`\`
 
 2. Run the installation script:
@@ -223,7 +226,7 @@ If you prefer manual setup:
 
 1. Extract tarball:
 \`\`\`bash
-sudo tar -xzf caos-deb-repository-${DB_BACKEND_LOWER}-${VERSION}.tar.gz -C /
+sudo tar -xzf ${PROJECT_NAME_SANITIZED}-deb-repository-${DB_BACKEND_LOWER}-${VERSION}.tar.gz -C /
 \`\`\`
 
 2. Update repository index:
@@ -239,27 +242,27 @@ cd /opt/caos/repository
 
 ## Usage
 
-After installation, you can install CAOS packages via APT:
+After installation, you can install ${PROJECT_NAME^^} packages via APT:
 
 \`\`\`bash
 # Install meta-package (recommended)
-sudo apt install caos-php-${DB_BACKEND_LOWER}
+sudo apt install ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}
 
 # Install specific PHP version
-sudo apt install caos-php-${DB_BACKEND_LOWER}-8.3
+sudo apt install ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}-8.3
 
 # See all available packages
-apt list caos-php*
+apt list ${PROJECT_NAME_SANITIZED}-php*
 \`\`\`
 
 ## Available Packages
 
-- caos-php-${DB_BACKEND_LOWER} - Meta-package
-- caos-php-${DB_BACKEND_LOWER}-8.0 - PHP 8.0 extension
-- caos-php-${DB_BACKEND_LOWER}-8.1 - PHP 8.1 extension
-- caos-php-${DB_BACKEND_LOWER}-8.2 - PHP 8.2 extension
-- caos-php-${DB_BACKEND_LOWER}-8.3 - PHP 8.3 extension
-- caos-php-${DB_BACKEND_LOWER}-8.4 - PHP 8.4 extension
+- ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER} - Meta-package
+- ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}-8.0 - PHP 8.0 extension
+- ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}-8.1 - PHP 8.1 extension
+- ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}-8.2 - PHP 8.2 extension
+- ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}-8.3 - PHP 8.3 extension
+- ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}-8.4 - PHP 8.4 extension
 
 ## Maintenance
 
@@ -276,7 +279,7 @@ To remove the repository:
 
 1. Remove APT source:
 \`\`\`bash
-sudo rm -f /etc/apt/sources.list.d/caos-local.list
+sudo rm -f /etc/apt/sources.list.d/${PROJECT_NAME}-local.list
 \`\`\`
 
 2. Remove repository files:
@@ -293,6 +296,7 @@ sudo apt update
 Generated: $(date)
 Build: $VERSION
 Database: $DB_BACKEND
+Project: $PROJECT_NAME
 EOF
 
     echo "Created README.md"
@@ -300,7 +304,7 @@ EOF
 
 create_tarball() {
     local temp_dir="$DIST_DIR/temp_caos_deb"
-    local tarball_name="caos-deb-repository-${DB_BACKEND_LOWER}-${VERSION}.tar.gz"
+    local tarball_name="${PROJECT_NAME_SANITIZED}-deb-repository-${DB_BACKEND_LOWER}-${VERSION}.tar.gz"
     local tarball_path="$DIST_DIR/$tarball_name"
 
     echo "Creating tarball: $tarball_name"
@@ -324,7 +328,7 @@ create_tarball() {
 }
 
 create_deployment_readme() {
-    local tarball_name="caos-deb-repository-${DB_BACKEND_LOWER}-${VERSION}.tar.gz"
+    local tarball_name="${PROJECT_NAME_SANITIZED}-deb-repository-${DB_BACKEND_LOWER}-${VERSION}.tar.gz"
     local readme_file="$DIST_DIR/${tarball_name}.README.txt"
 
     cat > "$readme_file" << EOF
@@ -335,8 +339,8 @@ To deploy:
 2. Run the installation script:
    sudo /opt/caos/install-repository.sh
 
-3. Install CAOS PHP extension:
-   sudo apt install caos-php-${DB_BACKEND_LOWER}
+3. Install ${PROJECT_NAME^^} PHP extension:
+   sudo apt install ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}
 EOF
 
     echo "Created deployment README: ${tarball_name}.README.txt"
@@ -345,85 +349,85 @@ EOF
 create_env_documentation() {
     local env_file="$DIST_DIR/ENV.md"
 
-    cat > "$env_file" << 'EOF'
-# CAOS Environment Variables
+    cat > "$env_file" << EOF
+# ${PROJECT_NAME^^} Environment Variables
 
-This document describes all environment variables used by the CAOS PHP extension.
+This document describes all environment variables used by the ${PROJECT_NAME^^} PHP extension.
 
 ## Cache Configuration (Redis)
 
 | Variable Name | Description | Default | Example |
 |---------------|-------------|---------|---------|
-| `CAOS_CACHEUSER` | Username for Redis 6+ with ACL support | - | `myuser` |
-| `CAOS_CACHEPASS` | Authentication password for Redis | - | `mypassword` |
-| `CAOS_CACHEHOST` | Redis server address | `localhost` | `redis.example.com` |
-| `CAOS_CACHEPORT` | Redis server port number | `6379` | `6380` |
-| `CAOS_CACHECLIENTNAME` | Client name identifier for Redis | - | `myapp-client` |
-| `CAOS_CACHEINDEX` | Redis database number (0-15) | `0` | `1` |
-| `CAOS_CACHECOMMANDTIMEOUT` | Timeout for Redis commands (seconds) | `30` | `60` |
-| `CAOS_CACHEPOOLSIZEMIN` | Minimum number of connections always kept idle | `5` | `10` |
-| `CAOS_CACHEPOOLSIZEMAX` | Maximum number of idle connections in the pool | `20` | `50` |
-| `CAOS_CACHEPOOLWAIT` | Timeout when waiting for connection from exhausted pool (seconds) | `30` | `60` |
-| `CAOS_CACHEPOOLCONNECTIONTIMEOUT` | Timeout for establishing connection (seconds) | `10` | `30` |
-| `CAOS_CACHEPOOLCONNECTIONLIFETIME` | Absolute maximum lifetime of a connection (seconds) | `3600` | `7200` |
-| `CAOS_CACHEPOOLCONNECTIONIDLETIME` | Maximum inactivity duration before closing connection (seconds) | `300` | `600` |
+| \`${PROJECT_NAME^^}_CACHEUSER\` | Username for Redis 6+ with ACL support | - | \`myuser\` |
+| \`${PROJECT_NAME^^}_CACHEPASS\` | Authentication password for Redis | - | \`mypassword\` |
+| \`${PROJECT_NAME^^}_CACHEHOST\` | Redis server address | \`localhost\` | \`redis.example.com\` |
+| \`${PROJECT_NAME^^}_CACHEPORT\` | Redis server port number | \`6379\` | \`6380\` |
+| \`${PROJECT_NAME^^}_CACHECLIENTNAME\` | Client name identifier for Redis | - | \`myapp-client\` |
+| \`${PROJECT_NAME^^}_CACHEINDEX\` | Redis database number (0-15) | \`0\` | \`1\` |
+| \`${PROJECT_NAME^^}_CACHECOMMANDTIMEOUT\` | Timeout for Redis commands (seconds) | \`30\` | \`60\` |
+| \`${PROJECT_NAME^^}_CACHEPOOLSIZEMIN\` | Minimum number of connections always kept idle | \`5\` | \`10\` |
+| \`${PROJECT_NAME^^}_CACHEPOOLSIZEMAX\` | Maximum number of idle connections in the pool | \`20\` | \`50\` |
+| \`${PROJECT_NAME^^}_CACHEPOOLWAIT\` | Timeout when waiting for connection from exhausted pool (seconds) | \`30\` | \`60\` |
+| \`${PROJECT_NAME^^}_CACHEPOOLCONNECTIONTIMEOUT\` | Timeout for establishing connection (seconds) | \`10\` | \`30\` |
+| \`${PROJECT_NAME^^}_CACHEPOOLCONNECTIONLIFETIME\` | Absolute maximum lifetime of a connection (seconds) | \`3600\` | \`7200\` |
+| \`${PROJECT_NAME^^}_CACHEPOOLCONNECTIONIDLETIME\` | Maximum inactivity duration before closing connection (seconds) | \`300\` | \`600\` |
 
 ## Database Configuration
 
 | Variable Name | Description | Default | Example |
 |---------------|-------------|---------|---------|
-| `CAOS_DBUSER` | Database username | - | `dbuser` |
-| `CAOS_DBPASS` | Database password | - | `dbpassword` |
-| `CAOS_DBHOST` | Database server address | `localhost` | `db.example.com` |
-| `CAOS_DBPORT` | Database server port | `3306` | `5432` |
-| `CAOS_DBNAME` | Database name | - | `myapp_db` |
-| `CAOS_DBPOOLSIZEMIN` | Minimum number of database connections in pool | `5` | `10` |
-| `CAOS_DBPOOLSIZEMAX` | Maximum number of database connections in pool | `20` | `50` |
-| `CAOS_DBPOOLWAIT` | Timeout when waiting for database connection (seconds) | `30` | `60` |
-| `CAOS_DBPOOLTIMEOUT` | Database connection pool timeout (seconds) | `30` | `60` |
-| `CAOS_DBCONNECT_TIMEOUT` | Database connection timeout (seconds) | `10` | `30` |
-| `CAOS_DBMAXWAIT` | Maximum wait time for database operations (seconds) | `30` | `60` |
-| `CAOS_DBHEALTHCHECKINTERVAL` | Health check interval for database connections (seconds) | `30` | `60` |
-| `CAOS_LOG_THRESHOLD_CONNECTION_LIMIT_EXCEEDED` | Log threshold for connection limit exceeded events | - | `WARNING` |
-| `CAOS_VALIDATE_CONNECTION_BEFORE_ACQUIRE` | Validate connection before acquiring from pool (`true`/`false`) | `true` | `false` |
-| `CAOS_VALIDATE_USING_TRANSACTION` | Validate connection using transaction (`true`/`false`) | `false` | `true` |
+| \`${PROJECT_NAME^^}_DBUSER\` | Database username | - | \`dbuser\` |
+| \`${PROJECT_NAME^^}_DBPASS\` | Database password | - | \`dbpassword\` |
+| \`${PROJECT_NAME^^}_DBHOST\` | Database server address | \`localhost\` | \`db.example.com\` |
+| \`${PROJECT_NAME^^}_DBPORT\` | Database server port | \`3306\` | \`5432\` |
+| \`${PROJECT_NAME^^}_DBNAME\` | Database name | - | \`myapp_db\` |
+| \`${PROJECT_NAME^^}_DBPOOLSIZEMIN\` | Minimum number of database connections in pool | \`5\` | \`10\` |
+| \`${PROJECT_NAME^^}_DBPOOLSIZEMAX\` | Maximum number of database connections in pool | \`20\` | \`50\` |
+| \`${PROJECT_NAME^^}_DBPOOLWAIT\` | Timeout when waiting for database connection (seconds) | \`30\` | \`60\` |
+| \`${PROJECT_NAME^^}_DBPOOLTIMEOUT\` | Database connection pool timeout (seconds) | \`30\` | \`60\` |
+| \`${PROJECT_NAME^^}_DBCONNECT_TIMEOUT\` | Database connection timeout (seconds) | \`10\` | \`30\` |
+| \`${PROJECT_NAME^^}_DBMAXWAIT\` | Maximum wait time for database operations (seconds) | \`30\` | \`60\` |
+| \`${PROJECT_NAME^^}_DBHEALTHCHECKINTERVAL\` | Health check interval for database connections (seconds) | \`30\` | \`60\` |
+| \`${PROJECT_NAME^^}_LOG_THRESHOLD_CONNECTION_LIMIT_EXCEEDED\` | Log threshold for connection limit exceeded events | - | \`WARNING\` |
+| \`${PROJECT_NAME^^}_VALIDATE_CONNECTION_BEFORE_ACQUIRE\` | Validate connection before acquiring from pool (\`true\`/\`false\`) | \`true\` | \`false\` |
+| \`${PROJECT_NAME^^}_VALIDATE_USING_TRANSACTION\` | Validate connection using transaction (\`true\`/\`false\`) | \`false\` | \`true\` |
 
 ## Usage Examples
 
 ### Basic Redis Configuration
 
-```bash
-export CAOS_CACHEHOST="redis.example.com"
-export CAOS_CACHEPASS="secure_password"
-export CAOS_CACHEPOOLSIZEMIN="10"
-export CAOS_CACHEPOOLSIZEMAX="50"
-export CAOS_CACHEPOOLCONNECTIONLIFETIME="7200"
-export CAOS_CACHEPOOLCONNECTIONIDLETIME="600"
-```
+\`\`\`bash
+export ${PROJECT_NAME^^}_CACHEHOST="redis.example.com"
+export ${PROJECT_NAME^^}_CACHEPASS="secure_password"
+export ${PROJECT_NAME^^}_CACHEPOOLSIZEMIN="10"
+export ${PROJECT_NAME^^}_CACHEPOOLSIZEMAX="50"
+export ${PROJECT_NAME^^}_CACHEPOOLCONNECTIONLIFETIME="7200"
+export ${PROJECT_NAME^^}_CACHEPOOLCONNECTIONIDLETIME="600"
+\`\`\`
 
 ### Database Configuration
 
-```bash
-export CAOS_DBHOST="mysql.example.com"
-export CAOS_DBUSER="app_user"
-export CAOS_DBPASS="db_password"
-export CAOS_DBNAME="application_db"
-export CAOS_DBPOOLSIZEMIN="5"
-export CAOS_DBPOOLSIZEMAX="20"
-export CAOS_DBCONNECT_TIMEOUT="30"
-```
+\`\`\`bash
+export ${PROJECT_NAME^^}_DBHOST="mysql.example.com"
+export ${PROJECT_NAME^^}_DBUSER="app_user"
+export ${PROJECT_NAME^^}_DBPASS="db_password"
+export ${PROJECT_NAME^^}_DBNAME="application_db"
+export ${PROJECT_NAME^^}_DBPOOLSIZEMIN="5"
+export ${PROJECT_NAME^^}_DBPOOLSIZEMAX="20"
+export ${PROJECT_NAME^^}_DBCONNECT_TIMEOUT="30"
+\`\`\`
 
 ### Docker/Container Environment
 
-```bash
+\`\`\`bash
 # Set in your Dockerfile or docker-compose.yml
-ENV CAOS_CACHEHOST=redis
-ENV CAOS_CACHEPORT=6379
-ENV CAOS_DBHOST=mysql
-ENV CAOS_DBUSER=app
-ENV CAOS_DBPASS=password
-ENV CAOS_DBNAME=app_db
-```
+ENV ${PROJECT_NAME^^}_CACHEHOST=redis
+ENV ${PROJECT_NAME^^}_CACHEPORT=6379
+ENV ${PROJECT_NAME^^}_DBHOST=mysql
+ENV ${PROJECT_NAME^^}_DBUSER=app
+ENV ${PROJECT_NAME^^}_DBPASS=password
+ENV ${PROJECT_NAME^^}_DBNAME=app_db
+\`\`\`
 
 ## Notes
 
@@ -435,7 +439,7 @@ Timeouts: Set appropriate timeouts based on your network latency and application
 
 Validation: Connection validation adds overhead but improves reliability in unstable network environments.
 
-For more information, refer to the CAOS documentation.
+For more information, refer to the ${PROJECT_NAME^^} documentation.
 EOF
 
     echo "Created environment documentation: $env_file"
@@ -443,7 +447,7 @@ EOF
 
 
 main() {
-    echo "Starting DEB repository tarball creation..."
+    echo "Starting DEB repository tarball creation for $PROJECT_NAME..."
 
     check_prerequisites
     create_install_script

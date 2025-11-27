@@ -71,11 +71,22 @@ else()
     set(CAOS_INI_CONTENT "extension=${PROJECT_NAME}.so\n")
     file(WRITE ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.ini "${CAOS_INI_CONTENT}")
 
+    # Build counter
+    set(BUILD_COUNTER_FILE "${CMAKE_BINARY_DIR}/build_counter.txt")
+    if(EXISTS "${BUILD_COUNTER_FILE}")
+      file(READ "${BUILD_COUNTER_FILE}" CAOS_BUILD_COUNT)
+      string(STRIP "${CAOS_BUILD_COUNT}" CAOS_BUILD_COUNT)
+    else()
+      set(CAOS_BUILD_COUNT 1)
+    endif()
+
+    string(TOLOWER "${CAOS_DB_BACKEND}" CAOS_DB_BACKEND_LOWER)
+
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_SOURCE_DIR}/dist
-      COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> ${CMAKE_SOURCE_DIR}/dist/
-      COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.ini ${CMAKE_SOURCE_DIR}/dist/
-      COMMENT "Copying ${PROJECT_NAME}.so and ${PROJECT_NAME}.ini to dist directory"
+      COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> ${CMAKE_SOURCE_DIR}/dist/${PROJECT_NAME}-${CAOS_DB_BACKEND_LOWER}-${CAOS_BUILD_COUNT}.so
+      COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.ini ${CMAKE_SOURCE_DIR}/dist/${PROJECT_NAME}-${CAOS_DB_BACKEND_LOWER}-${CAOS_BUILD_COUNT}.ini
+      COMMENT "Copying ${PROJECT_NAME}-${CAOS_DB_BACKEND_LOWER}-${CAOS_BUILD_COUNT}.so and ${PROJECT_NAME}-${CAOS_DB_BACKEND_LOWER}-${CAOS_BUILD_COUNT}.ini to dist directory"
       VERBATIM
     )
 
@@ -106,16 +117,15 @@ else()
     message(STATUS "PHP extension will be installed to: ${PHP_EXTENSION_DIR}/${PROJECT_NAME}.so")
     message(STATUS "PHP ini file will be installed to: ${PHP_MODS_AVAILABLE_DIR}/${PROJECT_NAME}.ini")
 
-
     add_custom_target(${PROJECT_NAME}_package_deb
-      COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/scripts/create_package_deb.sh ${CAOS_DB_BACKEND}
+      COMMAND ${CMAKE_SOURCE_DIR}/scripts/create_package_deb.sh ${CAOS_DB_BACKEND} ${PROJECT_NAME}
       DEPENDS libcaos ${PROJECT_NAME}
       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
       COMMENT "Building DEB package for PHP extension with ${CAOS_DB_BACKEND} backend"
     )
 
     add_custom_target(${PROJECT_NAME}_distribution_tarball
-      COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/scripts/create_distribution_tarball.sh ${CAOS_DB_BACKEND}
+      COMMAND ${CMAKE_SOURCE_DIR}/scripts/create_distribution_tarball.sh ${CAOS_DB_BACKEND} ${PROJECT_NAME}
       DEPENDS ${PROJECT_NAME}_package_deb
       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
       COMMENT "Creating distribution tarball with ${CAOS_DB_BACKEND} backend"
