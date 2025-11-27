@@ -1,1 +1,0 @@
-set(DB_BACKEND MARIADB)
