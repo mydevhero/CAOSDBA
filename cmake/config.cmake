@@ -17,11 +17,15 @@ option(CAOS_BUILD_BINDINGS      "CAOS build bindings extension"  ON)
 
 
 # Select CAOS_DB_BACKEND +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-if(EXISTS ${CMAKE_SOURCE_DIR}/cmake/db_backend.cmake)
+if(DEFINED CAOS_DB_BACKEND)
+  message(STATUS "Using CAOS_DB_BACKEND from command line: ${CAOS_DB_BACKEND}")
+elseif(EXISTS ${CMAKE_SOURCE_DIR}/cmake/db_backend.cmake)
   include(${CMAKE_SOURCE_DIR}/cmake/db_backend.cmake)
-  set(CAOS_DB_BACKEND "${DB_BACKEND}" CACHE STRING "Database backend, got default from cmake/db_backend.cmake" )
+  set(CAOS_DB_BACKEND "${DB_BACKEND}" CACHE STRING "Database backend, got default from cmake/db_backend.cmake")
+  message(STATUS "Using CAOS_DB_BACKEND from db_backend.cmake: ${CAOS_DB_BACKEND}")
 else()
-  set(CAOS_DB_BACKEND "MYSQL" CACHE STRING "Database backend to use for CAOS." )
+  set(CAOS_DB_BACKEND "MYSQL" CACHE STRING "Database backend to use for CAOS.")
+  message(STATUS "Using default CAOS_DB_BACKEND: ${CAOS_DB_BACKEND}")
 endif()
 
 set_property(CACHE CAOS_DB_BACKEND PROPERTY STRINGS
