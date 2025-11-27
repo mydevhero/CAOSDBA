@@ -1,0 +1,99 @@
+name: Validate Framework Integrity
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  validate-no-user-files:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for user project files in framework repository
+        run: |
+          echo "Checking for user project files in framework repository..."
+
+          # List of user project files that should NOT exist in framework repo
+          FORBIDDEN_PATTERNS=(
+            "src/"
+            "scripts/"
+            "dist/"
+            "build/"
+            "cmake/db_backend.cmake"
+            "cmake/custom_code.cmake"
+            "cmake/app.cmake"
+            "*.so"
+            "*.ini"
+            "*.deb"
+            ".*.swp"
+            "*.pro.user*"
+            "CMakeLists.txt.user*"
+            "default.profraw"
+            "todo.txt"
+            "docs/"
+          )
+
+          # Get changed files
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            BASE_SHA="${{ github.event.before }}"
+            HEAD_SHA="${{ github.event.after }}"
+          else
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          fi
+
+          CHANGED_FILES=$(git diff --name-only $BASE_SHA $HEAD_SHA 2>/dev/null || echo "")
+
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "✅ No files changed in this event"
+            exit 0
+          fi
+
+          VIOLATIONS=()
+          for file in $CHANGED_FILES; do
+            for pattern in "${FORBIDDEN_PATTERNS[@]}"; do
+              if [[ $file == $pattern* ]] || [[ $file == */$pattern* ]] || [[ $pattern == *"*"* && $file == $pattern ]]; then
+                VIOLATIONS+=("$file")
+                break
+              fi
+            done
+          done
+
+          if [ ${#VIOLATIONS[@]} -gt 0 ]; then
+            echo "❌ BLOCKED: Found user project files in framework repository"
+            echo ""
+            echo "These files should only exist in USER PROJECTS, not in the framework repository:"
+            for violation in "${VIOLATIONS[@]}"; do
+              echo "  - $violation"
+            done
+            echo ""
+            echo "💡 SOLUTION:"
+            echo "Add these patterns to your LOCAL git exclude (not committed to repository):"
+            echo ""
+            echo "Run these commands in your local repository:"
+            echo "  echo \"src/\" >> .git/info/exclude"
+            echo "  echo \"scripts/\" >> .git/info/exclude"
+            echo "  echo \"dist/\" >> .git/info/exclude"
+            echo "  echo \"build/\" >> .git/info/exclude"
+            echo "  echo \"cmake/db_backend.cmake\" >> .git/info/exclude"
+            echo "  echo \"cmake/custom_code.cmake\" >> .git/info/exclude"
+            echo "  echo \"cmake/app.cmake\" >> .git/info/exclude"
+            echo "  echo \"*.so\" >> .git/info/exclude"
+            echo "  echo \"*.ini\" >> .git/info/exclude"
+            echo "  echo \"*.deb\" >> .git/info/exclude"
+            echo ""
+            echo "This will hide these files from 'git status' on your machine only."
+            echo "They will not be committed to the framework repository."
+            echo ""
+            echo "📖 Remember:"
+            echo "This is a FRAMEWORK repository. You can't push user project files in this repository."
+            exit 1
+          else
+            echo "✅ SUCCESS: No user project files found in framework repository"
+          fi
