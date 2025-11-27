@@ -33,9 +33,8 @@ if(CAOS_DB_BACKEND STREQUAL "POSTGRESQL")
   if(CAOS_BUILD_EXAMPLES)
     list(APPEND POSTGRESQL_SOURCES Middleware/Repository/Database/PostgreSQL/Query.hpp)
   endif()
-endif()
 
-if(CAOS_DB_BACKEND STREQUAL "MYSQL")
+elseif(CAOS_DB_BACKEND STREQUAL "MYSQL")
   list(APPEND MYSQL_SOURCES
     Middleware/Repository/Database/MySQL/MySQL.hpp
     Middleware/Repository/Database/MySQL/MySQL.cpp
@@ -44,9 +43,8 @@ if(CAOS_DB_BACKEND STREQUAL "MYSQL")
   if(CAOS_BUILD_EXAMPLES)
     list(APPEND POSTGRESQL_SOURCES Middleware/Repository/Database/MySQL/Query.hpp)
   endif()
-endif()
 
-if(CAOS_DB_BACKEND STREQUAL "MARIADB")
+elseif(CAOS_DB_BACKEND STREQUAL "MARIADB")
   list(APPEND MARIADB_SOURCES
     Middleware/Repository/Database/MariaDB/MariaDB.cpp
     Middleware/Repository/Database/MariaDB/MariaDB.hpp
@@ -55,6 +53,9 @@ if(CAOS_DB_BACKEND STREQUAL "MARIADB")
   if(CAOS_BUILD_EXAMPLES)
     list(APPEND POSTGRESQL_SOURCES Middleware/Repository/Database/MariaDB/Query.hpp)
   endif()
+
+else()
+  message(FATAL_ERROR "Invalid CAOS_DB_BACKEND value: allowed POSTGRESQL, MYSQL, MARIADB")
 endif()
 
 if(CAOS_USE_CROWCPP)
@@ -199,15 +200,11 @@ endif()
 # PostgreSQL
 if(CAOS_DB_BACKEND STREQUAL "POSTGRESQL")
   include("cmake/postgresql.cmake")
-endif()
-
 # MySQL
-if(CAOS_DB_BACKEND STREQUAL "MYSQL")
+elseif(CAOS_DB_BACKEND STREQUAL "MYSQL")
   include("cmake/mysql.cmake")
-endif()
-
 # MariaDB
-if(CAOS_DB_BACKEND STREQUAL "MARIADB")
+elseif(CAOS_DB_BACKEND STREQUAL "MARIADB")
   include("cmake/mariadb.cmake")
 endif()
 # --------------------------------------------------------------------------------------------------
