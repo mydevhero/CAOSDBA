@@ -111,6 +111,9 @@ create_tarball_structure() {
 create_install_script() {
     local temp_dir="$DIST_DIR/temp_caos_deb"
 
+    # Crea la directory di destinazione
+    mkdir -p "$temp_dir$CAOS_OPT_DIR"
+
     cat > "$temp_dir$CAOS_OPT_DIR/install-repository.sh" << EOF
 #!/bin/bash
 # ${PROJECT_NAME^^} Repository Installation Script
@@ -138,6 +141,16 @@ if [ ! -d "\$REPO_DIR" ]; then
 fi
 
 echo "Setting up ${PROJECT_NAME^^} repository from \$REPO_DIR"
+
+# Remove existing APT source files to avoid conflicts
+if [ -f "/etc/apt/sources.list.d/caos-local.list" ]; then
+    echo "Removing existing caos-local.list to avoid conflicts..."
+    rm -f "/etc/apt/sources.list.d/caos-local.list"
+fi
+if [ -f "/etc/apt/sources.list.d/${PROJECT_NAME}-local.list" ]; then
+    echo "Removing existing ${PROJECT_NAME}-local.list to avoid conflicts..."
+    rm -f "/etc/apt/sources.list.d/${PROJECT_NAME}-local.list"
+fi
 
 # Update repository index
 echo "Updating repository index..."
@@ -173,11 +186,9 @@ echo "Repository location: \$REPO_DIR"
 echo ""
 EOF
 
-    # Questo chmod è solo per il file nella temp directory, non per il contenuto dello script
     chmod 755 "$temp_dir$CAOS_OPT_DIR/install-repository.sh"
-    echo "Created install-repository.sh"
+    echo "Created install-repository.sh in tarball structure"
 }
-
 create_readme() {
     local readme_file="$DIST_DIR/README.md"
 

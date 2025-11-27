@@ -206,7 +206,7 @@ create_control() {
             common_depends="$common_depends, libmysqlclient-dev, libmysqlcppconn-dev"
             ;;
         "mariadb")
-            # common_depends="$common_depends, libmariadb-dev"
+            common_depends="$common_depends, libmariadb-dev"
             ;;
         "postgresql")
             # common_depends="$common_depends, libpq-dev, libpqxx-dev"
@@ -290,7 +290,7 @@ create_meta_package() {
             meta_common_depends="$meta_common_depends, libmysqlclient-dev, libmysqlcppconn-dev"
             ;;
         "mariadb")
-            # meta_common_depends="$meta_common_depends, mariadb-common"
+            meta_common_depends="$meta_common_depends, libmariadb-dev"
             ;;
         "postgresql")
             # meta_common_depends="$meta_common_depends, postgresql-common, libpq-dev, libpqxx-dev"
@@ -366,29 +366,20 @@ echo "Updating ${PROJECT_NAME^^} repository index in \$REPO_DIR"
 
 mkdir -p "\$CONF_DIR"
 
-if [ ! -f "\$OVERRIDE_FILE" ]; then
-    cat > "\$OVERRIDE_FILE" << OVERRIDE_CONTENT
-${PROJECT_NAME_SANITIZED}-php-mysql optional php
-${PROJECT_NAME_SANITIZED}-php-mysql-8.0 optional php
-${PROJECT_NAME_SANITIZED}-php-mysql-8.1 optional php
-${PROJECT_NAME_SANITIZED}-php-mysql-8.2 optional php
-${PROJECT_NAME_SANITIZED}-php-mysql-8.3 optional php
-${PROJECT_NAME_SANITIZED}-php-mysql-8.4 optional php
-${PROJECT_NAME_SANITIZED}-php-mariadb optional php
-${PROJECT_NAME_SANITIZED}-php-mariadb-8.0 optional php
-${PROJECT_NAME_SANITIZED}-php-mariadb-8.1 optional php
-${PROJECT_NAME_SANITIZED}-php-mariadb-8.2 optional php
-${PROJECT_NAME_SANITIZED}-php-mariadb-8.3 optional php
-${PROJECT_NAME_SANITIZED}-php-mariadb-8.4 optional php
-${PROJECT_NAME_SANITIZED}-php-postgresql optional php
-${PROJECT_NAME_SANITIZED}-php-postgresql-8.0 optional php
-${PROJECT_NAME_SANITIZED}-php-postgresql-8.1 optional php
-${PROJECT_NAME_SANITIZED}-php-postgresql-8.2 optional php
-${PROJECT_NAME_SANITIZED}-php-postgresql-8.3 optional php
-${PROJECT_NAME_SANITIZED}-php-postgresql-8.4 optional php
-OVERRIDE_CONTENT
-    echo "Created override file: \$OVERRIDE_FILE"
-fi
+# Generate override file dynamically based on actual packages
+echo "Generating override file based on available packages..."
+> "\$OVERRIDE_FILE"
+
+for deb_file in "\$REPO_DIR"/*.deb; do
+    if [ -f "\$deb_file" ]; then
+        package_name=\$(dpkg-deb -f "\$deb_file" Package 2>/dev/null || basename "\$deb_file" | cut -d'_' -f1)
+        if [ -n "\$package_name" ]; then
+            echo "\$package_name optional php" >> "\$OVERRIDE_FILE"
+        fi
+    fi
+done
+
+echo "Override file generated with \$(wc -l < "\$OVERRIDE_FILE") entries"
 
 cd "\$REPO_DIR" || exit 1
 
@@ -443,7 +434,7 @@ if [ "\$EUID" -ne 0 ]; then
     exit 1
 fi
 
-echo "Setting up ${PROJECT_NAME^^} local repository for APT"
+echo "Setting up local repository for APT"
 
 if [ ! -d "\$REPO_DIR" ]; then
     echo "ERROR: Repository directory not found: \$REPO_DIR"
@@ -454,6 +445,14 @@ if [ ! -f "\$REPO_DIR/Packages.gz" ]; then
     echo "ERROR: Repository index not found. Run: ./update-repo.sh first"
     exit 1
 fi
+
+# Remove any existing conflicting files
+for existing_file in /etc/apt/sources.list.d/*-local.list; do
+    if [ -f "\$existing_file" ]; then
+        echo "Removing existing APT source: \$existing_file"
+        rm -f "\$existing_file"
+    fi
+done
 
 echo "deb [trusted=yes] file:\$REPO_DIR ./" > "\$APT_SOURCE_FILE"
 
@@ -476,7 +475,7 @@ if [ \$? -eq 0 ]; then
     echo ""
     echo "Setup completed"
     echo ""
-    echo "Install ${PROJECT_NAME^^} PHP extension:"
+    echo "Install PHP extension:"
     echo "sudo apt install ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}"
     echo ""
     echo "Or install for specific PHP version:"
