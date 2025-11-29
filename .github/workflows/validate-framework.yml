@@ -35,8 +35,8 @@ jobs:
             "*.pro.user*"
             "CMakeLists.txt.user*"
             "default.profraw"
-            "todo.txt"
-            "/docs/"
+            "/todo.txt"
+            "/docs/internal/"
           )
 
           # Get changed files
