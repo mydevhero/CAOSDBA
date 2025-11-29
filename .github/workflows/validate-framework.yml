@@ -1,5 +1,4 @@
 name: Validate Framework Integrity
-
 on:
   pull_request:
     branches: [ main ]
@@ -17,63 +16,94 @@ jobs:
 
       - name: Check for user project files in framework repository
         run: |
+          set -e  # Exit on error
+
+          echo "::group::Configuration"
           echo "Checking for user project files in framework repository..."
 
           # List of user project files that should NOT exist in framework repo
+          # Use precise patterns: ^pattern for start, pattern$ for end, or exact paths
           FORBIDDEN_PATTERNS=(
-            "/src/"
-            "/scripts/"
-            "/dist/"
-            "/build/"
-            "/cmake/db_backend.cmake"
-            "/cmake/custom_code.cmake"
-            "/cmake/app.cmake"
-            "*.so"
-            "*.ini"
-            "*.deb"
-            ".*.swp"
-            "*.pro.user*"
-            "CMakeLists.txt.user*"
-            "default.profraw"
-            "/todo.txt"
-            "/docs/internal/"
+            "^src/"
+            "^scripts/"
+            "^dist/"
+            "^build/"
+            "^cmake/db_backend.cmake$"
+            "^cmake/custom_code.cmake$"
+            "^cmake/app.cmake$"
+            "\.so$"
+            "\.ini$"
+            "\.deb$"
+            "\.swp$"
+            "\.pro\.user"
+            "CMakeLists\.txt\.user"
+            "^default\.profraw$"
+            "^todo\.txt$"
+            "^docs/internal/"
           )
+          echo "::endgroup::"
 
           # Get changed files
+          echo "::group::Detecting changed files"
           if [[ "${{ github.event_name }}" == "push" ]]; then
             BASE_SHA="${{ github.event.before }}"
             HEAD_SHA="${{ github.event.after }}"
+            echo "Event: push"
+            echo "Base SHA: $BASE_SHA"
+            echo "Head SHA: $HEAD_SHA"
           else
             BASE_SHA="${{ github.event.pull_request.base.sha }}"
             HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+            echo "Event: pull_request"
+            echo "Base SHA: $BASE_SHA"
+            echo "Head SHA: $HEAD_SHA"
           fi
 
           CHANGED_FILES=$(git diff --name-only $BASE_SHA $HEAD_SHA 2>/dev/null || echo "")
 
           if [ -z "$CHANGED_FILES" ]; then
-            echo "✅ No files changed in this event"
+            echo "No files changed in this event"
+            echo "::endgroup::"
+            echo "::notice::✅ No files to validate"
             exit 0
           fi
 
+          echo "Changed files:"
+          echo "$CHANGED_FILES" | sed 's/^/  - /'
+          echo "::endgroup::"
+
+          # Check for violations
+          echo "::group::Validating files"
           VIOLATIONS=()
-          for file in $CHANGED_FILES; do
+
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+
             for pattern in "${FORBIDDEN_PATTERNS[@]}"; do
-              if [[ $file == $pattern* ]] || [[ $file == */$pattern* ]] || [[ $pattern == *"*"* && $file == $pattern ]]; then
+              if echo "$file" | grep -qE "$pattern"; then
                 VIOLATIONS+=("$file")
+                echo "⚠️  Matched forbidden pattern '$pattern': $file"
                 break
               fi
             done
-          done
+          done <<< "$CHANGED_FILES"
+          echo "::endgroup::"
 
+          # Report results
           if [ ${#VIOLATIONS[@]} -gt 0 ]; then
-            echo "❌ BLOCKED: Found user project files in framework repository"
+            echo "::group::❌ VALIDATION FAILED"
+            echo ""
+            echo "::error::Found ${#VIOLATIONS[@]} user project file(s) in framework repository"
             echo ""
             echo "These files should only exist in USER PROJECTS, not in the framework repository:"
             for violation in "${VIOLATIONS[@]}"; do
-              echo "  - $violation"
+              echo "::error file=$violation::User project file should not be in framework repository"
+              echo "  ❌ $violation"
             done
             echo ""
-            echo "💡 SOLUTION:"
+            echo "::endgroup::"
+
+            echo "::group::💡 SOLUTION"
             echo "Add these patterns to your LOCAL git exclude (not committed to repository):"
             echo ""
             echo "Run these commands in your local repository:"
@@ -87,13 +117,19 @@ jobs:
             echo "  echo \"*.so\" >> .git/info/exclude"
             echo "  echo \"*.ini\" >> .git/info/exclude"
             echo "  echo \"*.deb\" >> .git/info/exclude"
+            echo "  echo \"todo.txt\" >> .git/info/exclude"
+            echo "  echo \"docs/internal/\" >> .git/info/exclude"
             echo ""
             echo "This will hide these files from 'git status' on your machine only."
             echo "They will not be committed to the framework repository."
-            echo ""
-            echo "📖 Remember:"
-            echo "This is a FRAMEWORK repository. You can't push user project files in this repository."
+            echo "::endgroup::"
+
+            echo "::group::📖 Remember"
+            echo "This is a FRAMEWORK repository."
+            echo "User project files should not be pushed to this repository."
+            echo "::endgroup::"
+
             exit 1
           else
-            echo "✅ SUCCESS: No user project files found in framework repository"
+            echo "::notice::✅ SUCCESS: No user project files found in framework repository"
           fi
