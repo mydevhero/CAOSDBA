@@ -1,11 +1,7 @@
 <div>
-<img src="https://raw.githubusercontent.com/mydevhero/CAOSDBA/main/docs/assets/caosdba.svg" alt="CAOSDBA" width="300"/>
-</div>
+<img src="https://raw.githubusercontent.com/mydevhero/CAOSDBA/main/docs/assets/caosdba.svg" alt="CAOSDBA" width="600"/>
 
-<div align="center">
-
-**Cache App On Steroids - High-Performance C++ Backend with Built-in Caching**
-
+<p><b>Cache App On Steroids - High-Performance C++ Backend with Built-in Caching</b></p>
 </div>
 
 **CAOS** (Cache App On Steroids) it's a high-performance **C++ Architectural Framework** designed for backends where **caching is not an optimization, but a foundational component**. It's built for speed, consistency, and scalability from the ground up.
