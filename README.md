@@ -1,4 +1,6 @@
-# CAOS Framework
+<div>
+<img src="https://raw.githubusercontent.com/mydevhero/CAOSDBA/main/docs/assets/caosdba.svg" alt="CAOSDBA" width="300"/>
+</div>
 
 <div align="center">
 
