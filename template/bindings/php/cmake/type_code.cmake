@@ -1,0 +1,2 @@
+set(CAOS_TEMPLATE_CODE TRUE)
+target_compile_definitions(libcaos PUBLIC CAOS_TEMPLATE_CODE)

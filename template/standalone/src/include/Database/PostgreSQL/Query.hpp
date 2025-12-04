@@ -4,8 +4,8 @@
 
 #include "Middleware/Repository/Database/PostgreSQL/PostgreSQL.hpp"
 
-#ifdef QUERY_EXISTS_IQuery_Demo_Test_echoString
-std::optional<std::string> PostgreSQL::IQuery_Demo_Test_echoString(std::string str)
+/*
+std::optional<std::string> PostgreSQL::IQuery_your_query(std::string str)
 {
   if(!running.load(std::memory_order_relaxed))
   {
@@ -26,7 +26,7 @@ std::optional<std::string> PostgreSQL::IQuery_Demo_Test_echoString(std::string s
         pqxx::work tx(*connection);
         pqxx::params p;
         p.append(str);
-        result = tx.exec("SELECT  $1", p);/*pg_sleep(0.05),*/
+        result = tx.exec("SELECT  $1", p);
         tx.commit();
       }
 
@@ -60,4 +60,4 @@ std::optional<std::string> PostgreSQL::IQuery_Demo_Test_echoString(std::string s
 
   return std::nullopt;
 }
-#endif // End of ifdef QUERY_EXISTS_IQuery_Demo_Test_echoString
+*/

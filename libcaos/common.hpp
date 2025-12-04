@@ -43,11 +43,24 @@ enum class initFlags:std::uint8_t {
   None        = 0,
   Repository  = 1 << 0,
   CrowCpp     = 1 << 1,
-  PHP_EXT     = 1 << 2,
-  All         = Repository | CrowCpp | PHP_EXT
+  All         = Repository | CrowCpp
 };
 
+inline initFlags operator&(initFlags lhs, initFlags rhs)
+{
+  using T = std::underlying_type_t<initFlags>;
+  return static_cast<initFlags>(static_cast<T>(lhs) & static_cast<T>(rhs));
+}
 
+inline initFlags operator|(initFlags lhs, initFlags rhs) {
+    using T = std::underlying_type_t<initFlags>;
+    return static_cast<initFlags>(static_cast<T>(lhs) | static_cast<T>(rhs));
+}
+
+inline bool hasFlag(initFlags value, initFlags flag)
+{
+  return (value & flag) != initFlags::None; // or static_cast<uint8_t>(...) != 0
+}
 
 using LogSeverity = spdlog::level::level_enum;
 enum class LogDestinationSink: std::uint8_t { terminal=0, syslog, EOE };

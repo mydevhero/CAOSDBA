@@ -7,7 +7,6 @@ message(STATUS "Looking for hiredis library on the system...")
 
 find_package(PkgConfig REQUIRED)
 
-# Cerca hiredis con diversi metodi
 find_package(hiredis QUIET)
 
 if(NOT hiredis_FOUND)
@@ -37,7 +36,6 @@ endif()
 if(hiredis_FOUND)
   message(STATUS "Using system hiredis library")
 
-  # Crea target per hiredis di sistema
   add_library(hiredis_static INTERFACE IMPORTED)
   if(TARGET hiredis::hiredis)
     set_target_properties(hiredis_static PROPERTIES
@@ -56,16 +54,7 @@ else()
 endif()
 
 else()
-  message(FATAL_ERROR "\n"
-    "===========================================================================\n"
-    "HIREDIS LIBRARY NOT FOUND\n"
-    "===========================================================================\n"
-    "hiredis library is required but was not found on your system.\n\n"
-    "Please install hiredis using one of the following methods:\n\n"
-    "Ubuntu/Debian:\n"
-    "    sudo apt-get install libhiredis-dev\n\n"
-    "===========================================================================\n"
-  )
+  message(FATAL_ERROR "HiRedis library not found. Install with: sudo apt-get install libhiredis-dev")
 endif()
 
 # --------------------------------------------------------------------------------------------------
@@ -74,12 +63,9 @@ endif()
 set(REDIS_PREBUILT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vendor/prebuilt/")
 set(REDISPP_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vendor/redis-plus-plus")
 
-# Ottieni il percorso di installazione di hiredis di sistema per redis++
 if(HIREDIS_PKG_FOUND)
-  # Se trovato via pkg-config, usa le directory fornite
   set(HIREDIS_INSTALL_DIR_FOR_REDISPP "")
 else()
-  # Altrimenti ricava la directory base dalle include/library
   get_filename_component(HIREDIS_BASE_DIR "${HIREDIS_INCLUDE_DIR}" DIRECTORY)
   set(HIREDIS_INSTALL_DIR_FOR_REDISPP "${HIREDIS_BASE_DIR}")
 endif()
@@ -90,22 +76,18 @@ if(EXISTS ${REDIS_PREBUILT_DIR}/redispp/lib/libredis++.a)
 else()
   message(STATUS "Building redis-plus-plus from submodule...")
 
-  # Verifica che il submodule esista
   if(NOT EXISTS ${REDISPP_SOURCE_DIR}/CMakeLists.txt)
     message(FATAL_ERROR "Redis++ source directory not found: ${REDISPP_SOURCE_DIR}\n"
       "Please initialize the submodule: git submodule update --init vendor/redis-plus-plus")
   endif()
 
-  # Esegui lo script di build passando le informazioni di hiredis di sistema
   if(HIREDIS_PKG_FOUND)
-    # Se abbiamo pkg-config, passa le variabili di ambiente
     execute_process(
       COMMAND bash -c "PKG_CONFIG_PATH=${HIREDIS_PKG_PREFIX}/lib/pkgconfig ${CMAKE_CURRENT_SOURCE_DIR}/vendor/build-scripts/build_redispp.sh system"
       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
       RESULT_VARIABLE redispp_build_result
     )
 else()
-  # Altrimenti passa la directory di hiredis
   execute_process(
     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/vendor/build-scripts/build_redispp.sh ${HIREDIS_INSTALL_DIR_FOR_REDISPP}
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
@@ -123,7 +105,6 @@ endif()
 # --------------------------------------------------------------------------------------------------
 # 3. TARGETS IMPORT
 # --------------------------------------------------------------------------------------------------
-# redis++ (build da sorgente)
 add_library(redispp_static STATIC IMPORTED GLOBAL)
 set_target_properties(redispp_static PROPERTIES
   IMPORTED_LOCATION ${REDISPP_INSTALL_DIR}/lib/libredis++.a
@@ -132,7 +113,7 @@ set_target_properties(redispp_static PROPERTIES
 )
 
 # --------------------------------------------------------------------------------------------------
-# 4. DISABILITA WARNING PER LE LIBRERIE REDIS
+# 4. DISABLE WARNINGs
 # --------------------------------------------------------------------------------------------------
 add_library(redis_suppressed_flags INTERFACE)
 
@@ -142,7 +123,6 @@ target_compile_options(redis_suppressed_flags INTERFACE
   -Wno-missing-field-initializers
 )
 
-# Crea wrapper target che applicano i flag soppressi
 add_library(hiredis_suppressed INTERFACE)
 add_library(redispp_suppressed INTERFACE)
 

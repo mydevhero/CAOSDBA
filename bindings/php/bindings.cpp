@@ -205,7 +205,7 @@ static void caos_execute_internal(zend_execute_data *execute_data, zval *return_
 // =================================================================================================
 
 PHP_FUNCTION(caos_hello);
-PHP_FUNCTION(IQuery_Test_echoString);
+PHP_FUNCTION(IQuery_Example_echoString);
 
 // =================================================================================================
 // ARGUMENT INFO
@@ -219,13 +219,13 @@ ZEND_BEGIN_ARG_INFO(arginfolibcaos_hello, 0)
 ZEND_END_ARG_INFO()
 
 /**
- * Argument information for IQuery_Test_echoString()
+ * Argument information for IQuery_Example_echoString()
  *
  * Parameters:
  * 1. token (string)  - Authentication token
  * 2. str (string)    - String to echo
  */
-ZEND_BEGIN_ARG_INFO(arginfolibIQuery_Test_echoString, 0)
+ZEND_BEGIN_ARG_INFO(arginfolibIQuery_Example_echoString, 0)
 ZEND_ARG_INFO(0, token)  // Token as first parameter
 ZEND_ARG_INFO(0, str)    // Original parameter as second
 ZEND_END_ARG_INFO()
@@ -240,7 +240,7 @@ ZEND_END_ARG_INFO()
 static const zend_function_entry caos_functions[] =
 {
   PHP_FE(caos_hello, arginfolibcaos_hello)
-  PHP_FE(IQuery_Test_echoString, arginfolibIQuery_Test_echoString)
+  PHP_FE(IQuery_Example_echoString, arginfolibIQuery_Example_echoString)
   PHP_FE_END
 };
 
@@ -380,7 +380,7 @@ PHP_FUNCTION(caos_hello)
 }
 
 /**
- * IQuery_Test_echoString() - Echo string through CAOS repository
+ * IQuery_Example_echoString() - Echo string through CAOS repository
  *
  * This function demonstrates:
  * 1. Token-based authentication (via hook)
@@ -392,7 +392,7 @@ PHP_FUNCTION(caos_hello)
  * BEFORE this function body executes. If token validation fails, this
  * function is never called.
  *
- * Usage: IQuery_Test_echoString($token, $string)
+ * Usage: IQuery_Example_echoString($token, $string)
  *
  * @param string $token Authentication token (validated by hook)
  * @param string $str   String to echo through repository
@@ -409,7 +409,7 @@ PHP_FUNCTION(caos_hello)
  * - AUTH: Authentication failure (set by hook, not by this function)
  * - AUTH_SYSTEM_ERROR: Authentication system error (set by hook)
  */
-PHP_FUNCTION(IQuery_Test_echoString)
+PHP_FUNCTION(IQuery_Example_echoString)
 {
   (void)execute_data;
 
@@ -451,7 +451,7 @@ PHP_FUNCTION(IQuery_Test_echoString)
     }
 
     // Call repository method
-    auto repo_result = repo->IQuery_Test_echoString(str);
+    auto repo_result = repo->IQuery_Example_echoString(str);
     if (!repo_result.has_value())
     {
       // Repository returned no value - return success with null data

@@ -92,7 +92,7 @@ Napi::String caos_echoString(const Napi::CallbackInfo& info)
       return Napi::String::New(env, "CAOS repository not available!\n");
     }
 
-    auto repo_result = repo->IQuery_Test_echoString(input);
+    auto repo_result = repo->IQuery_Example_echoString(input);
     if (!repo_result.has_value())
     {
       return Napi::String::New(env, "No result from repository!\n");

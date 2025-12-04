@@ -38,7 +38,7 @@ endif()
 # 2. FIND LIBRARIES AND HEADERS IN CORRECT LOCATIONS
 # --------------------------------------------------------------------------------------------------
 
-# Try to find libmariadbcpp.a in multiple possible locations
+# Try to find libmariadbcpp.a
 if(EXISTS ${MARIADB_INSTALL_DIR}/lib/mariadb/libmariadbcpp.a)
   set(MARIADB_CPP_LIB ${MARIADB_INSTALL_DIR}/lib/mariadb/libmariadbcpp.a)
 elseif(EXISTS ${MARIADB_INSTALL_DIR}/lib/libmariadbcpp.a)
@@ -47,7 +47,7 @@ else()
   message(FATAL_ERROR "MariaDB C++ connector library not found in: ${MARIADB_INSTALL_DIR}")
 endif()
 
-# Try to find libmariadb.a (C connector) - ESSENTIAL FOR LINKING
+# Try to find libmariadb.a (C connector)
 if(EXISTS ${MARIADB_INSTALL_DIR}/lib/mariadb/libmariadb.a)
   set(MARIADB_C_LIB ${MARIADB_INSTALL_DIR}/lib/mariadb/libmariadb.a)
 elseif(EXISTS ${MARIADB_INSTALL_DIR}/lib/libmariadb.a)
@@ -63,17 +63,16 @@ else()
   endif()
 endif()
 
-# Set include directories
 set(MARIADB_INCLUDE_DIRS
-    ${MARIADB_INSTALL_DIR}/include
-    ${MARIADB_INSTALL_DIR}/include/mariadb
+  ${MARIADB_INSTALL_DIR}/include
+  ${MARIADB_INSTALL_DIR}/include/mariadb
 )
 
 # --------------------------------------------------------------------------------------------------
 # 3. CREATE IMPORTED TARGETS
 # --------------------------------------------------------------------------------------------------
 
-# libmariadb (C connector) - MUST BE FIRST
+# libmariadb (C connector)
 add_library(libmariadb STATIC IMPORTED GLOBAL)
 set_target_properties(libmariadb PROPERTIES
   IMPORTED_LOCATION ${MARIADB_C_LIB}
@@ -93,82 +92,15 @@ set_target_properties(mariadbcpp PROPERTIES
 # --------------------------------------------------------------------------------------------------
 
 target_include_directories(${PROJECT_NAME} PUBLIC
-    ${MARIADB_INCLUDE_DIRS}
+  ${MARIADB_INCLUDE_DIRS}
 )
 
-# Link BOTH libraries in the correct order
 target_link_libraries(${PROJECT_NAME} PRIVATE
-    mariadbcpp
-    libmariadb
+  mariadbcpp
+  libmariadb
 )
 
 message(STATUS "MariaDB connector setup complete")
 message(STATUS "• C++ Library: ${MARIADB_CPP_LIB}")
 message(STATUS "• C Library: ${MARIADB_C_LIB}")
 message(STATUS "• Include directories: ${MARIADB_INCLUDE_DIRS}")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# target_compile_definitions(${PROJECT_NAME} PUBLIC CAOS_USE_DB_MARIADB)
-
-
-# find_library(MARIADB_C_LIB NAMES mariadb mariadbclient)
-# find_path(MARIADB_C_INCLUDE_DIR mysql.h PATH_SUFFIXES mysql)
-
-# if(NOT MARIADB_C_LIB OR NOT MARIADB_C_INCLUDE_DIR)
-#   message(FATAL_ERROR "MariaDB C connector not found. Install with: sudo apt-get install libmariadb-dev")
-# else()
-#   message(STATUS "MariaDB C connector found.")
-# endif()
-
-
-# message(STATUS "Fetching mariadb-connector-cpp from GitHub.")
-
-# include(ExternalProject)
-# ExternalProject_Add(
-#   mariadb-connector-cpp
-#   GIT_REPOSITORY https://github.com/mariadb-corporation/mariadb-connector-cpp.git
-#   GIT_TAG 1.1.7
-#   PREFIX "${CMAKE_BINARY_DIR}/_deps/mariadb-connector-cpp"
-#   INSTALL_DIR "${CMAKE_BINARY_DIR}/_deps/mariadb-connector-cpp-install"
-#   CMAKE_ARGS
-#     -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/_deps/mariadb-connector-cpp-install
-#     -DSKIP_TESTING=ON
-#     -DSKIP_EXAMPLES=ON
-#   BUILD_COMMAND ${CMAKE_COMMAND} --build . --config Release
-#   INSTALL_COMMAND ${CMAKE_COMMAND} --install .
-#   BUILD_ALWAYS OFF
-#   UPDATE_COMMAND ""
-# )
-
-# ExternalProject_Get_Property(mariadb-connector-cpp INSTALL_DIR)
-# set(MARIADB_INCLUDE_DIR "${INSTALL_DIR}/include")
-# set(MARIADB_LIB_DIR "${INSTALL_DIR}/lib/mariadb")
-
-# include_directories(${MARIADB_INCLUDE_DIR})
-
-# add_custom_command(
-#   OUTPUT ${MARIADB_LIB_DIR}/libmariadbcpp.so
-#   COMMAND ""
-#   DEPENDS mariadb-connector-cpp
-# )
-
-# add_custom_target(mariadbcpp DEPENDS ${MARIADB_LIB_DIR}/libmariadbcpp.so)
-# add_dependencies(${PROJECT_NAME} mariadbcpp)
-
-# target_include_directories(${PROJECT_NAME} PRIVATE ${INSTALL_DIR}/include)
-# target_link_directories(${PROJECT_NAME} PRIVATE ${MARIADB_LIB_DIR})
-# target_link_libraries(${PROJECT_NAME} PRIVATE ${MARIADB_LIB_DIR}/libmariadbcpp.so)

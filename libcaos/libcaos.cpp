@@ -150,7 +150,7 @@ void Caos::PRINT_HEADER() noexcept
 
 Caos::Caos(int argc, char* argv[]) : terminalPtr(&TerminalOptions::get_instance(argc, argv))
 {
-  this->init(initFlags::Repository|initFlags::CrowCpp);
+  this->init(initFlags::Repository);
 }
 
 Caos::Caos(int argc, char* argv[], initFlags flags) : terminalPtr(&TerminalOptions::get_instance(argc, argv))
@@ -181,29 +181,19 @@ Caos::~Caos()
 
 void Caos::init(initFlags flags)
 {
-  if ((static_cast<std::uint8_t>(flags) & static_cast<std::uint8_t>(initFlags::Repository)) != 0)
+  // if ((static_cast<std::uint8_t>(flags) & static_cast<std::uint8_t>(initFlags::Repository)) != 0)
+  if (hasFlag(flags, initFlags::Repository))
   {
     this->repository = std::make_unique<Cache>(std::make_unique<Database>());
   }
 
-  if ((static_cast<std::uint8_t>(flags) & static_cast<std::uint8_t>(initFlags::CrowCpp)) != 0)
-  {
 #ifdef CAOS_USE_CROWCPP
-    this->crowcpp = std::make_unique<CrowCpp>();
-#else
-#warning "Can't provide crowcpp object while CAOS_USE_CROWCPP is OFF in CMakeLists.txt"
-#endif
-  }
-
-
-  if ((static_cast<std::uint8_t>(flags) & static_cast<std::uint8_t>(initFlags::PHP_EXT)) != 0)
+  // if ((static_cast<std::uint8_t>(flags) & static_cast<std::uint8_t>(initFlags::CrowCpp)) != 0)
+  if (hasFlag(flags, initFlags::CrowCpp))
   {
-#ifdef CAOS_BUILD_PHP_BINDING
-    // caosFilter::Auth::Token::setAutoToken();
-#else
-#warning "Can't provide PHP methods while CAOS_BUILD_PHP_BINDING is OFF in CMakeLists.txt"
-#endif
+    this->crowcpp = std::make_unique<CrowCpp>();
   }
+#endif
 
   // Caos::PRINT_HEADER();
 }

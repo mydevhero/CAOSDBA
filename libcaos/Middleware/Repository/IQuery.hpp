@@ -34,7 +34,7 @@
  *   return_type | method_name | full_parameters | call_parameters
  *
  * Example:
- *   std::optional<std::string> | IQuery_Test_echoString | std::string str | str
+ *   std::optional<std::string> | IQuery_Example_echoString | std::string str | str
  *
  * 2.  AUTOMATIC CODE GENERATION:
  *

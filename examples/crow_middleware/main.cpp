@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
     {
       auto& caos = app.get_context<middleware::Repository>(req);
 
-      auto ret = caos.repository->IQuery_Test_echoString(str);
+      auto ret = caos.repository->IQuery_Example_echoString(str);
 
       if (ret.has_value())
       {
@@ -135,7 +135,7 @@ int main(int argc, char* argv[])
 
 //     try
 //     {
-//       auto ret = mycaos->repository->IQuery_Test_echoString(str);
+//       auto ret = mycaos->repository->IQuery_Example_echoString(str);
 
 //       if (ret.has_value())
 //       {

@@ -2,10 +2,10 @@
 
 #include "Middleware/Repository/Database/MySQL/MySQL.hpp"
 
-#ifdef QUERY_EXISTS_IQuery_Demo_Test_echoString
-std::optional<std::string> MySQL::IQuery_Demo_Test_echoString(std::string str)
+/*
+std::optional<std::string> MySQL::IQuery_your_query(std::string str)
 {
-  static constexpr const char* fName = "MySQL::echoString";
+  static constexpr const char* fName = "MySQL::IQuery_your_query";
 
   if(!running.load(std::memory_order_relaxed))
   {
@@ -90,4 +90,4 @@ std::optional<std::string> MySQL::IQuery_Demo_Test_echoString(std::string str)
 
   return std::nullopt;
 }
-#endif // End of ifdef QUERY_EXISTS_IQuery_Demo_Test_echoString
+*/

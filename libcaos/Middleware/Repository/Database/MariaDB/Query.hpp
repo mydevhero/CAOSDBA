@@ -22,8 +22,8 @@
 
 #include "MariaDB.hpp"
 
-#ifdef QUERY_EXISTS_IQuery_Test_echoString
-std::optional<std::string> MariaDB::IQuery_Test_echoString(std::string str)
+#ifdef QUERY_EXISTS_IQuery_Example_echoString
+std::optional<std::string> MariaDB::IQuery_Example_echoString(std::string str)
 {
   static constexpr const char* fName = "MariaDB::echoString";
 
@@ -110,4 +110,4 @@ std::optional<std::string> MariaDB::IQuery_Test_echoString(std::string str)
 
   return std::nullopt;
 }
-#endif // End of ifdef QUERY_EXISTS_IQuery_Test_echoString
+#endif // End of ifdef QUERY_EXISTS_IQuery_Example_echoString

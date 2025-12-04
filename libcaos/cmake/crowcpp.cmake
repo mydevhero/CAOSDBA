@@ -13,6 +13,6 @@ set(CROW_ENABLE_SSL OFF CACHE BOOL "" FORCE)
 
 add_subdirectory(${CROW_SOURCE_DIR})
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Crow)
-
+# target_link_libraries(${PROJECT_NAME} PRIVATE Crow)
+target_link_libraries(${PROJECT_NAME} PRIVATE Crow::Crow)
 message(STATUS "CrowCpp configured successfully")

@@ -20,38 +20,40 @@ if(Python3_FOUND)
     set(PYTHON_EXT_INSTALL_DIR ${CMAKE_BINARY_DIR}/python-ext)
     file(MAKE_DIRECTORY ${PYTHON_EXT_INSTALL_DIR})
 
-    add_library(caos_python MODULE bindings.cpp)
+    add_library(${PROJECT_NAME} MODULE bindings.cpp)
 
-    set_target_properties(caos_python PROPERTIES
+    include(${CMAKE_SOURCE_DIR}/libcaos/cmake/debug.cmake)
+
+    set_target_properties(${PROJECT_NAME} PROPERTIES
         PREFIX ""
         OUTPUT_NAME "caos_native"
         SUFFIX ".so"
     )
 
     # Include directories
-    target_include_directories(caos_python PRIVATE
+    target_include_directories(${PROJECT_NAME} PRIVATE
         ${Python3_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/libcaos
     )
 
     # Link
-    target_link_libraries(caos_python PRIVATE
+    target_link_libraries(${PROJECT_NAME} PRIVATE
         libcaos
         ${Python3_LIBRARIES}
     )
 
     # Flag di compilazione
-    target_compile_options(caos_python PRIVATE
+    target_compile_options(${PROJECT_NAME} PRIVATE
         -Wall
         -Wno-deprecated-declarations
         -std=c++17
     )
 
-    target_compile_definitions(caos_python PUBLIC CAOS_BUILD_PYTHON_BINDING)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC CAOS_BUILD_PYTHON_BINDING)
 
     # Copia l'estensione
-    add_custom_command(TARGET caos_python POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:caos_python> ${PYTHON_EXT_INSTALL_DIR}
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> ${PYTHON_EXT_INSTALL_DIR}
         COMMENT "Copying Python extension to local test folder"
     )
 
@@ -64,7 +66,7 @@ __version__ = '0.1.0'
 __all__ = ['hello', 'echo_string']")
 
     # Installa
-    install(TARGETS caos_python LIBRARY DESTINATION lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages/caos_native)
+    install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages/caos_native)
 
 else()
     message(FATAL_ERROR "

@@ -39,30 +39,30 @@
 
 #include <array>
 
-inline initFlags operator|(initFlags flag1, initFlags flag2)
-{
-  return static_cast<initFlags>(
-    static_cast<std::uint8_t>(flag1) | static_cast<std::uint8_t>(flag2)
-  );
-}
+// inline initFlags operator|(initFlags flag1, initFlags flag2)
+// {
+//   return static_cast<initFlags>(
+//     static_cast<std::uint8_t>(flag1) | static_cast<std::uint8_t>(flag2)
+//   );
+// }
 
-inline initFlags operator&(initFlags flag1, initFlags flag2)
-{
-  return static_cast<initFlags>(
-    static_cast<std::uint8_t>(flag1) & static_cast<std::uint8_t>(flag2)
-  );
-}
+// inline initFlags operator&(initFlags flag1, initFlags flag2)
+// {
+//   return static_cast<initFlags>(
+//     static_cast<std::uint8_t>(flag1) & static_cast<std::uint8_t>(flag2)
+//   );
+// }
 
-inline initFlags operator|=(initFlags& flag1, initFlags flag2)
-{
-  flag1 = flag1 | flag2;
-  return flag1;
-}
+// inline initFlags operator|=(initFlags& flag1, initFlags flag2)
+// {
+//   flag1 = flag1 | flag2;
+//   return flag1;
+// }
 
-inline bool operator!(initFlags flag1)
-{
-  return static_cast<std::uint8_t>(flag1) == 0;
-}
+// inline bool operator!(initFlags flag1)
+// {
+//   return static_cast<std::uint8_t>(flag1) == 0;
+// }
 
 class Caos
 {

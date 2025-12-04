@@ -2,10 +2,10 @@
 
 #include "Middleware/Repository/Database/MariaDB/Query.hpp"
 
-#ifdef QUERY_EXISTS_IQuery_Demo_Test_echoString
-std::optional<std::string> MariaDB::IQuery_Demo_Test_echoString(std::string str)
+/*
+std::optional<std::string> MariaDB::IQuery_your_query(std::string str)
 {
-  static constexpr const char* fName = "MariaDB::echoString";
+  static constexpr const char* fName = "MariaDB::IQuery_your_query";
 
   if(!running.load(std::memory_order_relaxed))
   {
@@ -90,4 +90,4 @@ std::optional<std::string> MariaDB::IQuery_Demo_Test_echoString(std::string str)
 
   return std::nullopt;
 }
-#endif // End of ifdef QUERY_EXISTS_IQuery_Demo_Test_echoString
+*/

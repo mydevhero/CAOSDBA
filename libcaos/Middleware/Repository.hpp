@@ -34,7 +34,7 @@ namespace middleware
 
     Repository(int argc, char* argv[])
     {
-      caos = std::make_unique<Caos>(argc, argv);
+      caos = std::make_unique<Caos>(argc, argv, initFlags::Repository|initFlags::CrowCpp);
     }
 
     struct context

@@ -24,8 +24,8 @@
 #include "Query.hpp"
 #endif
 
-#ifdef CAOS_CUSTOM_CODE
-#include "../src/include/Cache/Redis/Query.hpp"
+#if (defined(CAOS_STANDALONE_CODE)||defined(CAOS_TEMPLATE_CODE))
+#include "../../src/include/Cache/Redis/Query.hpp"
 #endif
 
 
