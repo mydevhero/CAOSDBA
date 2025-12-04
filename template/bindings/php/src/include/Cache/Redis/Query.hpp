@@ -2,10 +2,10 @@
 
 #include "Middleware/Repository/Cache/Redis/Redis.hpp"
 
-#ifdef QUERY_EXISTS_IQuery_Demo_Test_echoString
-std::optional<std::string> Redis::IQuery_Demo_Test_echoString(std::string str)
+#ifdef QUERY_EXISTS_IQuery_Template_echoString
+std::optional<std::string> Redis::IQuery_Template_echoString(std::string str)
 {
-  static constexpr const char* fName = "Redis::IQuery_Demo_Test_echoString";
+  static constexpr const char* fName = "Redis::IQuery_Template_echoString";
 
   std::optional<std::string> db_result;
 
@@ -29,7 +29,7 @@ std::optional<std::string> Redis::IQuery_Demo_Test_echoString(std::string str)
     }
 
     // 3. Cache miss - query database
-    db_result = this->database->IQuery_Demo_Test_echoString(str);
+    db_result = this->database->IQuery_Template_echoString(str);
 
     // 4. Database return a value, store in cache
     if (db_result.has_value())
@@ -63,7 +63,7 @@ std::optional<std::string> Redis::IQuery_Demo_Test_echoString(std::string str)
       return db_result;
     }
 
-    return this->database->IQuery_Demo_Test_echoString(str);
+    return this->database->IQuery_Template_echoString(str);
   }
   catch (const std::exception& e)
   {
@@ -75,4 +75,4 @@ std::optional<std::string> Redis::IQuery_Demo_Test_echoString(std::string str)
     throw;
   }
 };
-#endif // End of ifdef QUERY_EXISTS_IQuery_Demo_Test_echoString
+#endif // End of ifdef QUERY_EXISTS_IQuery_Template_echoString

@@ -70,7 +70,7 @@ std::unique_ptr<Caos>& libcaos(bool check=false)
     int argc = argv.size();
 
     // Initialize CAOS with repository
-    caos = std::make_unique<Caos>(argc, argv.data(), (initFlags::Repository|initFlags::PHP_EXT));
+    caos = std::make_unique<Caos>(argc, argv.data(), (initFlags::Repository));
   }
 
   return caos;
@@ -203,24 +203,25 @@ static void caos_execute_internal(zend_execute_data *execute_data, zval *return_
 // =================================================================================================
 // FUNCTION DECLARATIONS
 // =================================================================================================
-PHP_FUNCTION(IQuery_Demo_Test_echoString);
+PHP_FUNCTION(IQuery_Template_echoString);
 
 // =================================================================================================
 // ARGUMENT INFO
 // =================================================================================================
 
 /**
- * Argument information for IQuery_Demo_Test_echoString()
+ * Argument information for IQuery_Template_echoString()
  *
  * Parameters:
  * 1. token (string)  - Authentication token
  * 2. str (string)    - String to echo
  */
-ZEND_BEGIN_ARG_INFO(arginfolibIQuery_Demo_Test_echoString, 0)
+#ifdef QUERY_EXISTS_IQuery_Template_echoString
+ZEND_BEGIN_ARG_INFO(arginfolibIQuery_Template_echoString, 0)
 ZEND_ARG_INFO(0, token)  // Token as first parameter
 ZEND_ARG_INFO(0, str)    // Original parameter as second
 ZEND_END_ARG_INFO()
-
+#endif
 // =================================================================================================
 // FUNCTION REGISTRATION
 // =================================================================================================
@@ -230,7 +231,9 @@ ZEND_END_ARG_INFO()
  */
 static const zend_function_entry PHP_EXT_FUNCTIONS[] =
 {
-  PHP_FE(IQuery_Demo_Test_echoString, arginfolibIQuery_Demo_Test_echoString)
+  #ifdef QUERY_EXISTS_IQuery_Template_echoString
+  PHP_FE(IQuery_Template_echoString, arginfolibIQuery_Template_echoString)
+  #endif
   PHP_FE_END
 };
 
@@ -353,7 +356,7 @@ extern "C"
 // =================================================================================================
 
 /**
- * IQuery_Demo_Test_echoString() - Echo string through CAOS repository
+ * IQuery_Template_echoString() - Echo string through CAOS repository
  *
  * This function demonstrates:
  * 1. Token-based authentication (via hook)
@@ -365,7 +368,7 @@ extern "C"
  * BEFORE this function body executes. If token validation fails, this
  * function is never called.
  *
- * Usage: IQuery_Demo_Test_echoString($token, $string)
+ * Usage: IQuery_Template_echoString($token, $string)
  *
  * @param string $token Authentication token (validated by hook)
  * @param string $str   String to echo through repository
@@ -382,7 +385,8 @@ extern "C"
  * - AUTH: Authentication failure (set by hook, not by this function)
  * - AUTH_SYSTEM_ERROR: Authentication system error (set by hook)
  */
-PHP_FUNCTION(IQuery_Demo_Test_echoString)
+#ifdef QUERY_EXISTS_IQuery_Template_echoString
+PHP_FUNCTION(IQuery_Template_echoString)
 {
   (void)execute_data;
 
@@ -424,7 +428,7 @@ PHP_FUNCTION(IQuery_Demo_Test_echoString)
     }
 
     // Call repository method
-    auto repo_result = repo->IQuery_Demo_Test_echoString(str);
+    auto repo_result = repo->IQuery_Template_echoString(str);
     if (!repo_result.has_value())
     {
       // Repository returned no value - return success with null data
@@ -457,3 +461,4 @@ PHP_FUNCTION(IQuery_Demo_Test_echoString)
     RETURN_OBJ(Z_OBJ(result_obj));
   }
 }
+#endif

@@ -60,46 +60,32 @@ set_target_properties(libpq PROPERTIES
 # libpgcommon
 add_library(pgcommon STATIC IMPORTED GLOBAL)
 set_target_properties(pgcommon PROPERTIES
-    IMPORTED_LOCATION ${PG_INSTALL_DIR}/lib/libpgcommon.a
+  IMPORTED_LOCATION ${PG_INSTALL_DIR}/lib/libpgcommon.a
 )
 
 # libpgcommon_shlib
 add_library(pgcommon_shlib STATIC IMPORTED GLOBAL)
 set_target_properties(pgcommon_shlib PROPERTIES
-    IMPORTED_LOCATION ${PG_INSTALL_DIR}/lib/libpgcommon_shlib.a
+  IMPORTED_LOCATION ${PG_INSTALL_DIR}/lib/libpgcommon_shlib.a
 )
 
 # libpgport
 add_library(pgport STATIC IMPORTED GLOBAL)
 set_target_properties(pgport PROPERTIES
-    IMPORTED_LOCATION ${PG_INSTALL_DIR}/lib/libpgport.a
+  IMPORTED_LOCATION ${PG_INSTALL_DIR}/lib/libpgport.a
 )
 
 # libpgport_shlib
 add_library(pgport_shlib STATIC IMPORTED GLOBAL)
 set_target_properties(pgport_shlib PROPERTIES
-    IMPORTED_LOCATION ${PG_INSTALL_DIR}/lib/libpgport_shlib.a
+  IMPORTED_LOCATION ${PG_INSTALL_DIR}/lib/libpgport_shlib.a
 )
 
 add_library(pqxx STATIC IMPORTED GLOBAL)
 set_target_properties(pqxx PROPERTIES
-    IMPORTED_LOCATION ${PQXX_INSTALL_DIR}/lib/libpqxx.a
-    INTERFACE_INCLUDE_DIRECTORIES ${PQXX_INSTALL_DIR}/include
-    INTERFACE_LINK_LIBRARIES
-        libpq
-        pgcommon
-        pgport
-        pgcommon_shlib
-        pgport_shlib
-)
-
-target_include_directories(${PROJECT_NAME} PRIVATE
-    ${PG_INSTALL_DIR}/include
-    ${PQXX_INSTALL_DIR}/include
-)
-
-target_link_libraries(${PROJECT_NAME} PRIVATE
-    pqxx
+  IMPORTED_LOCATION ${PQXX_INSTALL_DIR}/lib/libpqxx.a
+  INTERFACE_INCLUDE_DIRECTORIES ${PQXX_INSTALL_DIR}/include
+  INTERFACE_LINK_LIBRARIES
     libpq
     pgcommon
     pgport
@@ -107,7 +93,18 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     pgport_shlib
 )
 
+target_include_directories(${PROJECT_NAME} PRIVATE
+  ${PG_INSTALL_DIR}/include
+  ${PQXX_INSTALL_DIR}/include
+)
 
-
+target_link_libraries(${PROJECT_NAME} PRIVATE
+  pqxx
+  libpq
+  pgcommon
+  pgport
+  pgcommon_shlib
+  pgport_shlib
+)
 
 message(STATUS "PostgreSQL+libpqxx setup complete")

@@ -1,5 +1,4 @@
-
-message(STATUS "Building CAOS as Node.js extension")
+message(STATUS "Building CAOS as Node.js binding example")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -136,35 +135,35 @@ endif()
 set(NODE_EXT_INSTALL_DIR ${CMAKE_BINARY_DIR}/node-ext)
 file(MAKE_DIRECTORY ${NODE_EXT_INSTALL_DIR})
 
-add_library(caos_node MODULE bindings.cpp)
+add_library(${PROJECT_NAME} MODULE bindings.cpp)
 
-set_target_properties(caos_node PROPERTIES
+set_target_properties(${PROJECT_NAME} PROPERTIES
   PREFIX ""
   OUTPUT_NAME "caos"
   SUFFIX ".node"
 )
 
-target_include_directories(caos_node PRIVATE
+target_include_directories(${PROJECT_NAME} PRIVATE
   ${NODE_HEADERS_DIR}      # node_api.h
   ${NAPI_INCLUDE_DIR}      # napi.h
   ${CMAKE_SOURCE_DIR}/libcaos
 )
 
-target_link_libraries(caos_node PRIVATE libcaos)
+target_link_libraries(${PROJECT_NAME} PRIVATE libcaos)
 
-target_compile_options(caos_node PRIVATE
+target_compile_options(${PROJECT_NAME} PRIVATE
   -Wall
   -Wno-deprecated-declarations
   -std=c++17
   -DNODE_GYP_MODULE_NAME=caos)
 
-target_compile_definitions(caos_node PUBLIC
+target_compile_definitions(${PROJECT_NAME} PUBLIC
   CAOS_BUILD_NODE_BINDING
   NAPI_CPP_EXCEPTIONS)
 
-add_custom_command(TARGET caos_node POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:caos_node> ${NODE_EXT_INSTALL_DIR}
-  COMMENT "Copying Node.js extension to local test folder"
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> ${NODE_EXT_INSTALL_DIR}
+  COMMENT "Copying Node.js  to local test folder"
 )
 
 # package.json for binding
@@ -186,13 +185,13 @@ set(NODE_INDEX_JS_CONTENT "const native = require('./caos.node');
   };")
 file(WRITE ${NODE_EXT_INSTALL_DIR}/index.js "${NODE_INDEX_JS_CONTENT}")
 
-install(TARGETS caos_node LIBRARY DESTINATION lib/node_modules/caos-native)
+install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib/node_modules/caos-native)
 
 else()
   message(FATAL_ERROR "
     Node.js development packages not found!
 
-    Required for building CAOS Node.js extension.
+    Required for building CAOS Node.js binding example.
 
     Installation commands:
     • Ubuntu/Debian:    sudo apt-get install nodejs npm

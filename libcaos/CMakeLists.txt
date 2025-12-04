@@ -41,7 +41,7 @@ elseif(CAOS_DB_BACKEND STREQUAL "MYSQL")
   )
 
   if(CAOS_BUILD_EXAMPLES)
-    list(APPEND POSTGRESQL_SOURCES Middleware/Repository/Database/MySQL/Query.hpp)
+    list(APPEND MYSQL_SOURCES Middleware/Repository/Database/MySQL/Query.hpp)
   endif()
 
 elseif(CAOS_DB_BACKEND STREQUAL "MARIADB")
@@ -51,11 +51,12 @@ elseif(CAOS_DB_BACKEND STREQUAL "MARIADB")
   )
 
   if(CAOS_BUILD_EXAMPLES)
-    list(APPEND POSTGRESQL_SOURCES Middleware/Repository/Database/MariaDB/Query.hpp)
+    list(APPEND MARIADB_SOURCES Middleware/Repository/Database/MariaDB/Query.hpp)
   endif()
 
 else()
-  message(FATAL_ERROR "Invalid CAOS_DB_BACKEND value: allowed POSTGRESQL, MYSQL, MARIADB")
+  message(FATAL_ERROR "CAOS_DB_BACKEND not defined. Please specify with -DCAOS_DB_BACKEND=<value>\n"
+          "Available options: POSTGRESQL, MYSQL, MARIADB")
 endif()
 
 if(CAOS_USE_CROWCPP)
@@ -76,18 +77,37 @@ if(CAOS_USE_CACHE)
     list(APPEND REDIS_SOURCES
       Middleware/Repository/Cache/Redis/Redis.hpp
       Middleware/Repository/Cache/Redis/Redis.cpp
-      Middleware/Repository/Cache/Redis/Query.hpp
     )
+
+    if(CAOS_BUILD_EXAMPLES)
+      list(APPEND REDIS_SOURCES
+        Middleware/Repository/Cache/Redis/Query.hpp
+      )
+    endif()
   endif()
 endif()
 
-add_library(${PROJECT_NAME} STATIC ${PROJECT_NAME}.cpp
-)
+add_library(${PROJECT_NAME} STATIC ${PROJECT_NAME}.cpp)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")
 
 include(cmake/compiler.cmake)
+
+if(CAOS_BUILD_PHP_BINDING)
+  target_compile_definitions(${PROJECT_NAME} PUBLIC CAOS_BUILD_PHP_BINDING)
+endif()
+
+if(CAOS_BUILD_NODE_BINDING)
+  target_compile_definitions(${PROJECT_NAME} PUBLIC CAOS_BUILD_NODE_BINDING)
+endif()
+
+if(CAOS_BUILD_PYTHON_BINDING)
+  target_compile_definitions(${PROJECT_NAME} PUBLIC CAOS_BUILD_PYTHON_BINDING)
+endif()
+
 include(cmake/query_code_generation.cmake)
+
+include(${CMAKE_BINARY_DIR}/generated_queries/Query_Config.cmake)
 
 target_sources(${PROJECT_NAME} PRIVATE
   config_validation.hpp
@@ -188,11 +208,6 @@ if(CAOS_USE_CACHE)
 endif()
 # --------------------------------------------------------------------------------------------------
 
-if(CAOS_BUILD_PHP_BINDING)
-  target_compile_definitions(${PROJECT_NAME} PUBLIC CAOS_BUILD_PHP_BINDING)
-endif()
-
-
 # --------------------------------------------------------------------------------------------------
 # Database
 # --------------------------------------------------------------------------------------------------
@@ -206,19 +221,22 @@ elseif(CAOS_DB_BACKEND STREQUAL "MYSQL")
 # MariaDB
 elseif(CAOS_DB_BACKEND STREQUAL "MARIADB")
   include("cmake/mariadb.cmake")
+else()
+  message(FATAL_ERROR "CAOS_DB_BACKEND not defined. Please specify with -DCAOS_DB_BACKEND=<value>\n"
+          "Available options: POSTGRESQL, MYSQL, MARIADB")
 endif()
 # --------------------------------------------------------------------------------------------------
 
 
 target_include_directories(${PROJECT_NAME} PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/repository
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middleware
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middleware/Repository
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middleware/Repository/Database
-    ${CMAKE_BINARY_DIR}
-    ${CMAKE_BINARY_DIR}/libcaos
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/repository
+  ${CMAKE_CURRENT_SOURCE_DIR}/Middleware
+  ${CMAKE_CURRENT_SOURCE_DIR}/Middleware/Repository
+  ${CMAKE_CURRENT_SOURCE_DIR}/Middleware/Repository/Database
+  ${CMAKE_BINARY_DIR}
+  ${CMAKE_BINARY_DIR}/libcaos
 )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC pthread)

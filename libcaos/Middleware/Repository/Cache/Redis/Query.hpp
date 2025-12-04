@@ -22,10 +22,10 @@
 
 #include "Redis.hpp"
 
-#ifdef QUERY_EXISTS_IQuery_Test_echoString
-std::optional<std::string> Redis::IQuery_Test_echoString(std::string str)
+#ifdef QUERY_EXISTS_IQuery_Example_echoString
+std::optional<std::string> Redis::IQuery_Example_echoString(std::string str)
 {
-  static constexpr const char* fName = "Redis::IQuery_Test_echoString";
+  static constexpr const char* fName = "Redis::IQuery_Example_echoString";
 
   std::optional<std::string> db_result;
 
@@ -49,7 +49,7 @@ std::optional<std::string> Redis::IQuery_Test_echoString(std::string str)
     }
 
     // 3. Cache miss - query database
-    db_result = this->database->IQuery_Test_echoString(str);
+    db_result = this->database->IQuery_Example_echoString(str);
 
     // 4. Database return a value, store in cache
     if (db_result.has_value())
@@ -83,7 +83,7 @@ std::optional<std::string> Redis::IQuery_Test_echoString(std::string str)
       return db_result;
     }
 
-    return this->database->IQuery_Test_echoString(str);
+    return this->database->IQuery_Example_echoString(str);
   }
   catch (const std::exception& e)
   {
@@ -95,11 +95,11 @@ std::optional<std::string> Redis::IQuery_Test_echoString(std::string str)
     throw;
   }
 };
-#endif // End of ifdef QUERY_EXISTS_IQuery_Test_echoString
+#endif // End of ifdef QUERY_EXISTS_IQuery_Example_echoString
 
 // std::optional<std::string> Redis::IQuery_Test_sumInt(const int& int1, const int& int2)
 // {
-//   static constexpr const char* fName = "Redis::IQuery_Test_echoString";
+//   static constexpr const char* fName = "Redis::IQuery_Example_echoString";
 
 //   std::optional<std::string> db_result;
 
@@ -123,7 +123,7 @@ std::optional<std::string> Redis::IQuery_Test_echoString(std::string str)
 //     }
 
 //     // 3. Cache miss - query database
-//     db_result = this->database->IQuery_Test_echoString(int1, int2);
+//     db_result = this->database->IQuery_Example_echoString(int1, int2);
 
 //     // 4. Database return a value, store in cache
 //     if (db_result.has_value())
@@ -157,7 +157,7 @@ std::optional<std::string> Redis::IQuery_Test_echoString(std::string str)
 //       return db_result;
 //     }
 
-//     return this->database->IQuery_Test_echoString(str);
+//     return this->database->IQuery_Example_echoString(str);
 //   }
 //   catch (const std::exception& e)
 //   {

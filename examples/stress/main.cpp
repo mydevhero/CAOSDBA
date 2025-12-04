@@ -60,7 +60,7 @@ void worker_thread()
 
     try
     {
-      auto result = caos->repository->IQuery_Test_echoString(std::to_string(current_i));
+      auto result = caos->repository->IQuery_Example_echoString(std::to_string(current_i));
 
       if (result.has_value())
       {

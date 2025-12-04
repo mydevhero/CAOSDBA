@@ -24,7 +24,7 @@
 #include "Query.hpp"
 #endif
 
-#ifdef CAOS_CUSTOM_CODE
+#if (defined(CAOS_STANDALONE_CODE)||defined(CAOS_TEMPLATE_CODE))
 #include "../src/include/Database/MySQL/Query.hpp"
 #endif
 

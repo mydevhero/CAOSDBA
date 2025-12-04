@@ -82,7 +82,7 @@ static PyObject* caos_echoString(PyObject*, PyObject* args)
       return NULL;
     }
 
-    auto repo_result = repo->IQuery_Test_echoString(input);
+    auto repo_result = repo->IQuery_Example_echoString(input);
     if (!repo_result.has_value())
     {
       return PyUnicode_FromString("No result from repository!\n");

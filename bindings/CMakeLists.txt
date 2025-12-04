@@ -1,21 +1,19 @@
 cmake_minimum_required(VERSION 3.5)
 
-include(${CMAKE_BINARY_DIR}/generated_queries/Query_Config.cmake)
-
-# PHP EXTENSION ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-if(CAOS_BUILD_PHP_BINDING_EXAMPLE AND QUERY_EXISTS_IQuery_Test_echoString)
+# PHP BINDING ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+if(CAOS_BUILD_PHP_BINDING_EXAMPLE AND QUERY_EXISTS_IQuery_Example_echoString)
   add_subdirectory(php)
 endif()
-# PHP_EXTENSION ------------------------------------------------------------------------------------
+# PHP_BINDING --------------------------------------------------------------------------------------
 
-# NODE EXTENSION +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-if(CAOS_BUILD_NODE_BINDING_EXAMPLE AND QUERY_EXISTS_IQuery_Test_echoString)
+# NODE BINDING +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+if(CAOS_BUILD_NODE_BINDING_EXAMPLE AND QUERY_EXISTS_IQuery_Example_echoString)
   add_subdirectory(node)
 endif()
-# NODE EXTENSION -----------------------------------------------------------------------------------
+# NODE BINDING -------------------------------------------------------------------------------------
 
-# PYTHON EXTENSION +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-if(CAOS_BUILD_PYTHON_BINDING_EXAMPLE AND QUERY_EXISTS_IQuery_Test_echoString)
+# PYTHON BINDING +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+if(CAOS_BUILD_PYTHON_BINDING_EXAMPLE AND QUERY_EXISTS_IQuery_Example_echoString)
   add_subdirectory(python)
 endif()
-# PYTHON EXTENSION -----------------------------------------------------------------------------------
+# PYTHON BINDING -----------------------------------------------------------------------------------

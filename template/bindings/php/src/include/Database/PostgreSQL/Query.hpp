@@ -4,8 +4,8 @@
 
 #include "Middleware/Repository/Database/PostgreSQL/PostgreSQL.hpp"
 
-#ifdef QUERY_EXISTS_IQuery_Demo_Test_echoString
-std::optional<std::string> PostgreSQL::IQuery_Demo_Test_echoString(std::string str)
+#ifdef QUERY_EXISTS_IQuery_Template_echoString
+std::optional<std::string> PostgreSQL::IQuery_Template_echoString(std::string str)
 {
   if(!running.load(std::memory_order_relaxed))
   {
@@ -60,4 +60,4 @@ std::optional<std::string> PostgreSQL::IQuery_Demo_Test_echoString(std::string s
 
   return std::nullopt;
 }
-#endif // End of ifdef QUERY_EXISTS_IQuery_Demo_Test_echoString
+#endif // End of ifdef QUERY_EXISTS_IQuery_Template_echoString

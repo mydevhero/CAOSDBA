@@ -37,7 +37,7 @@
 int main(int argc, char* argv[])
 {
 
-  auto caos = std::make_unique<Caos>(argc, argv);
+  auto caos = std::make_unique<Caos>(argc, argv, initFlags::Repository|initFlags::CrowCpp);
 
   crow::App<> app;
 
@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
   {
     try
     {
-      auto ret = caos->repository->IQuery_Test_echoString(str);
+      auto ret = caos->repository->IQuery_Example_echoString(str);
 
       if (ret.has_value())
       {
