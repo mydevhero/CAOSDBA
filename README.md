@@ -89,7 +89,7 @@ $result = IQuery_GetUserById($token, $id);
 config:
   layout: elk
 ---
-flowchart LR
+flowchart TB
   anchor[" "]
   
   subgraph classic["Classic backend development approach"]
@@ -103,7 +103,7 @@ flowchart LR
         SEC_RISK["Security risk: credentials exposure to small backend team"]
   end
   
-  subgraph caosdba["CAOSDBA Approac specialized DBA team"]
+  subgraph caosdba["CAOSDBA Approach ‑ specialized DBA team"]
         DBA_START["Backend developer submits query requirements"]
         DBA_SPEC["DBA team defines optimal queries"]
         DBA_CPP["DBAs write and compile queries in C++ CAOSDBA"]
