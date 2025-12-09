@@ -4,7 +4,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../" && pwd)"
 BUILD_DIR="$PROJECT_ROOT/build/release"
 DIST_DIR="$PROJECT_ROOT/dist"
-CAOS_OPT_DIR="/opt/caos"
+CAOS_OPT_DIR="/opt/caosdba"
 
 # Get database backend and project name from command line
 DB_BACKEND=${1:-"MYSQL"}
@@ -120,7 +120,7 @@ create_install_script() {
 
 set -e
 
-CAOS_OPT_DIR="/opt/caos"
+CAOS_OPT_DIR="/opt/caosdba"
 REPO_DIR="\$CAOS_OPT_DIR/repository"
 
 # Check if running as root
@@ -136,7 +136,7 @@ echo "================================================================"
 # Verify we're in the correct location
 if [ ! -d "\$REPO_DIR" ]; then
     echo "ERROR: Repository directory not found: \$REPO_DIR"
-    echo "Make sure the tarball was extracted to /opt/caos"
+    echo "Make sure the tarball was extracted to /opt/caosdba"
     exit 1
 fi
 
@@ -205,7 +205,7 @@ This tarball contains the ${PROJECT_NAME^^} DEB packages and local APT repositor
 
 ### Directory Structure
 
-/opt/caos/
+/opt/caosdba/
 ├── repository/          # Local APT repository
 │   ├── *.deb           # DEB packages
 │   ├── Packages        # Repository index
@@ -228,7 +228,7 @@ sudo tar -xzf ${PROJECT_NAME_SANITIZED}-deb-repository-${DB_BACKEND_LOWER}-${VER
 
 2. Run the installation script:
 \`\`\`bash
-sudo /opt/caos/install-repository.sh
+sudo /opt/caosdba/install-repository.sh
 \`\`\`
 
 ### Manual Installation
@@ -242,7 +242,7 @@ sudo tar -xzf ${PROJECT_NAME_SANITIZED}-deb-repository-${DB_BACKEND_LOWER}-${VER
 
 2. Update repository index:
 \`\`\`bash
-cd /opt/caos/repository
+cd /opt/caosdba/repository
 ./update-repo.sh
 \`\`\`
 
@@ -279,7 +279,7 @@ apt list ${PROJECT_NAME_SANITIZED}-php*
 
 To update the repository after adding new packages:
 \`\`\`bash
-cd /opt/caos/repository
+cd /opt/caosdba/repository
 ./update-repo.sh
 sudo apt update
 \`\`\`
@@ -295,7 +295,7 @@ sudo rm -f /etc/apt/sources.list.d/${PROJECT_NAME}-local.list
 
 2. Remove repository files:
 \`\`\`bash
-sudo rm -rf /opt/caos
+sudo rm -rf /opt/caosdba
 \`\`\`
 
 3. Update APT cache:
@@ -334,7 +334,7 @@ create_tarball() {
     echo ""
     echo "To deploy:"
     echo "  sudo tar -xzf $tarball_path -C /"
-    echo "  sudo /opt/caos/install-repository.sh"
+    echo "  sudo /opt/caosdba/install-repository.sh"
     echo ""
 }
 
@@ -348,7 +348,7 @@ To deploy:
    sudo tar -xzf $tarball_name -C /
 
 2. Run the installation script:
-   sudo /opt/caos/install-repository.sh
+   sudo /opt/caosdba/install-repository.sh
 
 3. Install ${PROJECT_NAME^^} PHP extension:
    sudo apt install ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}
@@ -369,75 +369,75 @@ This document describes all environment variables used by the ${PROJECT_NAME^^} 
 
 | Variable Name | Description | Default | Example |
 |---------------|-------------|---------|---------|
-| \`${PROJECT_NAME^^}_CACHEUSER\` | Username for Redis 6+ with ACL support | - | \`myuser\` |
-| \`${PROJECT_NAME^^}_CACHEPASS\` | Authentication password for Redis | - | \`mypassword\` |
-| \`${PROJECT_NAME^^}_CACHEHOST\` | Redis server address | \`localhost\` | \`redis.example.com\` |
-| \`${PROJECT_NAME^^}_CACHEPORT\` | Redis server port number | \`6379\` | \`6380\` |
-| \`${PROJECT_NAME^^}_CACHECLIENTNAME\` | Client name identifier for Redis | - | \`myapp-client\` |
-| \`${PROJECT_NAME^^}_CACHEINDEX\` | Redis database number (0-15) | \`0\` | \`1\` |
-| \`${PROJECT_NAME^^}_CACHECOMMANDTIMEOUT\` | Timeout for Redis commands (seconds) | \`30\` | \`60\` |
-| \`${PROJECT_NAME^^}_CACHEPOOLSIZEMIN\` | Minimum number of connections always kept idle | \`5\` | \`10\` |
-| \`${PROJECT_NAME^^}_CACHEPOOLSIZEMAX\` | Maximum number of idle connections in the pool | \`20\` | \`50\` |
-| \`${PROJECT_NAME^^}_CACHEPOOLWAIT\` | Timeout when waiting for connection from exhausted pool (seconds) | \`30\` | \`60\` |
-| \`${PROJECT_NAME^^}_CACHEPOOLCONNECTIONTIMEOUT\` | Timeout for establishing connection (seconds) | \`10\` | \`30\` |
-| \`${PROJECT_NAME^^}_CACHEPOOLCONNECTIONLIFETIME\` | Absolute maximum lifetime of a connection (seconds) | \`3600\` | \`7200\` |
-| \`${PROJECT_NAME^^}_CACHEPOOLCONNECTIONIDLETIME\` | Maximum inactivity duration before closing connection (seconds) | \`300\` | \`600\` |
+| \`CAOS_CACHEUSER\` | Username for Redis 6+ with ACL support | - | \`myuser\` |
+| \`CAOS_CACHEPASS\` | Authentication password for Redis | - | \`mypassword\` |
+| \`CAOS_CACHEHOST\` | Redis server address | \`localhost\` | \`redis.example.com\` |
+| \`CAOS_CACHEPORT\` | Redis server port number | \`6379\` | \`6380\` |
+| \`CAOS_CACHECLIENTNAME\` | Client name identifier for Redis | - | \`myapp-client\` |
+| \`CAOS_CACHEINDEX\` | Redis database number (0-15) | \`0\` | \`1\` |
+| \`CAOS_CACHECOMMANDTIMEOUT\` | Timeout for Redis commands (seconds) | \`30\` | \`60\` |
+| \`CAOS_CACHEPOOLSIZEMIN\` | Minimum number of connections always kept idle | \`5\` | \`10\` |
+| \`CAOS_CACHEPOOLSIZEMAX\` | Maximum number of idle connections in the pool | \`20\` | \`50\` |
+| \`CAOS_CACHEPOOLWAIT\` | Timeout when waiting for connection from exhausted pool (seconds) | \`30\` | \`60\` |
+| \`CAOS_CACHEPOOLCONNECTIONTIMEOUT\` | Timeout for establishing connection (seconds) | \`10\` | \`30\` |
+| \`CAOS_CACHEPOOLCONNECTIONLIFETIME\` | Absolute maximum lifetime of a connection (seconds) | \`3600\` | \`7200\` |
+| \`CAOS_CACHEPOOLCONNECTIONIDLETIME\` | Maximum inactivity duration before closing connection (seconds) | \`300\` | \`600\` |
 
 ## Database Configuration
 
 | Variable Name | Description | Default | Example |
 |---------------|-------------|---------|---------|
-| \`${PROJECT_NAME^^}_DBUSER\` | Database username | - | \`dbuser\` |
-| \`${PROJECT_NAME^^}_DBPASS\` | Database password | - | \`dbpassword\` |
-| \`${PROJECT_NAME^^}_DBHOST\` | Database server address | \`localhost\` | \`db.example.com\` |
-| \`${PROJECT_NAME^^}_DBPORT\` | Database server port | \`3306\` | \`5432\` |
-| \`${PROJECT_NAME^^}_DBNAME\` | Database name | - | \`myapp_db\` |
-| \`${PROJECT_NAME^^}_DBPOOLSIZEMIN\` | Minimum number of database connections in pool | \`5\` | \`10\` |
-| \`${PROJECT_NAME^^}_DBPOOLSIZEMAX\` | Maximum number of database connections in pool | \`20\` | \`50\` |
-| \`${PROJECT_NAME^^}_DBPOOLWAIT\` | Timeout when waiting for database connection (seconds) | \`30\` | \`60\` |
-| \`${PROJECT_NAME^^}_DBPOOLTIMEOUT\` | Database connection pool timeout (seconds) | \`30\` | \`60\` |
-| \`${PROJECT_NAME^^}_DBCONNECT_TIMEOUT\` | Database connection timeout (seconds) | \`10\` | \`30\` |
-| \`${PROJECT_NAME^^}_DBMAXWAIT\` | Maximum wait time for database operations (seconds) | \`30\` | \`60\` |
-| \`${PROJECT_NAME^^}_DBHEALTHCHECKINTERVAL\` | Health check interval for database connections (seconds) | \`30\` | \`60\` |
-| \`${PROJECT_NAME^^}_LOG_THRESHOLD_CONNECTION_LIMIT_EXCEEDED\` | Log threshold for connection limit exceeded events | - | \`WARNING\` |
-| \`${PROJECT_NAME^^}_VALIDATE_CONNECTION_BEFORE_ACQUIRE\` | Validate connection before acquiring from pool (\`true\`/\`false\`) | \`true\` | \`false\` |
-| \`${PROJECT_NAME^^}_VALIDATE_USING_TRANSACTION\` | Validate connection using transaction (\`true\`/\`false\`) | \`false\` | \`true\` |
+| \`CAOS_DBUSER\` | Database username | - | \`dbuser\` |
+| \`CAOS_DBPASS\` | Database password | - | \`dbpassword\` |
+| \`CAOS_DBHOST\` | Database server address | \`localhost\` | \`db.example.com\` |
+| \`CAOS_DBPORT\` | Database server port | \`3306\` | \`5432\` |
+| \`CAOS_DBNAME\` | Database name | - | \`myapp_db\` |
+| \`CAOS_DBPOOLSIZEMIN\` | Minimum number of database connections in pool | \`5\` | \`10\` |
+| \`CAOS_DBPOOLSIZEMAX\` | Maximum number of database connections in pool | \`20\` | \`50\` |
+| \`CAOS_DBPOOLWAIT\` | Timeout when waiting for database connection (seconds) | \`30\` | \`60\` |
+| \`CAOS_DBPOOLTIMEOUT\` | Database connection pool timeout (seconds) | \`30\` | \`60\` |
+| \`CAOS_DBCONNECT_TIMEOUT\` | Database connection timeout (seconds) | \`10\` | \`30\` |
+| \`CAOS_DBMAXWAIT\` | Maximum wait time for database operations (seconds) | \`30\` | \`60\` |
+| \`CAOS_DBHEALTHCHECKINTERVAL\` | Health check interval for database connections (seconds) | \`30\` | \`60\` |
+| \`CAOS_LOG_THRESHOLD_CONNECTION_LIMIT_EXCEEDED\` | Log threshold for connection limit exceeded events | - | \`WARNING\` |
+| \`CAOS_VALIDATE_CONNECTION_BEFORE_ACQUIRE\` | Validate connection before acquiring from pool (\`true\`/\`false\`) | \`true\` | \`false\` |
+| \`CAOS_VALIDATE_USING_TRANSACTION\` | Validate connection using transaction (\`true\`/\`false\`) | \`false\` | \`true\` |
 
 ## Usage Examples
 
 ### Basic Redis Configuration
 
 \`\`\`bash
-export ${PROJECT_NAME^^}_CACHEHOST="redis.example.com"
-export ${PROJECT_NAME^^}_CACHEPASS="secure_password"
-export ${PROJECT_NAME^^}_CACHEPOOLSIZEMIN="10"
-export ${PROJECT_NAME^^}_CACHEPOOLSIZEMAX="50"
-export ${PROJECT_NAME^^}_CACHEPOOLCONNECTIONLIFETIME="7200"
-export ${PROJECT_NAME^^}_CACHEPOOLCONNECTIONIDLETIME="600"
+export CAOS_CACHEHOST="redis.example.com"
+export CAOS_CACHEPASS="secure_password"
+export CAOS_CACHEPOOLSIZEMIN="10"
+export CAOS_CACHEPOOLSIZEMAX="50"
+export CAOS_CACHEPOOLCONNECTIONLIFETIME="7200"
+export CAOS_CACHEPOOLCONNECTIONIDLETIME="600"
 \`\`\`
 
 ### Database Configuration
 
 \`\`\`bash
-export ${PROJECT_NAME^^}_DBHOST="mysql.example.com"
-export ${PROJECT_NAME^^}_DBUSER="app_user"
-export ${PROJECT_NAME^^}_DBPASS="db_password"
-export ${PROJECT_NAME^^}_DBNAME="application_db"
-export ${PROJECT_NAME^^}_DBPOOLSIZEMIN="5"
-export ${PROJECT_NAME^^}_DBPOOLSIZEMAX="20"
-export ${PROJECT_NAME^^}_DBCONNECT_TIMEOUT="30"
+export CAOS_DBHOST="mysql.example.com"
+export CAOS_DBUSER="app_user"
+export CAOS_DBPASS="db_password"
+export CAOS_DBNAME="application_db"
+export CAOS_DBPOOLSIZEMIN="5"
+export CAOS_DBPOOLSIZEMAX="20"
+export CAOS_DBCONNECT_TIMEOUT="30"
 \`\`\`
 
 ### Docker/Container Environment
 
 \`\`\`bash
 # Set in your Dockerfile or docker-compose.yml
-ENV ${PROJECT_NAME^^}_CACHEHOST=redis
-ENV ${PROJECT_NAME^^}_CACHEPORT=6379
-ENV ${PROJECT_NAME^^}_DBHOST=mysql
-ENV ${PROJECT_NAME^^}_DBUSER=app
-ENV ${PROJECT_NAME^^}_DBPASS=password
-ENV ${PROJECT_NAME^^}_DBNAME=app_db
+ENV CAOS_CACHEHOST=redis
+ENV CAOS_CACHEPORT=6379
+ENV CAOS_DBHOST=mysql
+ENV CAOS_DBUSER=app
+ENV CAOS_DBPASS=password
+ENV CAOS_DBNAME=app_db
 \`\`\`
 
 ## Notes

@@ -163,7 +163,7 @@ Caos::~Caos()
 {
   running.store(false,std::memory_order_release);
 
-#ifdef CAOS_USE_CROWCPP
+#if (defined(CAOS_USE_CROWCPP)||defined (CAOS_CROWCPP_CODE))
   if (this->crowcpp != nullptr)
   {
     this->crowcpp.reset();
@@ -187,7 +187,7 @@ void Caos::init(initFlags flags)
     this->repository = std::make_unique<Cache>(std::make_unique<Database>());
   }
 
-#ifdef CAOS_USE_CROWCPP
+#if (defined(CAOS_USE_CROWCPP)||defined (CAOS_CROWCPP_CODE))
   // if ((static_cast<std::uint8_t>(flags) & static_cast<std::uint8_t>(initFlags::CrowCpp)) != 0)
   if (hasFlag(flags, initFlags::CrowCpp))
   {

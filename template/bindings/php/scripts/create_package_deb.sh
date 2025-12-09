@@ -198,22 +198,8 @@ create_control() {
     local php_version=$3
     local architecture="amd64"
 
-    # Common dependencies for all backends
-    local common_depends="php${php_version}-common, libfmt-dev, libhiredis-dev, libspdlog-dev, ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}"
-
-    case "${DB_BACKEND_LOWER}" in
-        "mysql")
-            common_depends="$common_depends, libmysqlclient-dev, libmysqlcppconn-dev"
-            ;;
-        "mariadb")
-            common_depends="$common_depends, libmariadb-dev"
-            ;;
-        "postgresql")
-            # common_depends="$common_depends, libpq-dev, libpqxx-dev"
-            ;;
-        *)
-            ;;
-    esac
+    # Only php-common dependency - libraries are statically linked
+    local common_depends="php${php_version}-common, ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}"
 
     # Generate conflicts based on project name and other backends
     local conflicts_clause=""
@@ -282,22 +268,8 @@ create_meta_package() {
     echo "Creating meta-package with version: $VERSION"
     echo "Build counter: $CAOS_BUILD_COUNTER"
 
-    # Common dependencies for meta-package
-    local meta_common_depends="libfmt-dev, libhiredis-dev, libspdlog-dev"
-
-    case "${DB_BACKEND_LOWER}" in
-        "mysql")
-            meta_common_depends="$meta_common_depends, libmysqlclient-dev, libmysqlcppconn-dev"
-            ;;
-        "mariadb")
-            meta_common_depends="$meta_common_depends, libmariadb-dev"
-            ;;
-        "postgresql")
-            # meta_common_depends="$meta_common_depends, postgresql-common, libpq-dev, libpqxx-dev"
-            ;;
-        *)
-            ;;
-    esac
+    # No dependencies for meta-package - libraries are statically linked
+    local meta_common_depends=""
 
     # Meta-package recommends specific packages instead of depending on them
     local recommends_clause=""
@@ -332,7 +304,6 @@ Description: ${PROJECT_NAME^^} - Cache App On Steroids PHP extension with $DB_BA
  High-performance database access extension (Cache App On Steroids).
  This metapackage will install the appropriate version for your PHP.
  Removing this metapackage will also remove the specific PHP version packages.
-Depends: $meta_common_depends
 Recommends: $recommends_clause
 Conflicts: $meta_conflicts_clause
 Section: php

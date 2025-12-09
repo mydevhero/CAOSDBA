@@ -8,14 +8,9 @@ include(cmake/config.cmake)
 
 # Custom application
 if(EXISTS ${CMAKE_SOURCE_DIR}/cmake/app.cmake)
-  # Project Name
   project(my_app VERSION 0.0.1 LANGUAGES CXX)
-
-  # Application
   include(${CMAKE_SOURCE_DIR}/cmake/app.cmake)
-
-  # Add libcaos
-  include(${CMAKE_SOURCE_DIR}/cmake/libcaos.cmake)
+  target_link_libraries(${PROJECT_NAME} PRIVATE libcaos repoexception)
 
 # Standard CAOS project
 else()

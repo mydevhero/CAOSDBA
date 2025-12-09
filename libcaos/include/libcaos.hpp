@@ -28,7 +28,7 @@
 #include "Cache/Cache.hpp"
 #include "Database/Database.hpp"
 
-#ifdef CAOS_USE_CROWCPP
+#if (defined(CAOS_USE_CROWCPP)||defined (CAOS_CROWCPP_CODE))
 #include "CrowCpp.hpp"
 #endif
 
@@ -116,7 +116,7 @@ class Caos
     const Log                 log;
     std::unique_ptr<Cache>    repository;
 
-#ifdef CAOS_USE_CROWCPP
+#if (defined(CAOS_USE_CROWCPP)||defined (CAOS_CROWCPP_CODE))
     std::unique_ptr<CrowCpp>  crowcpp;
 #endif
 

@@ -1,2 +1,1 @@
 set(CAOS_STANDALONE_CODE TRUE)
-target_compile_definitions(libcaos PUBLIC CAOS_STANDALONE_CODE)

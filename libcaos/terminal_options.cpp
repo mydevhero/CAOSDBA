@@ -1,23 +1,3 @@
-/*
- * CAOS - <Cache App On Steroids>
- * Copyright (C) 2025  Alessandro Bianco
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- *
- * For support or inquiries, contact <mydevhero@gmail.com>
- */
-
 #include <terminal_options.hpp>
 
 /* +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -37,7 +17,7 @@ TerminalOptions::TerminalOptions(int argc, char** argv) : argc(argc), argv(argv)
     (CAOS_LOG_SEVERITY_OPT_NAME                       , "Log Terminal Severity"           , cxxopts::value<std::string>()->default_value(CAOS_LOG_SEVERITY)                                )
 
     // CrowCpp
-#ifdef CAOS_USE_CROWCPP
+#if (defined(CAOS_USE_CROWCPP)||defined (CAOS_CROWCPP_CODE))
     (CAOS_CROWCPP_HOST_OPT_NAME                       , "Bind to address"                 , cxxopts::value<std::string>()->default_value(CAOS_CROWCPP_HOST)                                      )
     (CAOS_CROWCPP_PORT_OPT_NAME                       , "Bind to port"                    , cxxopts::value<std::uint16_t>()->default_value(std::to_string(CAOS_CROWCPP_PORT))               )
     (CAOS_CROWCPP_THREADS_OPT_NAME                    , "Number of threads"               , cxxopts::value<std::size_t>()->default_value(std::to_string(CAOS_CROWCPP_THREADS))                    )

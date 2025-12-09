@@ -1,5 +1,3 @@
-target_compile_definitions(${PROJECT_NAME} PUBLIC CAOS_USE_CROWCPP)
-
 set(CROW_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vendor/crow")
 
 message(STATUS "Configuring CrowCpp via add_subdirectory")
@@ -13,6 +11,6 @@ set(CROW_ENABLE_SSL OFF CACHE BOOL "" FORCE)
 
 add_subdirectory(${CROW_SOURCE_DIR})
 
-# target_link_libraries(${PROJECT_NAME} PRIVATE Crow)
-target_link_libraries(${PROJECT_NAME} PRIVATE Crow::Crow)
+target_link_libraries(${PROJECT_NAME} PUBLIC Crow)
+target_link_libraries(${PROJECT_NAME} PUBLIC Crow::Crow)
 message(STATUS "CrowCpp configured successfully")
