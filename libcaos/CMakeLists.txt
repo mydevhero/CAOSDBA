@@ -59,7 +59,7 @@ else()
           "Available options: POSTGRESQL, MYSQL, MARIADB")
 endif()
 
-if(CAOS_USE_CROWCPP)
+if(CAOS_USE_CROWCPP OR CAOS_CROWCPP_CODE)
   list(APPEND CROWCPP_SOURCES
     CrowCpp.cpp
     include/CrowCpp.hpp
@@ -103,6 +103,18 @@ endif()
 
 if(CAOS_BUILD_PYTHON_BINDING)
   target_compile_definitions(${PROJECT_NAME} PUBLIC CAOS_BUILD_PYTHON_BINDING)
+endif()
+
+if(COAS_USE_CROWCPP)
+  target_compile_definitions(${PROJECT_NAME} PUBLIC CAOS_USE_CROWCPP)
+endif()
+
+if(CAOS_TEMPLATE_CODE)
+  target_compile_definitions(${PROJECT_NAME} PUBLIC CAOS_TEMPLATE_CODE)
+endif()
+
+if(CAOS_CROWCPP_CODE)
+  target_compile_definitions(${PROJECT_NAME} PUBLIC CAOS_CROWCPP_CODE)
 endif()
 
 include(cmake/query_code_generation.cmake)
@@ -188,7 +200,7 @@ include (cmake/fmt.cmake)
 include (cmake/spdlog.cmake)
 
 # CrowCpp
-if(CAOS_USE_CROWCPP)
+if(CAOS_USE_CROWCPP OR CAOS_CROWCPP_CODE)
   include(cmake/crowcpp.cmake)
 endif()
 

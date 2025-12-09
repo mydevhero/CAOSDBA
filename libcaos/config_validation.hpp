@@ -272,7 +272,7 @@ static_assert(is_non_null_and_non_empty_string(CAOS_LOG_SYSLOG_PATTERN), CAOS_LO
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // CROWCPP
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#ifdef CAOS_USE_CROWCPP
+#if (defined(CAOS_USE_CROWCPP) || defined (CAOS_CROWCPP_CODE))
 
   // Definitions
 

@@ -1,11 +1,10 @@
+if(NOT EXISTS ${CMAKE_SOURCE_DIR}/dist)
+  file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/dist)
+endif()
+
 # Select CAOS_ENV ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "release" CACHE STRING "CAOS Environment." )
-  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
-    "debug"
-    "test"
-    "release"
-  )
 endif()
 # Select CAOS_ENV ----------------------------------------------------------------------------------
 
@@ -46,7 +45,7 @@ elseif(DEFINED CAOS_DB_BACKEND)
 
 else()
   message(FATAL_ERROR "CAOS_DB_BACKEND not defined. Please specify with -DCAOS_DB_BACKEND=<value>\n"
-            "Available options: POSTGRESQL, MYSQL, MARIADB")
+          "Available options: POSTGRESQL, MYSQL, MARIADB")
 endif()
 
 set_property(CACHE CAOS_DB_BACKEND PROPERTY STRINGS
@@ -54,19 +53,12 @@ set_property(CACHE CAOS_DB_BACKEND PROPERTY STRINGS
   "MYSQL"
   "MARIADB"
 )
-# Select CAOS_DB_BACKEND ---------------------------------------------------------------------------
 
 # Select CAOS_PROJECT_TYPE +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 if(EXISTS ${CMAKE_SOURCE_DIR}/cmake/project_type.cmake)
   include(${CMAKE_SOURCE_DIR}/cmake/project_type.cmake)
   set(CAOS_PROJECT_TYPE "${PROJECT_TYPE}" CACHE STRING "Project Type, got default from cmake/project_type.cmake")
   message(STATUS "Using CAOS_PROJECT_TYPE from project_type.cmake: ${CAOS_PROJECT_TYPE}")
-
-  # Update
-  if(DEFINED CAOS_PROJECT_TYPE AND NOT "${CAOS_PROJECT_TYPE}" STREQUAL "${PROJECT_TYPE}")
-    file(WRITE ${CMAKE_SOURCE_DIR}/cmake/project_type.cmake "set(PROJECT_TYPE ${CAOS_PROJECT_TYPE})")
-    message(STATUS "Updated project_type.cmake with: ${CAOS_PROJECT_TYPE}")
-  endif()
 
 elseif(DEFINED CAOS_PROJECT_TYPE)
   message(STATUS "Using CAOS_PROJECT_TYPE from command line: ${CAOS_PROJECT_TYPE}")
@@ -97,12 +89,6 @@ if(DEFINED CAOS_PROJECT_TYPE AND CAOS_PROJECT_TYPE STREQUAL "BINDING")
     set(CAOS_BINDING_LANGUAGE "${BINDING_LANGUAGE}" CACHE STRING "Binding language, got default from cmake/binding_language.cmake")
     message(STATUS "Using CAOS_BINDING_LANGUAGE from binding_language.cmake: ${CAOS_BINDING_LANGUAGE}")
 
-    # Update
-    if(DEFINED CAOS_BINDING_LANGUAGE AND NOT "${CAOS_BINDING_LANGUAGE}" STREQUAL "${BINDING_LANGUAGE}")
-      file(WRITE ${CMAKE_SOURCE_DIR}/cmake/binding_language.cmake "set(BINDING_LANGUAGE ${CAOS_BINDING_LANGUAGE})")
-      message(STATUS "Updated binding_language.cmake with: ${CAOS_BINDING_LANGUAGE}")
-    endif()
-
   elseif(DEFINED CAOS_BINDING_LANGUAGE)
     message(STATUS "Using CAOS_BINDING_LANGUAGE from command line: ${CAOS_BINDING_LANGUAGE}")
 
@@ -115,45 +101,79 @@ if(DEFINED CAOS_PROJECT_TYPE AND CAOS_PROJECT_TYPE STREQUAL "BINDING")
 
   else()
     message(FATAL_ERROR "CAOS_BINDING_LANGUAGE not defined. Please specify with -DCAOS_BINDING_LANGUAGE=<value>\n"
-            "Available options: PHP")
+            "Available options: PHP, NODE, PYTHON")
   endif()
 
   set_property(CACHE CAOS_BINDING_LANGUAGE PROPERTY STRINGS
     "PHP"
+    "NODE"
+    "PYTHON"
   )
 endif()
 # Select CAOS_BINDING_LANGUAGE ---------------------------------------------------------------------
+
+# Select CAOS_CROWCPP_TYPE +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+if(DEFINED CAOS_PROJECT_TYPE AND CAOS_PROJECT_TYPE STREQUAL "CROWCPP")
+  if(EXISTS ${CMAKE_SOURCE_DIR}/cmake/crowcpp_type.cmake)
+    include(${CMAKE_SOURCE_DIR}/cmake/crowcpp_type.cmake)
+    set(CAOS_CROWCPP_TYPE "${CROWCPP_TYPE}" CACHE STRING "CROWCPP type, got default from cmake/crowcpp_type.cmake")
+    message(STATUS "Using CAOS_CROWCPP_TYPE from crowcpp_type.cmake: ${CAOS_CROWCPP_TYPE}")
+
+  elseif(DEFINED CAOS_CROWCPP_TYPE)
+    message(STATUS "Using CAOS_CROWCPP_TYPE from command line: ${CAOS_CROWCPP_TYPE}")
+
+    # Save
+    file(WRITE ${CMAKE_SOURCE_DIR}/cmake/crowcpp_type.cmake
+      "# CROWCPP type configuration\n"
+      "set(CROWCPP_TYPE ${CAOS_CROWCPP_TYPE})\n"
+    )
+    message(STATUS "Saved CROWCPP type configuration: ${CAOS_CROWCPP_TYPE}")
+
+  else()
+    message(FATAL_ERROR "CAOS_CROWCPP_TYPE not defined. Please specify with -DCAOS_CROWCPP_TYPE=<value>\n"
+            "Available options: ENDPOINT, MIDDLEWARE")
+  endif()
+
+  set_property(CACHE CAOS_CROWCPP_TYPE PROPERTY STRINGS
+    "ENDPOINT"
+    "MIDDLEWARE"
+  )
+endif()
+# Select CAOS_CROWCPP_TYPE -------------------------------------------------------------------------
 
 # Initialize project structure ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Execute setup script to initialize project files from templates
 message(STATUS "Initializing project structure...")
 
 execute_process(
-    COMMAND ${CMAKE_SOURCE_DIR}/bin/caosdba.sh --init
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    OUTPUT_VARIABLE SETUP_OUTPUT
-    ERROR_VARIABLE SETUP_ERROR
-    RESULT_VARIABLE SETUP_RESULT
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    ERROR_STRIP_TRAILING_WHITESPACE
+  COMMAND ${CMAKE_SOURCE_DIR}/bin/caosdba.sh --init
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE SETUP_OUTPUT
+  ERROR_VARIABLE SETUP_ERROR
+  RESULT_VARIABLE SETUP_RESULT
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  ERROR_STRIP_TRAILING_WHITESPACE
 )
+
+if(EXISTS ${CMAKE_SOURCE_DIR}/cmake/type_code.cmake)
+  include(${CMAKE_SOURCE_DIR}/cmake/type_code.cmake)
+endif()
 
 # Display setup output
 if(SETUP_OUTPUT)
-    message(STATUS "${SETUP_OUTPUT}")
+  message(STATUS "${SETUP_OUTPUT}")
 endif()
 
 # Check for errors
 if(NOT SETUP_RESULT EQUAL 0)
-    if(SETUP_ERROR)
-        message(WARNING "Setup script encountered an issue:\n${SETUP_ERROR}")
-      else()
-        message(WARNING "Setup script failed with return code: ${SETUP_RESULT}")
-    endif()
-    message(WARNING "Project initialization may be incomplete. Please check the setup script.")
+  if(SETUP_ERROR)
+    message(WARNING "Setup script encountered an issue:\n${SETUP_ERROR}")
+  else()
+    message(WARNING "Setup script failed with return code: ${SETUP_RESULT}")
+  endif()
+  message(WARNING "Project initialization may be incomplete. Please check the setup script.")
 endif()
 # Initialize project structure ---------------------------------------------------------------------
-
 
 
 
@@ -162,10 +182,7 @@ endif()
 # Select CAOS_USE_CACHE ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 if(CAOS_USE_CACHE)
   set(CAOS_CACHE_BACKEND "REDIS" CACHE STRING "Cache backend to use for CAOS." )
-
-  set_property(CACHE CAOS_CACHE_BACKEND PROPERTY STRINGS
-    "REDIS"
-  )
+  set_property(CACHE CAOS_CACHE_BACKEND PROPERTY STRINGS "REDIS")
 endif()
 # Select CAOS_USE_CACHE ----------------------------------------------------------------------------
 
@@ -217,3 +234,6 @@ if(CAOS_BUILD_EXAMPLES)
   add_subdirectory(examples)
 endif()
 # Option CAOS_BUILD_EXAMPLES -----------------------------------------------------------------------
+
+# Get query boilerplate code
+include(${CMAKE_BINARY_DIR}/generated_queries/Query_Config.cmake)

@@ -92,7 +92,7 @@ config:
 flowchart TB
   anchor[" "]
   
-  subgraph classic["Classic backend development approach"]
+  subgraph classic["Classic backend<br>development approach"]
         DEV_START["Backend developer starts development"]
         DEV_QUERY["Writes SQL queries and data access code"]
         DEV_CRED["Requires DB/Cache credentials access"]
@@ -103,7 +103,7 @@ flowchart TB
         SEC_RISK["Security risk: credentials exposure to small backend team"]
   end
   
-  subgraph caosdba["CAOSDBA Approach with specialized DBA team"]
+  subgraph caosdba["CAOSDBA Approach<br>specialized DBA team"]
         DBA_START["Backend developer submits query requirements"]
         DBA_SPEC["DBA team defines optimal queries"]
         DBA_CPP["DBAs write and compile queries in C++ CAOSDBA"]

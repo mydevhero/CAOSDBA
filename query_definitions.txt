@@ -1,7 +1,12 @@
 ###################################################################################################################################################
-# return_type                   | method_name               | full_params           | call_params  | authType |name             | key             #
+# return_type                   | method_name               | full_params           | call_params  | authType |authName             | authKey     #
 ###################################################################################################################################################
 
 
-std::optional<std::string>      | IQuery_Example_echoString    | std::string str       | str          | TOKEN    | CAOS_API_TOKEN | ARBJi7cJuOYPXmFPPLVWsGrXmD4SU3LW
-std::optional<std::string>      | IQuery_Template_echoString    | std::string str       | str          | TOKEN    | CAOS_API_TOKEN | ARBJi7cJuOYPXmFPPLVWsGrXmD4SU3LW
+#std::optional<std::string>      | IQuery_Example_echoString    | std::string str       | str          | TOKEN    | CAOS_API_TOKEN | ARBJi7cJuOYPXmFPPLVWsGrXmD4SU3LW
+
+# For language bindings or CrowCpp (just ignore authType, authName, authKey)
+std::optional<std::string>      | IQuery_Template_echoString    | std::string str       | str          | TOKEN    |CAOS_API_TOKEN | ARBJi7cJuOYPXmFPPLVWsGrXmD4SU3LW
+
+# For CrowCpp backend
+#std::optional<std::string>      | IQuery_Template_echoString    | std::string str       | str          |||

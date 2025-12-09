@@ -6,7 +6,7 @@ if(EXISTS ${CMAKE_SOURCE_DIR}/cmake/type_code.cmake)
   include(${CMAKE_SOURCE_DIR}/cmake/type_code.cmake)
 endif()
 
-if(CAOS_TEMPLATE_CODE)
+if(CAOS_TEMPLATE_CODE OR CAOS_CROWCPP_CODE)
   set(CAOS_TEMPLATE_QUERY "--caos-template-query")
 endif()
 
