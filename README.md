@@ -94,20 +94,20 @@ flowchart TB
   
   subgraph classic["Classic backend development approach"]
         DEV_START["Backend developer starts development"]
-        DEV_QUERY["1. Writes SQL queries and data access code"]
-        DEV_CRED["2. Requires DB/Cache credentials access"]
-        DEV_OPT["3. Implements optimization, pooling, caching"]
+        DEV_QUERY["Writes SQL queries and data access code"]
+        DEV_CRED["Requires DB/Cache credentials access"]
+        DEV_OPT["Implements optimization, pooling, caching"]
         DEV_SEC["Security risk: backend team has full credentials"]
         DEV_END{"Query quality: varies by developer skills"}
         LOW_PERF["Risk of sub-optimal performance and concurrency bugs"]
         SEC_RISK["Security risk: credentials exposure to small backend team"]
   end
   
-  subgraph caosdba["CAOSDBA Approach - Specialized DBA team"]
+  subgraph caosdba["CAOSDBA Approach with specialized DBA team"]
         DBA_START["Backend developer submits query requirements"]
-        DBA_SPEC["1. DBA team defines optimal queries"]
-        DBA_CPP["2. DBAs write and compile queries in C++ CAOSDBA"]
-        DBA_NATIVE["3. Backend invokes queries as native commands"]
+        DBA_SPEC["DBA team defines optimal queries"]
+        DBA_CPP["DBAs write and compile queries in C++ CAOSDBA"]
+        DBA_NATIVE["Backend invokes queries as native commands"]
         DBA_ABSTRACT["Backend team unaware of Cache/DB layer"]
         DBA_SEC["Security advantage: no credentials shared with backend"]
         DBA_HIGH{"Query quality: high, sophisticated, secure, guaranteed performance"}
