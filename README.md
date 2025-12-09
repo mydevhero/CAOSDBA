@@ -177,9 +177,19 @@ flowchart TB
 Clone the repository into a local directory:
 ```bash
 # Install dependencies (Debian/Ubuntu)
+sudo apt-get update
 sudo apt-get install libfmt-dev libspdlog-dev libhiredis-dev
 
+# For MySQL support
+sudo apt-get install libmysqlclient-dev libmysqlcppconn-dev
+
+# For MariaDB support
+sudo apt-get install libmariadb-dev
+
+# Clone repository from GitHub with submodules
 git clone --recurse-submodules https://github.com/mydevhero/CAOSDBA.git
+
+# Change to project directory
 cd CAOSDBA
 ```
 
