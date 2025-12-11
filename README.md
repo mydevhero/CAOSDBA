@@ -6,7 +6,7 @@
 
 &nbsp;
 
-## Why CAOSDBA?
+# Why CAOSDBA?
 
 **CAOSDBA** is a high-performance C++ framework designed with a **cache-first architecture** at its core. It's particularly valuable for teams seeking **predictable low-latency** and **scalable data access patterns**.
 
@@ -16,7 +16,21 @@ By integrating [**CrowCpp**](https://github.com/CrowCpp/Crow) as its backend eng
 
 &nbsp;
 
-## Quick Example
+# Collaborative data layer design
+
+**Great applications are built on great data layers**—but creating optimal data access patterns requires bridging multiple areas of expertise. DBAs bring deep knowledge of query optimization and data modeling, while developers focus on application logic.
+
+CAOSDBA helps these different experts work together effectively, ensuring that database expertise translates directly into application performance without creating silos or complexity.
+
+## **How CAOSDBA enables team collaboration**
+
+- **DBAs write optimized queries** in C++ with full control over execution plans and caching strategies
+- **Developers access data** through simple PHP functions or REST APIs
+- **Performance knowledge stays with experts** who understand the data layer best
+- **Application code remains clean** and focused on business logic
+- **Teams share ownership** of data layer performance and scalability
+
+## **Traditional challenges vs. CAOSDBA approach**
 
 **Traditional approach:**
 ```php
@@ -36,22 +50,6 @@ $result = IQuery_GetUserById($token, $id);
 
 &nbsp;
 
-## 👥 Collaborative data layer design
-
-**Great applications are built on great data layers**—but creating optimal data access patterns requires bridging multiple areas of expertise. DBAs bring deep knowledge of query optimization and data modeling, while developers focus on application logic.
-
-CAOSDBA helps these different experts work together effectively, ensuring that database expertise translates directly into application performance without creating silos or complexity.
-
-### **How CAOSDBA enables team collaboration**
-
-- **DBAs write optimized queries** in C++ with full control over execution plans and caching strategies
-- **Developers access data** through simple PHP functions or REST APIs
-- **Performance knowledge stays with experts** who understand the data layer best
-- **Application code remains clean** and focused on business logic
-- **Teams share ownership** of data layer performance and scalability
-
-### **Traditional challenges vs. CAOSDBA approach**
-
 | Aspect | Traditional Approach | With CAOSDBA |
 | :--- | :--- | :--- |
 | **Query Ownership** | Scattered across application code | Centralized with data experts |
@@ -61,40 +59,41 @@ CAOSDBA helps these different experts work together effectively, ensuring that d
 
 &nbsp;
 
-## ⚡ Performance by Architectural Design
+# Performance by Architectural Design
 
-### **Data access & caching:**
+&nbsp;
+
+## **Data access & caching:**
 * **Cache-First architecture:** Every critical request is directed to **Redis** first, ensuring **sub-millisecond response times**
 * **Smart caching:** Configurable **cache invalidation strategies** and distributed caching support to guarantee data freshness and consistency
 * **Unified access:** A consistent and **automated API** for interacting with all persistence layers
 
-### **Connection infrastructure (Pool Management):**
+## **Connection infrastructure (Pool Management):**
 * **Automatic connection pooling:** The framework intelligently manages a **pool of connections** (to Redis and databases) to avoid resource saturation and the overhead of connection creation/destruction
 * **Controlled scalability:** Allows configuration of **minimum and maximum** connection limits, enabling CAOSDBA to optimize resource utilization elastically
 
-### **Multi-Database support:**
+## **Multi-Database support:**
 * **PostgreSQL:** Full ACID compliance for critical data
 * **MySQL/MariaDB:** Reliable, enterprise-grade relational storage
 * **Redis:** Blazing-fast in-memory caching layer
 
-### **Web & API ready:**
+## **Web & API ready:**
 * **Built-in HTTP server** via **CrowCpp** for rapid service development
 * Out-of-the-box **REST API** endpoints, ideal for **microservices** and **API Gateways**
 * **Native PHP exports** - call C++ queries directly as PHP functions
 
 &nbsp;
 
-## 🧠 Architecture & Technology
+# Architecture & Technology
 
-### **Architectural benefits:**
+## **Architectural benefits:**
 * **Reduced Database Load:** Smart caching can **cut direct DB queries by up to 90%**
 * **Improved Data Consistency:** Robust invalidation and synchronization mechanisms
 * **Developer Productivity:** Consistent and reusable data layer patterns
 * **Flexible Deployment:** Supports single instances and distributed clusters
 
-&nbsp;
 
-### Overview
+## Overview
 
 ```mermaid
 ---
@@ -157,7 +156,7 @@ flowchart TB
 
 &nbsp;
 
-## 🎯 Ideal For
+# Ideal For
 
 * **High-Traffic web applications:** Efficient handling of thousands of concurrent users
 * **Near Real-Time data processing:** **Low-latency** data ingestion and processing
@@ -168,7 +167,8 @@ flowchart TB
 
 &nbsp;
 
-### **Supported Technologies:**
+# Supported Technologies:
+
 | Category | Technologies |
 | :--- | :--- |
 | **Persistence** | PostgreSQL, MySQL, MariaDB |
@@ -180,7 +180,8 @@ flowchart TB
 
 &nbsp;
 
-### **Prerequisites**
+# Prerequisites
+
 - C++17 or later
 - CMake 3.15+
 - Linux OS
@@ -220,7 +221,9 @@ Currently CAOSDBA provides support for PHP language bindings or CrowCpp backend.
 ## Project type
 The flag `CAOS_PROJECT_TYPE` defines which kind of project to create.
 
-### Language binding
+&nbsp;
+
+## Language binding
 - `CAOS_PROJECT_TYPE=BINDING`
 
 If you choose `BINDING` as `CAOS_PROJECT_TYPE`, then you have to choose which language to bind to using the `CAOS_BINDING_LANGUAGE` flag:
@@ -231,12 +234,16 @@ Compiling PHP binding requires PHP module development:
 sudo apt-get install php-dev
 ```
 
-### CrowCpp
+&nbsp;
+
+## CrowCpp
 - `CAOS_PROJECT_TYPE=CROWCPP`
 
 If you choose `CAOS_PROJECT_TYPE=CROWCPP`, then you have to choose which kind of support you want by defining the `CAOS_CROWCPP_TYPE` flag:
 - `CAOS_CROWCPP_TYPE=ENDPOINT` 
 - `CAOS_CROWCPP_TYPE=MIDDLEWARE`
+
+&nbsp;
 
 ## Database
 The flag `CAOS_DB_BACKEND` can be set to one of the three databases currently supported:
@@ -244,9 +251,13 @@ The flag `CAOS_DB_BACKEND` can be set to one of the three databases currently su
 - `CAOS_DB_BACKEND=MYSQL`
 - `CAOS_DB_BACKEND=POSTGRESQL` 
 
+&nbsp;
+
 # Examples
 
-### PHP binding with MySQL backend
+&nbsp;
+
+## PHP binding with MySQL backend
 
 ```bash
 cmake -G Ninja -DCAOS_DB_BACKEND=MYSQL -DCAOS_PROJECT_TYPE=BINDING -DCAOS_BINDING_LANGUAGE=PHP ../../
@@ -256,6 +267,8 @@ cmake -G Ninja -DCAOS_DB_BACKEND=MYSQL -DCAOS_PROJECT_TYPE=BINDING -DCAOS_BINDIN
 ```bash
 cmake -G Ninja -DCAOS_DB_BACKEND=POSTGRESQL -DCAOS_PROJECT_TYPE=CROWCPP -DCAOS_CROWCPP_TYPE=MIDDLEWARE ../../
 ```
+
+&nbsp;
 
 # Defining queries
 
@@ -281,10 +294,14 @@ Just define your query as shown in the example code.
 
 TOKENs provide secure access control in shared environments like PHP, ensuring only authorized code can execute queries.
 
+&nbsp;
+
 # Build
 ```bash
 cmake --build .
 ```
+
+&nbsp;
 
 # Environment variables used by CAOS
 
@@ -316,6 +333,8 @@ Export each TOKEN as defined in `query_definitions.txt`:
 export CAOS_API_TOKEN=ARBJi7cJuOYPXmFPPLVWsGrXmD4SU3LW
 ```
 
+&nbsp;
+
 # First try
 
 NOTE: library is called "my_app", like the PROJECT_NAME in CMakeLists.txt
@@ -323,6 +342,8 @@ NOTE: library is called "my_app", like the PROJECT_NAME in CMakeLists.txt
 ```bash
 php -d extension=./my_app.so -r 'print_r(IQuery_Template_echoString("ARBJi7cJuOYPXmFPPLVWsGrXmD4SU3LW","test"));'
 ```
+
+&nbsp;
 
 # Prepare to release your CAOSDBA app
 
@@ -356,14 +377,57 @@ sudo apt install my-app-php-postgresql
 ```
 
 Once the app is installed, you can try the example query by typing:
+
 ```bash
 php -r 'print_r(IQuery_Template_echoString("ARBJi7cJuOYPXmFPPLVWsGrXmD4SU3LW","test"));'
 ```
 
-# 🤝 Contributing
+&nbsp;
+
+# Clean project
+
+During the initial CMake configuration, CAOS sets up the project by copying and creating necessary files. If you need to start from scratch (e.g., after major configuration changes or to resolve build issues), you can clean the project using the following steps.
+
+&nbsp;
+
+## ⚠️ Warning
+
+The purge operation **deletes files irreversibly**, including:
+- The `build/release` directory
+- Configuration files in `cmake/`
+- The entire `src/` directory
+
+Make sure you have committed or backed up any important changes before proceeding.
+
+&nbsp;
+
+## Cleanup commands
+
+```bash
+# Remove the build directory
+rm -rf build/release
+
+# Purge generated configuration files (deletes files in cmake/ and src/!)
+./bin/caosdba.sh --purge
+```
+
+&nbsp;
+
+## What happens after cleaning
+
+After running these commands, you'll need to:
+
+- Re-run CMake configuration
+- Rebuild the project from scratch
+
+&nbsp;
+
+# Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-# ⭐ Show your support
+&nbsp;
+
+# Show your support
 
 If you find CAOSDBA useful, please consider giving it a star on GitHub!
