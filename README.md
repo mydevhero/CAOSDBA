@@ -8,11 +8,11 @@
 
 ## Why CAOSDBA?
 
-**CAOSDBA** (**C**ache-**A**pp-**O**n-**S**teroids for **D**ata**b**ase **A**rchitects), also referred to as **CAOS**, is a high-performance C++ framework that makes caching your **primary data layer**. Built for DBAs who need **predictable low-latency** and **zero-downtime scalability**. Designed for systems where caching isn't an optimization—it's the **foundational component**.
+**CAOSDBA** is a high-performance C++ framework designed with a **cache-first architecture** at its core. It's particularly valuable for teams seeking **predictable low-latency** and **scalable data access patterns**.
 
-It integrates [**CrowCpp**](https://github.com/CrowCpp/Crow) as its backend engine and exposes C++ queries as **native PHP extensions**. Execute high-performance C++ code seamlessly through standard PHP function calls.
+By integrating [**CrowCpp**](https://github.com/CrowCpp/Crow) as its backend engine and exposing C++ queries as **native PHP extensions**, CAOSDBA allows teams to execute high-performance C++ code through simple PHP function calls or REST APIs.
 
-**In summary**, CAOSDBA is a high-level engineering solution that combines the efficiency of C++ with the Cache-First pattern, ensuring that data layer performance is driven by DBA expertise and is easily accessible from application environments like PHP or REST Microservices.
+**In essence**, CAOSDBA bridges the gap between application code and data layer optimization, making expert-level query performance accessible across your entire tech stack.
 
 &nbsp;
 
@@ -25,6 +25,8 @@ $result = $db->query("SELECT * FROM users WHERE id = ?", [$id]);
 // Performance varies, credentials exposed
 ```
 
+&nbsp;
+
 **With CAOSDBA:**
 ```php
 // DBA-optimized C++ query, cached automatically
@@ -34,20 +36,28 @@ $result = IQuery_GetUserById($token, $id);
 
 &nbsp;
 
-## 👑 Designed for Database Experts
+## 👥 Collaborative data layer design
 
-**Database performance starts with proper query design**—something DBAs master daily. While backend developers excel at application logic, DBAs own the data layer expertise.
+**Great applications are built on great data layers**—but creating optimal data access patterns requires bridging multiple areas of expertise. DBAs bring deep knowledge of query optimization and data modeling, while developers focus on application logic.
 
-### **The reality CAOSDBA solves:**
-- **DBAs** write optimal queries but can't always enforce their usage in application code
-- **Developers** may lack deep SQL tuning expertise for complex data patterns
-- **Performance gaps** emerge when query logic lives far from database expertise
+CAOSDBA helps these different experts work together effectively, ensuring that database expertise translates directly into application performance without creating silos or complexity.
 
-### **The approach:**
-- **Query ownership** stays with DBA teams where it belongs
-- **C++ compiled queries** ensure optimal execution plans every time
-- **CrowCpp or PHP simple interfaces** let developers call expert-level queries safely
-- **No more "query degradation"** between DBA specs and implementation
+### **How CAOSDBA enables team collaboration**
+
+- **DBAs write optimized queries** in C++ with full control over execution plans and caching strategies
+- **Developers access data** through simple PHP functions or REST APIs
+- **Performance knowledge stays with experts** who understand the data layer best
+- **Application code remains clean** and focused on business logic
+- **Teams share ownership** of data layer performance and scalability
+
+### **Traditional challenges vs. CAOSDBA approach**
+
+| Aspect | Traditional Approach | With CAOSDBA |
+| :--- | :--- | :--- |
+| **Query Ownership** | Scattered across application code | Centralized with data experts |
+| **Performance Consistency** | Varies by developer experience | Guaranteed by compiled C++ queries |
+| **Team Collaboration** | Often reactive and siloed | Proactive and integrated |
+| **Caching Strategy** | Application-focused implementation | Data-layer focused with DBA guidance |
 
 &nbsp;
 
@@ -81,6 +91,8 @@ $result = IQuery_GetUserById($token, $id);
 * **Improved Data Consistency:** Robust invalidation and synchronization mechanisms
 * **Developer Productivity:** Consistent and reusable data layer patterns
 * **Flexible Deployment:** Supports single instances and distributed clusters
+
+&nbsp;
 
 ### Overview
 
@@ -154,6 +166,8 @@ flowchart TB
 * **E-commerce/Gaming:** High-performance product catalogs and leaderboards
 * **Data-Intensive backends:** Services requiring efficient processing of large datasets like ERP, WMS or CRM
 
+&nbsp;
+
 ### **Supported Technologies:**
 | Category | Technologies |
 | :--- | :--- |
@@ -171,6 +185,8 @@ flowchart TB
 - CMake 3.15+
 - Linux OS
 - PHP 8.0+ (for PHP bindings)
+
+&nbsp;
 
 # Getting Started
 
@@ -193,14 +209,18 @@ git clone --recurse-submodules https://github.com/mydevhero/CAOSDBA.git
 cd CAOSDBA
 ```
 
-# Configure Project
+&nbsp;
+
+# Configure project
 
 Currently CAOSDBA provides support for PHP language bindings or CrowCpp backend.
 
-## Project Type
+&nbsp;
+
+## Project type
 The flag `CAOS_PROJECT_TYPE` defines which kind of project to create.
 
-### Language Binding
+### Language binding
 - `CAOS_PROJECT_TYPE=BINDING`
 
 If you choose `BINDING` as `CAOS_PROJECT_TYPE`, then you have to choose which language to bind to using the `CAOS_BINDING_LANGUAGE` flag:
@@ -211,7 +231,7 @@ Compiling PHP binding requires PHP module development:
 sudo apt-get install php-dev
 ```
 
-### CrowCpp Endpoints
+### CrowCpp
 - `CAOS_PROJECT_TYPE=CROWCPP`
 
 If you choose `CAOS_PROJECT_TYPE=CROWCPP`, then you have to choose which kind of support you want by defining the `CAOS_CROWCPP_TYPE` flag:
@@ -237,7 +257,7 @@ cmake -G Ninja -DCAOS_DB_BACKEND=MYSQL -DCAOS_PROJECT_TYPE=BINDING -DCAOS_BINDIN
 cmake -G Ninja -DCAOS_DB_BACKEND=POSTGRESQL -DCAOS_PROJECT_TYPE=CROWCPP -DCAOS_CROWCPP_TYPE=MIDDLEWARE ../../
 ```
 
-# Defining Queries
+# Defining queries
 
 Look into `query_definitions.txt`, which looks like:
 ```txt
@@ -266,7 +286,7 @@ TOKENs provide secure access control in shared environments like PHP, ensuring o
 cmake --build .
 ```
 
-# Environment Variables Used by CAOS
+# Environment variables used by CAOS
 
 CAOSDBA requires these environment variables to be set before running:
 
@@ -296,7 +316,7 @@ Export each TOKEN as defined in `query_definitions.txt`:
 export CAOS_API_TOKEN=ARBJi7cJuOYPXmFPPLVWsGrXmD4SU3LW
 ```
 
-# First Try
+# First try
 
 NOTE: library is called "my_app", like the PROJECT_NAME in CMakeLists.txt
 
@@ -304,7 +324,7 @@ NOTE: library is called "my_app", like the PROJECT_NAME in CMakeLists.txt
 php -d extension=./my_app.so -r 'print_r(IQuery_Template_echoString("ARBJi7cJuOYPXmFPPLVWsGrXmD4SU3LW","test"));'
 ```
 
-# Prepare to release Your CAOSDBA App
+# Prepare to release your CAOSDBA app
 
 NOTE: target prepends "my_app", like the PROJECT_NAME in CMakeLists.txt
 
@@ -331,8 +351,6 @@ There you'll find deb packages for a regular installation on Debian/Ubuntu:
 NOTE: package prepends "my_app", like the PROJECT_NAME in CMakeLists.txt
 
 ```bash
-sudo apt search my-app-php-postgresql
-
 # Install
 sudo apt install my-app-php-postgresql
 ```
@@ -342,10 +360,10 @@ Once the app is installed, you can try the example query by typing:
 php -r 'print_r(IQuery_Template_echoString("ARBJi7cJuOYPXmFPPLVWsGrXmD4SU3LW","test"));'
 ```
 
-## 🤝 Contributing
+# 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## ⭐ Show your support
+# ⭐ Show your support
 
 If you find CAOSDBA useful, please consider giving it a star on GitHub!
