@@ -25,7 +25,7 @@ CAOSDBA helps these different experts work together effectively, ensuring that d
 ## **How CAOSDBA enables team collaboration**
 
 - **DBAs write optimized queries** in C++ with full control over execution plans and caching strategies
-- **Developers access data** through simple PHP functions or REST APIs
+- **Developers access data** through native PHP/Python functions or REST APIs
 - **Performance knowledge stays with experts** who understand the data layer best
 - **Application code remains clean** and focused on business logic
 - **Teams share ownership** of data layer performance and scalability
@@ -80,7 +80,7 @@ $result = IQuery_GetUserById($token, $id);
 ## **Web & API ready:**
 * **Built-in HTTP server** via **CrowCpp** for rapid service development
 * Out-of-the-box **REST API** endpoints, ideal for **microservices** and **API Gateways**
-* **Native PHP exports** - call C++ queries directly as PHP functions
+* **Native PHP/Python exports** - call C++ queries directly as PHP/Python functions
 
 &nbsp;
 
@@ -173,7 +173,7 @@ flowchart TB
 | :--- | :--- |
 | **Persistence** | PostgreSQL, MySQL, MariaDB |
 | **Caching** | Redis |
-| **Web/REST** | CrowCpp (HTTP/JSON) - PHP native extension |
+| **Web/REST** | CrowCpp (HTTP/JSON) - PHP/Python native extension |
 | **Language** | C++17+ |
 | **Platform** | Linux |
 | **Build System** | CMake |
@@ -186,14 +186,15 @@ flowchart TB
 - CMake 3.15+
 - Linux OS
 - PHP 8.0+ (for PHP bindings)
+- Python 3.6+ (for Python bindings)
 
 &nbsp;
 
 # Getting Started
 
-Clone the repository into a local directory:
+**Install dependencies (Debian/Ubuntu):**
+
 ```bash
-# Install dependencies (Debian/Ubuntu)
 sudo apt-get update
 sudo apt-get install libfmt-dev libspdlog-dev libhiredis-dev
 
@@ -203,7 +204,16 @@ sudo apt-get install libmysqlclient-dev libmysqlcppconn-dev
 # For MariaDB support
 sudo apt-get install libmariadb-dev
 
-# Clone repository from GitHub with submodules
+# PHP bindings
+sudo apt-get install php-dev
+
+# Python bindings
+sudo apt-get install python3-dev
+```
+
+**Clone repository from GitHub with submodules:**
+
+```bash
 git clone --recurse-submodules https://github.com/mydevhero/CAOSDBA.git
 
 # Change to project directory
@@ -214,7 +224,7 @@ cd CAOSDBA
 
 # Configure project
 
-Currently CAOSDBA provides support for PHP language bindings or CrowCpp backend.
+Currently CAOSDBA provides support for PHP and Python language bindings or CrowCpp backend.
 
 &nbsp;
 
@@ -228,10 +238,16 @@ The flag `CAOS_PROJECT_TYPE` defines which kind of project to create.
 
 If you choose `BINDING` as `CAOS_PROJECT_TYPE`, then you have to choose which language to bind to using the `CAOS_BINDING_LANGUAGE` flag:
 - `CAOS_BINDING_LANGUAGE=PHP`
+- `CAOS_BINDING_LANGUAGE=PYTHON`
 
 Compiling PHP binding requires PHP module development:
 ```bash
 sudo apt-get install php-dev
+```
+
+Compiling Python binding requires Python module development:
+```bash
+sudo apt-get install python3-dev
 ```
 
 &nbsp;
@@ -263,6 +279,12 @@ The flag `CAOS_DB_BACKEND` can be set to one of the three databases currently su
 cmake -G Ninja -DCAOS_DB_BACKEND=MYSQL -DCAOS_PROJECT_TYPE=BINDING -DCAOS_BINDING_LANGUAGE=PHP ../../
 ```
 
+## Python binding with MySQL backend
+
+```bash
+cmake -G Ninja -DCAOS_DB_BACKEND=MYSQL -DCAOS_PROJECT_TYPE=BINDING -DCAOS_BINDING_LANGUAGE=PYTHON ../../
+```
+
 ### CrowCpp backend on PostgreSQL
 ```bash
 cmake -G Ninja -DCAOS_DB_BACKEND=POSTGRESQL -DCAOS_PROJECT_TYPE=CROWCPP -DCAOS_CROWCPP_TYPE=MIDDLEWARE ../../
@@ -292,7 +314,7 @@ Just define your query as shown in the example code.
 - `authName`: Environment variable name for the token
 - `authKey`: The actual authentication key value
 
-TOKENs provide secure access control in shared environments like PHP, ensuring only authorized code can execute queries.
+TOKENs provide secure access control in shared environments like PHP/Python, ensuring only authorized code can execute queries.
 
 &nbsp;
 
@@ -340,7 +362,11 @@ export CAOS_API_TOKEN=ARBJi7cJuOYPXmFPPLVWsGrXmD4SU3LW
 NOTE: library is called "my_app", like the PROJECT_NAME in CMakeLists.txt
 
 ```bash
+# PHP
 php -d extension=./my_app.so -r 'print_r(IQuery_Template_echoString("ARBJi7cJuOYPXmFPPLVWsGrXmD4SU3LW","test"));'
+
+# Python
+python3 -c "import my_app; print(my_app.IQuery_Template_echoString({'token':'ARBJi7cJuOYPXmFPPLVWsGrXmD4SU3LW'}, 'test'))"
 ```
 
 &nbsp;
