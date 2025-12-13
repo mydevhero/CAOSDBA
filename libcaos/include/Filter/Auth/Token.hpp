@@ -85,30 +85,6 @@ namespace caosFilter
 
           return token;
         }
-
-        // static void setAutoToken()
-        // {
-        //   for (const auto& tokenName : AutoToken)
-        //   {
-        //     if (std::getenv(tokenName) != nullptr)                                                  // Verify if token exists
-        //     {
-        //       spdlog::info("Token {} already exists, skip generation", tokenName);
-        //       continue;
-        //     }
-
-        //     std::string tokenValue = caosFilter::Auth::Token::generateToken();                      // Generate random token
-
-        //     if (setenv(tokenName, tokenValue.c_str(), 1) != 0)                                      // Export as env-var
-        //     {
-        //       spdlog::error("Error while exportinfig: {}", tokenName);
-        //     }
-        //     else
-        //     {
-        //       spdlog::info("Token {} = {}", tokenName, tokenValue);
-        //       std::cout << "Token " << tokenName << " = " << tokenValue << "\n";
-        //     }
-        //   }
-        // }
     };
   } // End of namespace Auth
 } // End of namespace caosFilter

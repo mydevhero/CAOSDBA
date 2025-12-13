@@ -14,10 +14,12 @@
  * Handles extraction and validation of call metadata from Python dictionary.
  * Token is optional - validation only occurs if token is present.
  */
-class CallContext {
+class CallContext
+{
   public:
     // Specific exceptions
-    class ValidationError : public std::runtime_error {
+    class ValidationError : public std::runtime_error
+    {
       public:
         ValidationError(const std::string& what, const std::string& type = "VALIDATION")
           : std::runtime_error(what), error_type_(type) {}
@@ -28,22 +30,25 @@ class CallContext {
         std::string error_type_;
     };
 
-    class AuthError : public ValidationError {
+    class AuthError : public ValidationError
+    {
       public:
         AuthError(const std::string& what) : ValidationError(what, "AUTH") {}
     };
 
-    // Data structure with optional token
-    struct Data {
+    struct Data
+    {
         std::optional<std::string> token;  // Optional authentication token
 
         // Check if token is present and non-empty
-        bool has_token() const {
-          return token.has_value() && !token->empty();
+        bool has_token() const
+        {
+          return !token->empty();
         }
 
         // Get token value or empty string
-        std::string get_token_or_empty() const {
+        std::string get_token_or_empty() const
+        {
           return token.value_or("");
         }
     };
@@ -57,7 +62,8 @@ class CallContext {
     /**
      * Context validator - Base interface
      */
-    class Validator {
+    class Validator
+    {
       public:
         virtual ~Validator() = default;
 
@@ -88,7 +94,8 @@ class CallContext {
      * Token validator - Uses caosFilter::Auth::Token
      * Only validates if token is present in context
      */
-    class TokenValidator : public Validator {
+    class TokenValidator : public Validator
+    {
       public:
         bool validate(const CallContext& ctx, const std::string& query_name) const override;
         bool should_validate(const CallContext& ctx) const override;
@@ -103,15 +110,19 @@ class CallContext {
     bool has_token() const { return data_.has_token(); }
 
     // Get token (throws if not present)
-    const std::string& token() const {
-      if (!data_.token.has_value()) {
+    const std::string& token() const
+    {
+      if (!data_.token.has_value())
+      {
         throw std::runtime_error("Token not available in call context");
       }
+
       return data_.token.value();
     }
 
     // Get token or empty string
-    std::string token_or_empty() const {
+    std::string token_or_empty() const
+    {
       return data_.get_token_or_empty();
     }
 
@@ -144,7 +155,8 @@ class CallContext {
     Data data_;
 
     // Validator registry
-    struct ValidatorRegistry {
+    struct ValidatorRegistry
+    {
         std::vector<std::unique_ptr<Validator>> global_validators;
         std::unordered_map<std::string, std::vector<std::unique_ptr<Validator>>> query_validators;
 
