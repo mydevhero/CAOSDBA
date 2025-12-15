@@ -1,8 +1,7 @@
 #!/bin/bash
 
-# Get database backend and project name from command line
 DB_BACKEND=${1:-"MYSQL"}
-PROJECT_NAME=${2:-"caos"}  # Default to 'caos' for backward compatibility
+PROJECT_NAME=${2:-"caos"}
 PROJECT_NAME_SANITIZED=$(echo "$PROJECT_NAME" | tr '_' '-')
 DB_BACKEND_LOWER=$(echo "$DB_BACKEND" | tr '[:upper:]' '[:lower:]')
 
@@ -11,207 +10,255 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../" && pwd)"
 BUILD_DIR="$PROJECT_ROOT/build/release"
 DIST_DIR="$PROJECT_ROOT/dist"
 REPO_DIR="$DIST_DIR/repository"
-PACKAGE_BASE_NAME="${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}"
 
 if [ -f "$BUILD_DIR/build_counter.txt" ]; then
     CAOS_BUILD_COUNTER=$(cat "$BUILD_DIR/build_counter.txt")
     VERSION="1.0.0+${CAOS_BUILD_COUNTER}"
 else
     VERSION="1.0.0+1"
-    echo "WARNING: $BUILD_DIR/build_counter.txt not found, using default version"
+    echo "WARNING: Using default version"
 fi
 
-echo "Building DEB packages for ${PROJECT_NAME} - ALL PHP versions (8.0+)"
-echo "Project: $PROJECT_NAME"
-echo "Version: $VERSION"
-echo "Database backend: $DB_BACKEND_LOWER"
-echo "Output directory: $DIST_DIR"
+extract_python_version() {
+    local filename=$1
+    local basename=$(basename "$filename")
 
-PHP_VERSIONS="8.0 8.1 8.2 8.3 8.4"
-
-get_php_api_version() {
-    local php_version=$1
-    case $php_version in
-        "8.0") echo "20200930" ;;
-        "8.1") echo "20210902" ;;
-        "8.2") echo "20220829" ;;
-        "8.3") echo "20230831" ;;
-        "8.4") echo "20240829" ;;
-        *) echo "20230831" ;;
-    esac
+    # Pattern: my_app.cpython-312-x86_64-linux-gnu.so
+    if [[ "$basename" =~ \.cpython-([0-9]+) ]]; then
+        local version="${BASH_REMATCH[1]}"
+        local major="${version:0:1}"
+        local minor="${version:1:2}"
+        echo "${major}.${minor}"
+    elif [[ "$basename" =~ \.cpython-([0-9])([0-9]+)- ]]; then
+        local major="${BASH_REMATCH[1]}"
+        local minor="${BASH_REMATCH[2]}"
+        echo "${major}.${minor}"
+    else
+        echo ""
+    fi
 }
 
-calculate_php_paths() {
-    local php_version=$1
-    PHP_API=$(get_php_api_version "$php_version")
-    PHP_EXT_DIR="/usr/lib/php/$PHP_API"
-    MODS_AVAILABLE_DIR="/etc/php/$php_version/mods-available"
+extract_build_number() {
+    local filename=$1
+    local basename=$(basename "$filename")
 
-    echo "Config for PHP $php_version:"
-    echo "   API: $PHP_API"
-    echo "   Extension dir: $PHP_EXT_DIR"
-    echo "   Mods available: $MODS_AVAILABLE_DIR"
+    if [ -f "$BUILD_DIR/build_counter.txt" ]; then
+        cat "$BUILD_DIR/build_counter.txt"
+    else
+        echo "1"
+    fi
+}
+
+find_python_extension_files() {
+    local pattern="${PROJECT_NAME}.cpython-*.so"
+    find "$DIST_DIR" -name "$pattern" -type f 2>/dev/null
+}
+
+calculate_python_paths() {
+    local python_version=$1
+    PYTHON_SITE_DIR="/usr/lib/python3/dist-packages"
+    PYTHON_PACKAGE_DIR="${PYTHON_SITE_DIR}/${PROJECT_NAME}"
 }
 
 check_prerequisites() {
-    if [ ! -f "$BUILD_DIR/${PROJECT_NAME}.so" ]; then
-        echo "ERROR: ${PROJECT_NAME}.so not found. Build the extension first at $BUILD_DIR/${PROJECT_NAME}.so"
+    local ext_files=$(find_python_extension_files)
+
+    if [ -z "$ext_files" ]; then
+        echo "ERROR: No Python extension files found in $DIST_DIR"
+        echo "Expected pattern: ${PROJECT_NAME}.cpython-*.so"
+        echo "Actual files in dist:"
+        find "$DIST_DIR" -name "*.so" -type f 2>/dev/null || echo "No .so files found"
         exit 1
     fi
 
-    if [ ! -f "$BUILD_DIR/${PROJECT_NAME}.ini" ]; then
-        echo "ERROR: ${PROJECT_NAME}.ini not found at $BUILD_DIR/${PROJECT_NAME}.ini"
+    local file_count=$(echo "$ext_files" | wc -l)
+
+    if [ "$file_count" -eq 0 ]; then
+        echo "ERROR: No Python extension files found"
         exit 1
     fi
 
     if ! command -v dpkg-deb >/dev/null 2>&1; then
-        echo "ERROR: dpkg-deb not found. Install dpkg-dev package: sudo apt install dpkg-dev"
+        echo "ERROR: dpkg-deb not found. Install dpkg-dev"
         exit 1
     fi
 }
 
 create_structure() {
     local deb_dir=$1
+    local python_version=$2
     rm -rf "$deb_dir"
-    mkdir -p "$deb_dir/$PHP_EXT_DIR"
-    mkdir -p "$deb_dir/$MODS_AVAILABLE_DIR"
+    mkdir -p "$deb_dir/$PYTHON_PACKAGE_DIR"
     mkdir -p "$deb_dir/DEBIAN"
 }
 
 copy_files() {
     local deb_dir=$1
-    echo "Copying files for PHP $PHP_VERSION"
+    local source_file=$2
+    local python_version=$3
 
-    # Copy the extension .so file
-    cp "$BUILD_DIR/${PROJECT_NAME}.so" "$deb_dir/$PHP_EXT_DIR/"
+    local so_filename=$(basename "$source_file")
+    cp "$source_file" "$deb_dir/$PYTHON_PACKAGE_DIR/"
 
-    # Copy the .ini configuration file
-    cp "$BUILD_DIR/${PROJECT_NAME}.ini" "$deb_dir/$MODS_AVAILABLE_DIR/"
+    # Only create __init__.py if it doesn't exist
+    if [ ! -f "$deb_dir/$PYTHON_PACKAGE_DIR/__init__.py" ]; then
+    cat > "$deb_dir/$PYTHON_PACKAGE_DIR/__init__.py" << 'EOF'
+"""
+${PROJECT_NAME} - CAOS Native Python Bindings
+==============================================
 
-    echo "Files copied successfully:"
-    echo "  - $deb_dir/$PHP_EXT_DIR/${PROJECT_NAME}.so"
-    echo "  - $deb_dir/$MODS_AVAILABLE_DIR/${PROJECT_NAME}.ini"
+Native extension for CAOS database operations.
+Backend: ${DB_BACKEND} (${DB_BACKEND_LOWER})
+
+Usage:
+    import ${PROJECT_NAME}
+"""
+
+import importlib.util
+import sys
+import os
+import glob
+
+def _load_correct_module():
+    """Load the correct .so module for current Python version."""
+    package_dir = os.path.dirname(__file__)
+
+    # Find all .so files in this directory
+    so_files = glob.glob(os.path.join(package_dir, "*.cpython-*.so"))
+
+    if not so_files:
+        raise ImportError(f"No native module found in {package_dir}")
+
+    # Get current Python version suffix (e.g., "312" for Python 3.12)
+    current_suffix = f"cpython-{sys.version_info.major}{sys.version_info.minor}"
+
+    # Try to find exact match first
+    for so_file in so_files:
+        if current_suffix in so_file:
+            return so_file
+
+    # If no exact match, use first available (fallback)
+    return so_files[0]
+
+# Load the native module
+module_path = _load_correct_module()
+module_filename = os.path.basename(module_path)
+
+spec = importlib.util.spec_from_file_location('${PROJECT_NAME}', module_path)
+module = importlib.util.module_from_spec(spec)
+sys.modules[__name__] = module
+spec.loader.exec_module(module)
+
+# Expose all public functions from native module
+for attr in dir(module):
+    if not attr.startswith('_'):
+        globals()[attr] = getattr(module, attr)
+
+__version__ = '${VERSION}'
+__backend__ = '${DB_BACKEND_LOWER}'
+__python_version__ = f"{sys.version_info.major}.{sys.version_info.minor}"
+
+def get_build_info():
+    """Return build information."""
+    return {
+        'module': '${PROJECT_NAME}',
+        'version': __version__,
+        'backend': __backend__,
+        'python_version': __python_version__,
+        'loaded_module': os.path.basename(module_path)
+    }
+EOF
+    fi
 }
 
 create_postinst() {
     local deb_dir=$1
-    local php_version=$2
-    cat > "$deb_dir/DEBIAN/postinst" << EOF
+    local python_version=$2
+
+    cat > "$deb_dir/DEBIAN/postinst" << 'POSTINST_EOF'
 #!/bin/bash
-# postinst
 set -e
 
-PHP_VERSION="$php_version"
-PHP_EXT_DIR="$PHP_EXT_DIR"
-MODS_AVAILABLE_DIR="$MODS_AVAILABLE_DIR"
-PROJECT_NAME="$PROJECT_NAME"
+# These variables should be defined when the package is installed
+# They come from the package name or could be hardcoded
+PACKAGE_NAME="my_app"  # Or extract from actual package name
+DB_BACKEND="POSTGRESQL"  # Or extract from package name
+DB_BACKEND_LOWER="postgresql"  # Or extract from package name
 
-echo ""
-echo "Processing ${PROJECT_NAME} PHP extension for PHP \$PHP_VERSION"
-echo ""
+PYTHON_PACKAGE_DIR="/usr/lib/python3/dist-packages/${PACKAGE_NAME}"
 
-# Check if this PHP version is installed on target system
-if [ ! -d "/etc/php/\$PHP_VERSION" ]; then
-    echo "INFO: PHP \$PHP_VERSION not installed on this system"
-    echo "Extension will be automatically enabled if PHP \$PHP_VERSION is installed later"
-    exit 0
-fi
+echo "Configuring ${PACKAGE_NAME} Python module..."
 
-echo "PHP \$PHP_VERSION is installed - enabling extension"
+if [ -d "$PYTHON_PACKAGE_DIR" ] && [ -f "$PYTHON_PACKAGE_DIR/__init__.py" ]; then
+    echo "  Updating __init__.py with correct module names..."
 
-# Set owner and permissions
-chown root:root "\$PHP_EXT_DIR/\$PROJECT_NAME.so" 2>/dev/null || true
-chmod 644 "\$PHP_EXT_DIR/\$PROJECT_NAME.so" 2>/dev/null || true
-chown root:root "\$MODS_AVAILABLE_DIR/\$PROJECT_NAME.ini" 2>/dev/null || true
-chmod 644 "\$MODS_AVAILABLE_DIR/\$PROJECT_NAME.ini" 2>/dev/null || true
+    # Escape special characters for sed
+    PACKAGE_NAME_ESC=$(printf '%s\n' "$PACKAGE_NAME" | sed 's/[&/\]/\\&/g')
+    DB_BACKEND_ESC=$(printf '%s\n' "$DB_BACKEND" | sed 's/[&/\]/\\&/g')
+    DB_BACKEND_LOWER_ESC=$(printf '%s\n' "$DB_BACKEND_LOWER" | sed 's/[&/\]/\\&/g')
 
-# Enable the extension
-if command -v phpenmod >/dev/null 2>&1; then
-    echo "Enabling \$PROJECT_NAME extension for PHP \$PHP_VERSION"
-    phpenmod -v \$PHP_VERSION -s cli \$PROJECT_NAME 2>/dev/null && echo "Enabled for CLI" || echo "WARNING: Could not enable for CLI"
-    phpenmod -v \$PHP_VERSION -s fpm \$PROJECT_NAME 2>/dev/null && echo "Enabled for FPM" || echo "WARNING: Could not enable for FPM"
-    phpenmod -v \$PHP_VERSION -s apache2 \$PROJECT_NAME 2>/dev/null && echo "Enabled for Apache" || echo "WARNING: Could not enable for Apache"
+    # Fix module name (remove '_native' suffix)
+    sed -i "s/'${PACKAGE_NAME_ESC}_native'/'${PACKAGE_NAME_ESC}'/g" "$PYTHON_PACKAGE_DIR/__init__.py"
 
-    # Reload services if running
-    systemctl reload "php\$PHP_VERSION-fpm" 2>/dev/null || true
-    systemctl reload "apache2" 2>/dev/null || true
+    # Replace other variables
+    sed -i "s/\${PROJECT_NAME}/${PACKAGE_NAME_ESC}/g" "$PYTHON_PACKAGE_DIR/__init__.py"
+    sed -i "s/\${DB_BACKEND}/${DB_BACKEND_ESC}/g" "$PYTHON_PACKAGE_DIR/__init__.py"
+    sed -i "s/\${DB_BACKEND_LOWER}/${DB_BACKEND_LOWER_ESC}/g" "$PYTHON_PACKAGE_DIR/__init__.py"
+
+    # Fix any escaped quotes (if they exist)
+    sed -i 's/\\"\\"\\"/"""/g' "$PYTHON_PACKAGE_DIR/__init__.py"
+    sed -i 's/\"\"\"/"""/g' "$PYTHON_PACKAGE_DIR/__init__.py"
+
+    echo "  __init__.py updated successfully"
 else
-    echo "ERROR: phpenmod not found. Please install php\$PHP_VERSION-common"
+    echo "  WARNING: Python package directory not found: $PYTHON_PACKAGE_DIR"
 fi
 
-echo ""
-echo "\$PROJECT_NAME PHP extension for PHP \$PHP_VERSION ready"
-echo "TIP: Run: php\$PHP_VERSION -m | grep \$PROJECT_NAME  to verify"
-echo ""
-EOF
+echo "Installation completed."
+POSTINST_EOF
+
     chmod +x "$deb_dir/DEBIAN/postinst"
 }
 
-create_prerm() {
-    local deb_dir=$1
-    local php_version=$2
-    cat > "$deb_dir/DEBIAN/prerm" << EOF
+create_meta_prerm() {
+    local deb_dir="$1"
+    cat > "$deb_dir/DEBIAN/prerm" << 'PRERM_EOF'
 #!/bin/bash
-# prerm
 set -e
 
-PHP_VERSION="$php_version"
-PHP_EXT_DIR="$PHP_EXT_DIR"
-MODS_AVAILABLE_DIR="$MODS_AVAILABLE_DIR"
-PROJECT_NAME="$PROJECT_NAME"
+# When removing the meta-package, also remove the specific version packages
+if [ "$1" = "remove" ] || [ "$1" = "deconfigure" ]; then
+    echo "Removing ${PROJECT_NAME} Python specific version packages..."
 
-echo ""
-echo "Disabling \$PROJECT_NAME PHP extension for PHP \$PHP_VERSION before removal"
-echo ""
-
-# Disable extension for all SAPI if this PHP version is installed
-if [ -d "/etc/php/\$PHP_VERSION" ] && command -v phpdismod >/dev/null 2>&1; then
-    echo "Disabling extension for all SAPI"
-    phpdismod -v \$PHP_VERSION -s cli \$PROJECT_NAME 2>/dev/null && echo "Disabled for CLI" || echo "WARNING: Could not disable for CLI"
-    phpdismod -v \$PHP_VERSION -s fpm \$PROJECT_NAME 2>/dev/null && echo "Disabled for FPM" || echo "WARNING: Could not disable for FPM"
-    phpdismod -v \$PHP_VERSION -s apache2 \$PROJECT_NAME 2>/dev/null && echo "Disabled for Apache" || echo "WARNING: Could not disable for Apache"
-
-    # Reload services if running
-    if systemctl is-active --quiet "php\$PHP_VERSION-fpm" 2>/dev/null; then
-        echo "Reloading PHP-FPM"
-        systemctl reload "php\$PHP_VERSION-fpm" 2>/dev/null || true
-    fi
-
-    if systemctl is-active --quiet "apache2" 2>/dev/null; then
-        echo "Reloading Apache"
-        systemctl reload "apache2" 2>/dev/null || true
-    fi
-
-    echo "\$PROJECT_NAME extension for PHP \$PHP_VERSION disabled before removal"
-else
-    echo "INFO: PHP \$PHP_VERSION not installed or phpdismod not available"
+    # Find all installed packages for this backend
+    for pkg in $(dpkg -l | grep "^ii" | awk '{print $2}' | grep "${PROJECT_NAME}-python-${DB_BACKEND_LOWER}-[0-9]"); do
+        echo "  Removing $pkg..."
+        apt-get remove -y "$pkg" || true
+    done
 fi
-
-echo ""
-EOF
+PRERM_EOF
     chmod +x "$deb_dir/DEBIAN/prerm"
 }
 
 create_control() {
     local deb_dir=$1
     local package_name=$2
-    local php_version=$3
+    local python_version=$3
     local architecture="amd64"
 
-    # Only php-common dependency - libraries are statically linked
-    local common_depends="php${php_version}-common, ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}"
+    # Python specific package DEPENDS on meta-package
+    local python_dep="python${python_version} | python${python_version}-minimal, ${PROJECT_NAME_SANITIZED}-python-${DB_BACKEND_LOWER}"
 
-    # Generate conflicts based on project name and other backends
     local conflicts_clause=""
     case "${DB_BACKEND_LOWER}" in
         "mysql")
-            conflicts_clause="${PROJECT_NAME_SANITIZED}-php-mariadb-${php_version}, ${PROJECT_NAME_SANITIZED}-php-postgresql-${php_version}"
+            conflicts_clause="${PROJECT_NAME_SANITIZED}-python-mariadb-${python_version}, ${PROJECT_NAME_SANITIZED}-python-postgresql-${python_version}"
             ;;
         "mariadb")
-            conflicts_clause="${PROJECT_NAME_SANITIZED}-php-mysql-${php_version}, ${PROJECT_NAME_SANITIZED}-php-postgresql-${php_version}"
+            conflicts_clause="${PROJECT_NAME_SANITIZED}-python-mysql-${python_version}, ${PROJECT_NAME_SANITIZED}-python-postgresql-${python_version}"
             ;;
         "postgresql")
-            conflicts_clause="${PROJECT_NAME_SANITIZED}-php-mysql-${php_version}, ${PROJECT_NAME_SANITIZED}-php-mariadb-${php_version}"
+            conflicts_clause="${PROJECT_NAME_SANITIZED}-python-mysql-${python_version}, ${PROJECT_NAME_SANITIZED}-python-mariadb-${python_version}"
             ;;
         *)
             ;;
@@ -221,39 +268,33 @@ create_control() {
 Package: $package_name
 Version: $VERSION
 Architecture: $architecture
-Maintainer: Alessandro Bianco <mydevhero@gmail.com>
-Description: ${PROJECT_NAME^^} - Cache App On Steroids extension for PHP $php_version with $DB_BACKEND_LOWER backend
- High-performance database access extension (Cache App On Steroids).
- Supports: CLI, FPM, Apache, Nginx for PHP $php_version with $DB_BACKEND_LOWER backend.
-Depends: $common_depends
-Recommends: php$php_version-fpm | libapache2-mod-php$php_version
+Maintainer: CAOS Development Team
+Description: ${PROJECT_NAME^^} - CAOS extension for Python $python_version with $DB_BACKEND_LOWER backend
+Depends: $python_dep
 Conflicts: $conflicts_clause
-Section: php
+Section: python
 Priority: optional
 EOF
 }
 
 build_single_package() {
-    local php_version=$1
-    local deb_dir="$BUILD_DIR/deb-staging-php$php_version"
+    local source_file=$1
+    local python_version=$2
+    local build_number=$3
 
-    calculate_php_paths "$php_version"
-    PHP_VERSION="$php_version"
+    calculate_python_paths "$python_version"
 
-    local package_name="${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}-$php_version"
+    local package_name="${PROJECT_NAME_SANITIZED}-python-${DB_BACKEND_LOWER}-${python_version}"
+    local deb_dir="$BUILD_DIR/deb-python-${python_version}"
 
-    echo "Building package: $package_name"
+    create_structure "$deb_dir" "$python_version"
+    copy_files "$deb_dir" "$source_file" "$python_version"
 
-    create_structure "$deb_dir"
-    if ! copy_files "$deb_dir"; then
-        echo "ERROR: Failed to copy files for PHP $php_version"
-        return 1
-    fi
-    create_postinst "$deb_dir" "$php_version"
-    create_prerm "$deb_dir" "$php_version"
-    create_control "$deb_dir" "$package_name" "$php_version"
+    create_postinst "$deb_dir" "$python_version"
+    create_prerm "$deb_dir" "$python_version"
+    create_control "$deb_dir" "$package_name" "$python_version"
 
-    dpkg-deb --build "$deb_dir" "$BUILD_DIR/${package_name}_${VERSION}_amd64.deb"
+    dpkg-deb --build "$deb_dir" "$BUILD_DIR/${package_name}_${VERSION}_amd64.deb" >/dev/null 2>&1
 
     rm -rf "$deb_dir"
 
@@ -262,70 +303,55 @@ build_single_package() {
 }
 
 create_meta_package() {
-    local deb_dir="$BUILD_DIR/deb-staging-meta"
+    local deb_dir="$BUILD_DIR/deb-meta-python"
     mkdir -p "$deb_dir/DEBIAN"
 
-    echo "Creating meta-package with version: $VERSION"
-    echo "Build counter: $CAOS_BUILD_COUNTER"
-
-    # No dependencies for meta-package - libraries are statically linked
-    local meta_common_depends=""
-
-    # Meta-package recommends specific packages instead of depending on them
     local recommends_clause=""
-    for version in $PHP_VERSIONS; do
-        pkg="${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}-$version"
-        recommends_clause="$recommends_clause$pkg (>= $VERSION), "
+    for pkg_file in "$BUILD_DIR"/*-python-${DB_BACKEND_LOWER}-*_${VERSION}_amd64.deb; do
+        if [ -f "$pkg_file" ]; then
+            pkg_name=$(basename "$pkg_file" | cut -d'_' -f1)
+            recommends_clause="$recommends_clause$pkg_name (>= $VERSION), "
+        fi
     done
     recommends_clause="${recommends_clause%, }"
 
-    # Generate conflicts for meta-package
     local meta_conflicts_clause=""
     case "${DB_BACKEND_LOWER}" in
         "mysql")
-            meta_conflicts_clause="${PROJECT_NAME_SANITIZED}-php-mariadb, ${PROJECT_NAME_SANITIZED}-php-postgresql"
+            meta_conflicts_clause="${PROJECT_NAME_SANITIZED}-python-mariadb, ${PROJECT_NAME_SANITIZED}-python-postgresql"
             ;;
         "mariadb")
-            meta_conflicts_clause="${PROJECT_NAME_SANITIZED}-php-mysql, ${PROJECT_NAME_SANITIZED}-php-postgresql"
+            meta_conflicts_clause="${PROJECT_NAME_SANITIZED}-python-mysql, ${PROJECT_NAME_SANITIZED}-python-postgresql"
             ;;
         "postgresql")
-            meta_conflicts_clause="${PROJECT_NAME_SANITIZED}-php-mysql, ${PROJECT_NAME_SANITIZED}-php-mariadb"
+            meta_conflicts_clause="${PROJECT_NAME_SANITIZED}-python-mysql, ${PROJECT_NAME_SANITIZED}-python-mariadb"
             ;;
         *)
             ;;
     esac
 
     cat > "$deb_dir/DEBIAN/control" << EOF
-Package: ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}
+Package: ${PROJECT_NAME_SANITIZED}-python-${DB_BACKEND_LOWER}
 Version: $VERSION
 Architecture: all
-Maintainer: Alessandro Bianco <mydevhero@gmail.com>
-Description: ${PROJECT_NAME^^} - Cache App On Steroids PHP extension with $DB_BACKEND_LOWER backend (metapackage)
- High-performance database access extension (Cache App On Steroids).
- This metapackage will install the appropriate version for your PHP.
- Removing this metapackage will also remove the specific PHP version packages.
+Maintainer: CAOS Development Team
+Description: ${PROJECT_NAME^^} - CAOS Python extension with $DB_BACKEND_LOWER backend (metapackage)
+ This metapackage will install the appropriate Python version packages.
 Recommends: $recommends_clause
 Conflicts: $meta_conflicts_clause
-Section: php
+Section: python
 Priority: optional
 EOF
 
-    echo "Building meta-package deb file..."
-    dpkg-deb --build "$deb_dir" "$BUILD_DIR/${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}-${VERSION}_all.deb"
-
-    # Verify the file was created
-    if [ -f "$BUILD_DIR/${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}-${VERSION}_all.deb" ]; then
-        echo "DEBUG: Meta-package successfully created: ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}-${VERSION}_all.deb"
-        ls -la "$BUILD_DIR/${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}-${VERSION}_all.deb"
-    else
-        echo "DEBUG: ERROR - Meta-package file was not created!"
-    fi
+    dpkg-deb --build "$deb_dir" "$BUILD_DIR/${PROJECT_NAME_SANITIZED}-python-${DB_BACKEND_LOWER}_${VERSION}_all.deb" >/dev/null 2>&1
 
     rm -rf "$deb_dir"
-    echo "Meta-package built: ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}-${VERSION}_all.deb"
+    echo "Built meta-package"
 }
 
-create_update_repo_script() {
+create_repository_scripts() {
+    mkdir -p "$REPO_DIR"
+
     cat > "$REPO_DIR/update-repo.sh" << EOF
 #!/bin/bash
 
@@ -333,24 +359,17 @@ REPO_DIR="\$(cd "\$(dirname "\$0")" && pwd)"
 CONF_DIR="\$REPO_DIR/conf"
 OVERRIDE_FILE="\$CONF_DIR/override"
 
-echo "Updating ${PROJECT_NAME^^} repository index in \$REPO_DIR"
-
 mkdir -p "\$CONF_DIR"
 
-# Generate override file dynamically based on actual packages
-echo "Generating override file based on available packages..."
 > "\$OVERRIDE_FILE"
-
 for deb_file in "\$REPO_DIR"/*.deb; do
     if [ -f "\$deb_file" ]; then
         package_name=\$(dpkg-deb -f "\$deb_file" Package 2>/dev/null || basename "\$deb_file" | cut -d'_' -f1)
         if [ -n "\$package_name" ]; then
-            echo "\$package_name optional php" >> "\$OVERRIDE_FILE"
+            echo "\$package_name optional python" >> "\$OVERRIDE_FILE"
         fi
     fi
 done
-
-echo "Override file generated with \$(wc -l < "\$OVERRIDE_FILE") entries"
 
 cd "\$REPO_DIR" || exit 1
 
@@ -360,14 +379,14 @@ dpkg-scanpackages --multiversion . "\$OVERRIDE_FILE" > Packages
 gzip -k -f Packages
 
 cat > Release << RELEASE_CONTENT
-Origin: ${PROJECT_NAME^^} Repository
+Origin: ${PROJECT_NAME^^} Python Repository
 Label: ${PROJECT_NAME^^}
 Suite: stable
 Codename: ${PROJECT_NAME}
 Version: 1.0
-Architectures: amd64
+Architectures: amd64 all
 Components: main
-Description: ${PROJECT_NAME^^} - Cache App On Steroids PHP extension
+Description: ${PROJECT_NAME^^} - CAOS Python extension
 Date: \$(date -Ru)
 MD5Sum:
  \$(md5sum Packages | cut -d' ' -f1) \$(stat -c %s Packages) Packages
@@ -377,209 +396,71 @@ SHA256:
  \$(sha256sum Packages.gz | cut -d' ' -f1) \$(stat -c %s Packages.gz) Packages.gz
 RELEASE_CONTENT
 
-if [ \$? -eq 0 ]; then
-    echo "Repository index updated successfully"
-    echo ""
-    echo "Packages in repository: \$(grep "^Package:" Packages | wc -l)"
-    echo ""
-    echo "Now run: sudo apt update"
-else
-    echo "ERROR: Failed to update repository index"
-    exit 1
-fi
+echo "Repository index updated"
 EOF
     chmod +x "$REPO_DIR/update-repo.sh"
-    echo "Created: $REPO_DIR/update-repo.sh"
-}
 
-create_setup_repo_script() {
     cat > "$REPO_DIR/setup-apt-source.sh" << EOF
 #!/bin/bash
 
 REPO_DIR="\$(cd "\$(dirname "\$0")" && pwd)"
-APT_SOURCE_FILE="/etc/apt/sources.list.d/${PROJECT_NAME}-local.list"
-APT_PREFERENCES_FILE="/etc/apt/preferences.d/${PROJECT_NAME}-local"
+APT_SOURCE_FILE="/etc/apt/sources.list.d/${PROJECT_NAME}-python-local.list"
 
 if [ "\$EUID" -ne 0 ]; then
-    echo "ERROR: This script must be run as root (use sudo)"
+    echo "ERROR: This script must be run as root"
     exit 1
 fi
 
-echo "Setting up local repository for APT"
-
-if [ ! -d "\$REPO_DIR" ]; then
-    echo "ERROR: Repository directory not found: \$REPO_DIR"
+if [ ! -d "\$REPO_DIR" ] || [ ! -f "\$REPO_DIR/Packages.gz" ]; then
+    echo "ERROR: Repository not found or not indexed"
     exit 1
 fi
-
-if [ ! -f "\$REPO_DIR/Packages.gz" ]; then
-    echo "ERROR: Repository index not found. Run: ./update-repo.sh first"
-    exit 1
-fi
-
-# Remove any existing conflicting files
-for existing_file in /etc/apt/sources.list.d/*-local.list; do
-    if [ -f "\$existing_file" ]; then
-        echo "Removing existing APT source: \$existing_file"
-        rm -f "\$existing_file"
-    fi
-done
 
 echo "deb [trusted=yes] file:\$REPO_DIR ./" > "\$APT_SOURCE_FILE"
 
-cat > "\$APT_PREFERENCES_FILE" << PREFERENCES
-Package: *
-Pin: origin ""
-Pin-Priority: 1000
+apt update
 
-Package: ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}*
-Pin: origin ""
-Pin-Priority: 1001
-PREFERENCES
-
-if [ \$? -eq 0 ]; then
-    echo "APT source configured: \$APT_SOURCE_FILE"
-    echo "APT preferences configured: \$APT_PREFERENCES_FILE"
-    echo ""
-    echo "Updating APT cache"
-    apt update
-    echo ""
-    echo "Setup completed"
-    echo ""
-    echo "Install PHP extension:"
-    echo "sudo apt install ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}"
-    echo ""
-    echo "Or install for specific PHP version:"
-    echo "sudo apt install ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}-8.3"
-else
-    echo "ERROR: Failed to create APT configuration"
-    exit 1
-fi
+echo "Install: sudo apt install ${PROJECT_NAME_SANITIZED}-python-${DB_BACKEND_LOWER}"
 EOF
     chmod +x "$REPO_DIR/setup-apt-source.sh"
-    echo "Created: $REPO_DIR/setup-apt-source.sh"
-}
-
-create_install_repository_script() {
-    cat > "$DIST_DIR/install-repository.sh" << EOF
-#!/bin/bash
-
-set -e
-
-SCRIPT_DIR="\$(cd "\$(dirname "\$0")" && pwd)"
-REPO_DIR="\$SCRIPT_DIR/repository"
-
-if [ "\$EUID" -ne 0 ]; then
-    echo "ERROR: This script must be run as root (use sudo)"
-    exit 1
-fi
-
-echo "================================================================"
-echo "${PROJECT_NAME^^} Repository Installation"
-echo "================================================================"
-
-if [ ! -d "\$REPO_DIR" ]; then
-    echo "ERROR: Repository directory not found: \$REPO_DIR"
-    echo "Make sure this script is in the same directory as the 'repository' folder"
-    exit 1
-fi
-
-echo "Setting up ${PROJECT_NAME^^} repository from \$REPO_DIR"
-
-echo "Updating repository index..."
-cd "\$REPO_DIR"
-if [ -f "./update-repo.sh" ]; then
-    ./update-repo.sh
-else
-    echo "ERROR: update-repo.sh not found in \$REPO_DIR"
-    exit 1
-fi
-
-echo "Configuring APT repository..."
-if [ -f "./setup-apt-source.sh" ]; then
-    ./setup-apt-source.sh
-else
-    echo "ERROR: setup-apt-source.sh not found in \$REPO_DIR"
-    exit 1
-fi
-
-echo ""
-echo "================================================================"
-echo "${PROJECT_NAME^^} Repository Installation Completed"
-echo "================================================================"
-echo ""
-echo "You can now install ${PROJECT_NAME^^} packages:"
-echo "sudo apt install ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}"
-echo ""
-echo "Or for specific PHP version:"
-echo "sudo apt install ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}-8.3"
-echo ""
-echo "Repository location: \$REPO_DIR"
-echo ""
-EOF
-
-    chmod +x "$DIST_DIR/install-repository.sh"
-    echo "Created: $DIST_DIR/install-repository.sh"
 }
 
 move_packages_to_repository() {
-    echo ""
-    echo "Moving packages to repository directory: $REPO_DIR"
     mkdir -p "$REPO_DIR"
-
     mv "$BUILD_DIR"/*.deb "$REPO_DIR/" 2>/dev/null || true
-
-    local moved_count=$(ls -1 "$REPO_DIR"/*.deb 2>/dev/null | wc -l)
-    echo "Moved $moved_count package(s) to $REPO_DIR"
-
-    echo ""
-    echo "Packages created:"
-    for pkg in "$REPO_DIR"/*.deb; do
-        if [ -f "$pkg" ]; then
-            echo "  $(basename "$pkg")"
-        fi
-    done
 }
 
 main() {
-    echo "Starting DEB package creation for $PROJECT_NAME..."
-
     check_prerequisites
 
-    echo "Building packages for PHP versions: $PHP_VERSIONS"
-    echo ""
-
+    local ext_files=$(find_python_extension_files)
     local built_count=0
-    for version in $PHP_VERSIONS; do
-        echo "=== PROCESSING PHP $version ==="
-        if build_single_package "$version"; then
-            built_count=$((built_count + 1))
-            echo "SUCCESS: PHP $version package built"
-        else
-            echo "WARNING: PHP $version package skipped"
+
+    while IFS= read -r source_file; do
+        if [ -z "$source_file" ]; then
+            continue
         fi
-        echo "=== COMPLETED PHP $version ==="
-        echo ""
-    done
 
-    if [ $built_count -gt 0 ]; then
-        echo "=== CREATING META PACKAGE ==="
+        local python_version=$(extract_python_version "$source_file")
+        local build_number=$(extract_build_number "$source_file")
+
+        if [ -z "$python_version" ]; then
+            continue
+        fi
+
+        if build_single_package "$source_file" "$python_version" "$build_number"; then
+            built_count=$((built_count + 1))
+        fi
+    done <<< "$ext_files"
+
+    if [ "$built_count" -gt 0 ]; then
         create_meta_package
-        echo ""
-
         move_packages_to_repository
-
-        echo "=== CREATING REPOSITORY SCRIPTS ==="
-        create_update_repo_script
-        create_setup_repo_script
-        create_install_repository_script
-
-        echo "Multi-version packaging completed"
-        echo "Built $built_count individual packages + 1 meta-package"
-        echo "Repository created in: $REPO_DIR"
+        create_repository_scripts
+        echo "Packaging completed: $built_count packages"
         exit 0
     else
-        echo "ERROR: No packages were built successfully"
+        echo "ERROR: No packages built"
         exit 1
     fi
 }

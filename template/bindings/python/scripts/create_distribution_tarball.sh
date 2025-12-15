@@ -6,9 +6,8 @@ BUILD_DIR="$PROJECT_ROOT/build/release"
 DIST_DIR="$PROJECT_ROOT/dist"
 CAOS_OPT_DIR="/opt/caosdba"
 
-# Get database backend and project name from command line
 DB_BACKEND=${1:-"MYSQL"}
-PROJECT_NAME=${2:-"caos"}  # Default to 'caos' for backward compatibility
+PROJECT_NAME=${2:-"caos"}
 PROJECT_NAME_SANITIZED=$(echo "$PROJECT_NAME" | tr '_' '-')
 DB_BACKEND_LOWER=$(echo "$DB_BACKEND" | tr '[:upper:]' '[:lower:]')
 
@@ -20,12 +19,11 @@ else
     echo "WARNING: $BUILD_DIR/build_counter.txt not found, using default version"
 fi
 
-echo "Creating DEB packages tarball for ${PROJECT_NAME}"
+echo "Creating DEB packages tarball for ${PROJECT_NAME} Python extension"
 echo "Version: $VERSION"
 echo "Database backend: $DB_BACKEND_LOWER"
 
 check_prerequisites() {
-    # Check if repository was created in dist directory
     if [ ! -d "$DIST_DIR/repository" ]; then
         echo "ERROR: Repository directory not found in $DIST_DIR/repository"
         echo "Please run the ${PROJECT_NAME}_package_deb target first:"
@@ -44,14 +42,13 @@ check_prerequisites() {
 }
 
 create_tarball_structure() {
-    local temp_dir="$DIST_DIR/temp_caos_deb"
+    local temp_dir="$DIST_DIR/temp_caos_python_deb"
 
     echo "Creating tarball structure in $temp_dir"
 
     rm -rf "$temp_dir"
     mkdir -p "$temp_dir$CAOS_OPT_DIR"
 
-    # Copy the entire repository structure from dist directory
     if [ -d "$DIST_DIR/repository" ]; then
         echo "Copying repository from $DIST_DIR/repository"
         cp -r "$DIST_DIR/repository" "$temp_dir$CAOS_OPT_DIR/"
@@ -60,47 +57,26 @@ create_tarball_structure() {
         exit 1
     fi
 
-    # Copy install-repository.sh from dist directory
     if [ -f "$DIST_DIR/install-repository.sh" ]; then
         echo "Copying install-repository.sh from $DIST_DIR"
         cp "$DIST_DIR/install-repository.sh" "$temp_dir$CAOS_OPT_DIR/"
-    else
-        echo "ERROR: $DIST_DIR/install-repository.sh not found"
-        exit 1
     fi
 
-    # Copy README.md from dist directory
     if [ -f "$DIST_DIR/README.md" ]; then
         echo "Copying README.md from $DIST_DIR"
         cp "$DIST_DIR/README.md" "$temp_dir$CAOS_OPT_DIR/"
-    else
-        echo "ERROR: $DIST_DIR/README.md not found"
-        exit 1
     fi
 
-    # Copy ENV.md from dist directory
     if [ -f "$DIST_DIR/ENV.md" ]; then
         echo "Copying ENV.md from $DIST_DIR"
         cp "$DIST_DIR/ENV.md" "$temp_dir$CAOS_OPT_DIR/"
-    else
-        echo "ERROR: $DIST_DIR/ENV.md not found"
-        exit 1
     fi
 
-    # Set correct ownership and permissions in temp directory
-    echo "Setting secure ownership and permissions in tarball..."
-
-    # Set ownership to root:root for everything
     chown -R root:root "$temp_dir$CAOS_OPT_DIR"
-
-    # Set directory permissions to 755 (readable e traversable da tutti)
     chmod 755 "$temp_dir$CAOS_OPT_DIR"
     find "$temp_dir$CAOS_OPT_DIR" -type d -exec chmod 755 {} \;
-
-    # Set file permissions to 644 (leggibili da tutti)
     find "$temp_dir$CAOS_OPT_DIR" -type f -exec chmod 644 {} \;
 
-    # Set executable permissions to 755 for scripts
     chmod 755 "$temp_dir$CAOS_OPT_DIR/install-repository.sh" 2>/dev/null || true
     chmod 755 "$temp_dir$CAOS_OPT_DIR/repository/update-repo.sh" 2>/dev/null || true
     chmod 755 "$temp_dir$CAOS_OPT_DIR/repository/setup-apt-source.sh" 2>/dev/null || true
@@ -109,40 +85,36 @@ create_tarball_structure() {
 }
 
 create_install_script() {
-    local temp_dir="$DIST_DIR/temp_caos_deb"
+    local temp_dir="$DIST_DIR/temp_caos_python_deb"
 
-    # Crea la directory di destinazione
     mkdir -p "$temp_dir$CAOS_OPT_DIR"
 
     cat > "$temp_dir$CAOS_OPT_DIR/install-repository.sh" << EOF
 #!/bin/bash
-# ${PROJECT_NAME^^} Repository Installation Script
+# ${PROJECT_NAME^^} Python Repository Installation Script
 
 set -e
 
 CAOS_OPT_DIR="/opt/caosdba"
 REPO_DIR="\$CAOS_OPT_DIR/repository"
 
-# Check if running as root
 if [ "\$EUID" -ne 0 ]; then
     echo "ERROR: This script must be run as root (use sudo)"
     exit 1
 fi
 
 echo "================================================================"
-echo "${PROJECT_NAME^^} Repository Installation"
+echo "${PROJECT_NAME^^} Python Repository Installation"
 echo "================================================================"
 
-# Verify we're in the correct location
 if [ ! -d "\$REPO_DIR" ]; then
     echo "ERROR: Repository directory not found: \$REPO_DIR"
     echo "Make sure the tarball was extracted to /opt/caosdba"
     exit 1
 fi
 
-echo "Setting up ${PROJECT_NAME^^} repository from \$REPO_DIR"
+echo "Setting up ${PROJECT_NAME^^} Python repository from \$REPO_DIR"
 
-# Remove existing APT source files to avoid conflicts
 if [ -f "/etc/apt/sources.list.d/caos-local.list" ]; then
     echo "Removing existing caos-local.list to avoid conflicts..."
     rm -f "/etc/apt/sources.list.d/caos-local.list"
@@ -151,8 +123,11 @@ if [ -f "/etc/apt/sources.list.d/${PROJECT_NAME}-local.list" ]; then
     echo "Removing existing ${PROJECT_NAME}-local.list to avoid conflicts..."
     rm -f "/etc/apt/sources.list.d/${PROJECT_NAME}-local.list"
 fi
+if [ -f "/etc/apt/sources.list.d/${PROJECT_NAME}-python-local.list" ]; then
+    echo "Removing existing ${PROJECT_NAME}-python-local.list to avoid conflicts..."
+    rm -f "/etc/apt/sources.list.d/${PROJECT_NAME}-python-local.list"
+fi
 
-# Update repository index
 echo "Updating repository index..."
 cd "\$REPO_DIR"
 if [ -f "./update-repo.sh" ]; then
@@ -162,7 +137,6 @@ else
     exit 1
 fi
 
-# Configure APT
 echo "Configuring APT repository..."
 if [ -f "./setup-apt-source.sh" ]; then
     ./setup-apt-source.sh
@@ -173,14 +147,17 @@ fi
 
 echo ""
 echo "================================================================"
-echo "${PROJECT_NAME^^} Repository Installation Completed"
+echo "${PROJECT_NAME^^} Python Repository Installation Completed"
 echo "================================================================"
 echo ""
-echo "You can now install ${PROJECT_NAME^^} packages:"
-echo "  sudo apt install ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}"
+echo "You can now install ${PROJECT_NAME^^} Python extension:"
+echo "  sudo apt install ${PROJECT_NAME_SANITIZED}-python-${DB_BACKEND_LOWER}"
 echo ""
-echo "Or for specific PHP version:"
-echo "  sudo apt install ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}-8.3"
+echo "Or for specific Python version:"
+echo "  sudo apt install ${PROJECT_NAME_SANITIZED}-python-${DB_BACKEND_LOWER}-3.12"
+echo ""
+echo "To test the installation:"
+echo "  python3 -c \"import ${PROJECT_NAME}; print(${PROJECT_NAME}.get_build_info())\""
 echo ""
 echo "Repository location: \$REPO_DIR"
 echo ""
@@ -189,11 +166,13 @@ EOF
     chmod 755 "$temp_dir$CAOS_OPT_DIR/install-repository.sh"
     echo "Created install-repository.sh in tarball structure"
 }
+
 create_readme() {
     local readme_file="$DIST_DIR/README.md"
+    local tarball_name="${PROJECT_NAME_SANITIZED}-python-deb-repository-${DB_BACKEND_LOWER}-${VERSION}.tar.gz"
 
     cat > "$readme_file" << EOF
-# ${PROJECT_NAME^^} DEB Packages Repository
+# ${PROJECT_NAME^^} Python DEB Packages Repository
 
 Version: $VERSION
 Database Backend: $DB_BACKEND
@@ -201,7 +180,7 @@ Project: $PROJECT_NAME
 
 ## Contents
 
-This tarball contains the ${PROJECT_NAME^^} DEB packages and local APT repository.
+This tarball contains the ${PROJECT_NAME^^} Python DEB packages and local APT repository.
 
 ### Directory Structure
 
@@ -211,8 +190,6 @@ This tarball contains the ${PROJECT_NAME^^} DEB packages and local APT repositor
 │   ├── Packages        # Repository index
 │   ├── Packages.gz     # Compressed index
 │   ├── Release         # Release info
-│   ├── conf/           # Configuration
-│   ├── i18n/           # Translations
 │   ├── update-repo.sh  # Repository update script
 │   └── setup-apt-source.sh # APT configuration script
 └── install-repository.sh   # Main installation script
@@ -223,7 +200,7 @@ This tarball contains the ${PROJECT_NAME^^} DEB packages and local APT repositor
 
 1. Extract the tarball to /opt:
 \`\`\`bash
-sudo tar -xzf ${PROJECT_NAME_SANITIZED}-deb-repository-${DB_BACKEND_LOWER}-${VERSION}.tar.gz -C /
+sudo tar -xzf ${tarball_name} -C /
 \`\`\`
 
 2. Run the installation script:
@@ -237,7 +214,7 @@ If you prefer manual setup:
 
 1. Extract tarball:
 \`\`\`bash
-sudo tar -xzf ${PROJECT_NAME_SANITIZED}-deb-repository-${DB_BACKEND_LOWER}-${VERSION}.tar.gz -C /
+sudo tar -xzf ${tarball_name} -C /
 \`\`\`
 
 2. Update repository index:
@@ -253,27 +230,41 @@ cd /opt/caosdba/repository
 
 ## Usage
 
-After installation, you can install ${PROJECT_NAME^^} packages via APT:
+After installation, you can install ${PROJECT_NAME^^} Python extension via APT:
 
 \`\`\`bash
 # Install meta-package (recommended)
-sudo apt install ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}
+sudo apt install ${PROJECT_NAME_SANITIZED}-python-${DB_BACKEND_LOWER}
 
-# Install specific PHP version
-sudo apt install ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}-8.3
+# Install specific Python version
+sudo apt install ${PROJECT_NAME_SANITIZED}-python-${DB_BACKEND_LOWER}-3.12
 
 # See all available packages
-apt list ${PROJECT_NAME_SANITIZED}-php*
+apt list ${PROJECT_NAME_SANITIZED}-python*
 \`\`\`
 
 ## Available Packages
 
-- ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER} - Meta-package
-- ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}-8.0 - PHP 8.0 extension
-- ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}-8.1 - PHP 8.1 extension
-- ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}-8.2 - PHP 8.2 extension
-- ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}-8.3 - PHP 8.3 extension
-- ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}-8.4 - PHP 8.4 extension
+- ${PROJECT_NAME_SANITIZED}-python-${DB_BACKEND_LOWER} - Meta-package
+- ${PROJECT_NAME_SANITIZED}-python-${DB_BACKEND_LOWER}-3.8 - Python 3.8 extension
+- ${PROJECT_NAME_SANITIZED}-python-${DB_BACKEND_LOWER}-3.9 - Python 3.9 extension
+- ${PROJECT_NAME_SANITIZED}-python-${DB_BACKEND_LOWER}-3.10 - Python 3.10 extension
+- ${PROJECT_NAME_SANITIZED}-python-${DB_BACKEND_LOWER}-3.11 - Python 3.11 extension
+- ${PROJECT_NAME_SANITIZED}-python-${DB_BACKEND_LOWER}-3.12 - Python 3.12 extension
+
+## Testing
+
+To verify the installation:
+
+\`\`\`bash
+python3 -c "import ${PROJECT_NAME}; print(${PROJECT_NAME}.get_build_info())"
+\`\`\`
+
+For specific Python version:
+
+\`\`\`bash
+python3.12 -c "import ${PROJECT_NAME}; print(${PROJECT_NAME}.get_build_info())"
+\`\`\`
 
 ## Maintenance
 
@@ -290,7 +281,7 @@ To remove the repository:
 
 1. Remove APT source:
 \`\`\`bash
-sudo rm -f /etc/apt/sources.list.d/${PROJECT_NAME}-local.list
+sudo rm -f /etc/apt/sources.list.d/${PROJECT_NAME}-python-local.list
 \`\`\`
 
 2. Remove repository files:
@@ -313,57 +304,13 @@ EOF
     echo "Created README.md"
 }
 
-create_tarball() {
-    local temp_dir="$DIST_DIR/temp_caos_deb"
-    local tarball_name="${PROJECT_NAME_SANITIZED}-deb-repository-${DB_BACKEND_LOWER}-${VERSION}.tar.gz"
-    local tarball_path="$DIST_DIR/$tarball_name"
-
-    echo "Creating tarball: $tarball_name"
-
-    mkdir -p "$DIST_DIR"
-    tar -czf "$tarball_path" -C "$temp_dir" opt
-
-    # Get package info
-    local deb_count=$(ls "$temp_dir$CAOS_OPT_DIR/repository"/*.deb 2>/dev/null | wc -l)
-
-    # Cleanup
-    rm -rf "$temp_dir"
-
-    echo "Tarball created: $tarball_path"
-    echo "Contains $deb_count DEB package(s)"
-    echo ""
-    echo "To deploy:"
-    echo "  sudo tar -xzf $tarball_path -C /"
-    echo "  sudo /opt/caosdba/install-repository.sh"
-    echo ""
-}
-
-create_deployment_readme() {
-    local tarball_name="${PROJECT_NAME_SANITIZED}-deb-repository-${DB_BACKEND_LOWER}-${VERSION}.tar.gz"
-    local readme_file="$DIST_DIR/${tarball_name}.README.txt"
-
-    cat > "$readme_file" << EOF
-To deploy:
-1. Extract the tarball:
-   sudo tar -xzf $tarball_name -C /
-
-2. Run the installation script:
-   sudo /opt/caosdba/install-repository.sh
-
-3. Install ${PROJECT_NAME^^} PHP extension:
-   sudo apt install ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}
-EOF
-
-    echo "Created deployment README: ${tarball_name}.README.txt"
-}
-
 create_env_documentation() {
     local env_file="$DIST_DIR/ENV.md"
 
     cat > "$env_file" << EOF
 # ${PROJECT_NAME^^} Environment Variables
 
-This document describes all environment variables used by the ${PROJECT_NAME^^} PHP extension.
+This document describes all environment variables used by the ${PROJECT_NAME^^} extension.
 
 ## Cache Configuration (Redis)
 
@@ -456,19 +403,60 @@ EOF
     echo "Created environment documentation: $env_file"
 }
 
+create_tarball() {
+    local temp_dir="$DIST_DIR/temp_caos_python_deb"
+    local tarball_name="${PROJECT_NAME_SANITIZED}-python-deb-repository-${DB_BACKEND_LOWER}-${VERSION}.tar.gz"
+    local tarball_path="$DIST_DIR/$tarball_name"
+
+    echo "Creating tarball: $tarball_name"
+
+    mkdir -p "$DIST_DIR"
+    tar -czf "$tarball_path" -C "$temp_dir" opt
+
+    local deb_count=$(ls "$temp_dir$CAOS_OPT_DIR/repository"/*.deb 2>/dev/null | wc -l)
+
+    rm -rf "$temp_dir"
+
+    echo "Tarball created: $tarball_path"
+    echo "Contains $deb_count DEB package(s)"
+    echo ""
+    echo "To deploy:"
+    echo "  sudo tar -xzf $tarball_path -C /"
+    echo "  sudo /opt/caosdba/install-repository.sh"
+    echo ""
+}
+
+create_deployment_readme() {
+    local tarball_name="${PROJECT_NAME_SANITIZED}-python-deb-repository-${DB_BACKEND_LOWER}-${VERSION}.tar.gz"
+    local readme_file="$DIST_DIR/${tarball_name}.README.txt"
+
+    cat > "$readme_file" << EOF
+To deploy:
+1. Extract the tarball:
+   sudo tar -xzf $tarball_name -C /
+
+2. Run the installation script:
+   sudo /opt/caosdba/install-repository.sh
+
+3. Install ${PROJECT_NAME^^} Python extension:
+   sudo apt install ${PROJECT_NAME_SANITIZED}-python-${DB_BACKEND_LOWER}
+EOF
+
+    echo "Created deployment README: ${tarball_name}.README.txt"
+}
 
 main() {
-    echo "Starting DEB repository tarball creation for $PROJECT_NAME..."
+    echo "Starting Python DEB repository tarball creation for $PROJECT_NAME..."
 
     check_prerequisites
+    create_tarball_structure
     create_install_script
     create_readme
     create_env_documentation
-    create_tarball_structure
     create_tarball
     create_deployment_readme
 
-    echo "DEB repository tarball creation completed successfully"
+    echo "Python DEB repository tarball creation completed successfully"
 }
 
 main "$@"
