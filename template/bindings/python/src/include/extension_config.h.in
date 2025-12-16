@@ -1,0 +1,5 @@
+#pragma once
+
+#define PYTHON_MODULE_NAME_STR      "@PROJECT_NAME@"
+#define PYTHON_INIT_FUNCTION        PyInit_@PROJECT_NAME@
+#define CAOS_PYTHON_DESCRIPTION     "CAOSDBA Python binding for " PYTHON_MODULE_NAME_STR

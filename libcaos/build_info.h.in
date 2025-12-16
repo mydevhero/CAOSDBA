@@ -9,7 +9,17 @@
 #define CAOS_VERSION_PATCH "@PROJECT_VERSION_PATCH@"
 
 [[maybe_unused]]
-static const char* get_build_count_string() {
+static const char* get_build_count_string()
+{
   static std::string build_count = std::to_string(CAOS_BUILD_COUNT);
   return build_count.c_str();
+}
+
+[[maybe_unused]]
+static const char* get_build_info_string()
+{
+  static std::string build_info = std::to_string(CAOS_BUILD_COUNT)
+                                  + "@"
+                                  + std::string(CAOS_BUILD_TIMESTAMP);
+  return build_info.c_str();
 }

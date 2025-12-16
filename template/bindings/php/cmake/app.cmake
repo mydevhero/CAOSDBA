@@ -1,8 +1,5 @@
 message(STATUS "Building CAOS as PHP extension")
 
-# Get query boilerplate code
-# include(${CMAKE_BINARY_DIR}/generated_queries/Query_Config.cmake)
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
