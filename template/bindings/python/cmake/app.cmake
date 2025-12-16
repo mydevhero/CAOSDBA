@@ -171,6 +171,10 @@ def get_build_info():
     }
 ]])
 
+        # Create nested repository directory structure: repositories/${PROJECT_NAME}/python/
+        set(PYTHON_REPO_DIR "${CMAKE_SOURCE_DIR}/dist/repositories/${PROJECT_NAME}/python")
+        file(MAKE_DIRECTORY ${PYTHON_REPO_DIR})
+
         # POST_BUILD: copy to both structured directory AND direct location
         add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
             # Copy .so file to Python package directory in build directory
@@ -190,15 +194,15 @@ def get_build_info():
         # Create a separate target for copying to dist/ (only executed when explicitly requested)
         add_custom_target(${TARGET_NAME}_copy_to_dist
             # Create dist directory if needed
-            COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_SOURCE_DIR}/dist/repositories/${PROJECT_NAME}
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_SOURCE_DIR}/dist/repositories/${PROJECT_NAME}/python
             # Copy .so file from build directory to dist directory
             COMMAND ${CMAKE_COMMAND} -E copy
                 ${PYTHON_PACKAGE_DIR}/${PROJECT_NAME}${PYTHON_MODULE_SUFFIX}
-                ${CMAKE_SOURCE_DIR}/dist/repositories/${PROJECT_NAME}/${PROJECT_NAME}${PYTHON_MODULE_SUFFIX}
+                ${CMAKE_SOURCE_DIR}/dist/repositories/${PROJECT_NAME}/python/${PROJECT_NAME}${PYTHON_MODULE_SUFFIX}
             # Copy __init__.py from build directory to dist directory
             COMMAND ${CMAKE_COMMAND} -E copy
                 ${PYTHON_PACKAGE_DIR}/__init__.py
-                ${CMAKE_SOURCE_DIR}/dist/repositories/${PROJECT_NAME}/__init__.py
+                ${CMAKE_SOURCE_DIR}/dist/repositories/${PROJECT_NAME}/python/__init__.py
             DEPENDS ${TARGET_NAME}
             COMMENT "Copying ${PROJECT_NAME} Python files to dist directory for packaging"
         )

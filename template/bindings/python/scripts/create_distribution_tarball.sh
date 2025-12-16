@@ -23,10 +23,10 @@ echo "Version: $VERSION"
 echo "Database backend: $DB_BACKEND_LOWER"
 
 check_prerequisites() {
-    local repo_dir="$DIST_DIR/repositories/${PROJECT_NAME}"
+    local repo_dir="$DIST_DIR/repositories/${PROJECT_NAME}/python"
 
     if [ ! -d "$repo_dir" ]; then
-        echo "ERROR: Repository directory not found in $repo_dir"
+        echo "ERROR: Python repository directory not found in $repo_dir"
         echo "Please run the ${PROJECT_NAME}_package_deb target first:"
         echo "  cmake --build build/release --target ${PROJECT_NAME}_package_deb"
         exit 1
@@ -34,26 +34,26 @@ check_prerequisites() {
 
     local deb_count=$(ls "$repo_dir"/*.deb 2>/dev/null | wc -l)
     if [ "$deb_count" -eq 0 ]; then
-        echo "ERROR: No DEB packages found in $repo_dir"
+        echo "ERROR: No Python DEB packages found in $repo_dir"
         echo "Please run the ${PROJECT_NAME}_package_deb target first"
         exit 1
     fi
 
-    echo "Found $deb_count DEB package(s) in $repo_dir"
+    echo "Found $deb_count Python DEB package(s) in $repo_dir"
 }
 
 create_tarball_structure() {
     local temp_dir="$DIST_DIR/temp_caos_python_deb"
-    local project_repo_dir="$temp_dir/opt/caosdba/repositories/${PROJECT_NAME}"
+    local project_repo_dir="$temp_dir/opt/caosdba/repositories/${PROJECT_NAME}/python"
 
     echo "Creating tarball structure in $temp_dir"
 
     rm -rf "$temp_dir"
     mkdir -p "$project_repo_dir"
 
-    local source_repo_dir="$DIST_DIR/repositories/${PROJECT_NAME}"
+    local source_repo_dir="$DIST_DIR/repositories/${PROJECT_NAME}/python"
     if [ -d "$source_repo_dir" ]; then
-        echo "Copying repository from $source_repo_dir"
+        echo "Copying Python repository from $source_repo_dir"
         cp -r "$source_repo_dir"/* "$project_repo_dir/"
     else
         echo "ERROR: $source_repo_dir not found"
@@ -97,12 +97,12 @@ create_install_script() {
 
     cat > "$temp_dir/opt/caosdba/install-repository.sh" << EOF
 #!/bin/bash
-# ${PROJECT_NAME^^} Python Repository Installation Script
+# ${PROJECT_NAME} Python Repository Installation Script
 
 set -e
 
 CAOS_OPT_DIR="/opt/caosdba"
-REPO_DIR="\$CAOS_OPT_DIR/repositories/${PROJECT_NAME}"
+REPO_DIR="\$CAOS_OPT_DIR/repositories/${PROJECT_NAME}/python"
 
 if [ "\$EUID" -ne 0 ]; then
     echo "ERROR: This script must be run as root (use sudo)"
@@ -110,16 +110,16 @@ if [ "\$EUID" -ne 0 ]; then
 fi
 
 echo "================================================================"
-echo "${PROJECT_NAME^^} Python Repository Installation"
+echo "${PROJECT_NAME} Python Repository Installation"
 echo "================================================================"
 
 if [ ! -d "\$REPO_DIR" ]; then
-    echo "ERROR: Repository directory not found: \$REPO_DIR"
+    echo "ERROR: Python repository directory not found: \$REPO_DIR"
     echo "Make sure the tarball was extracted to /opt/caosdba"
     exit 1
 fi
 
-echo "Setting up ${PROJECT_NAME^^} Python repository from \$REPO_DIR"
+echo "Setting up ${PROJECT_NAME} Python repository from \$REPO_DIR"
 
 # Clean up any existing conflicting source files
 echo "Cleaning up existing repository configurations..."
@@ -149,10 +149,10 @@ fi
 
 echo ""
 echo "================================================================"
-echo "${PROJECT_NAME^^} Python Repository Installation Completed"
+echo "${PROJECT_NAME} Python Repository Installation Completed"
 echo "================================================================"
 echo ""
-echo "You can now install ${PROJECT_NAME^^} Python extension:"
+echo "You can now install ${PROJECT_NAME} Python extension:"
 echo "  sudo apt install ${PROJECT_NAME_SANITIZED}-python-${DB_BACKEND_LOWER}"
 echo ""
 echo "Or for specific Python version:"
@@ -174,7 +174,7 @@ create_readme() {
     local tarball_name="${PROJECT_NAME_SANITIZED}-python-deb-repository-${DB_BACKEND_LOWER}-${VERSION}.tar.gz"
 
     cat > "$readme_file" << EOF
-# ${PROJECT_NAME^^} Python DEB Packages Repository
+# ${PROJECT_NAME} Python DEB Packages Repository
 
 Version: $VERSION
 Database Backend: $DB_BACKEND
@@ -182,19 +182,20 @@ Project: $PROJECT_NAME
 
 ## Contents
 
-This tarball contains the ${PROJECT_NAME^^} Python DEB packages and local APT repository.
+This tarball contains the ${PROJECT_NAME} Python DEB packages and local APT repository.
 
 ### Directory Structure
 
 /opt/caosdba/
 ├── repositories/
-│   └── ${PROJECT_NAME}/          # Project-specific repository
-│       ├── *.deb           # DEB packages
-│       ├── Packages        # Repository index
-│       ├── Packages.gz     # Compressed index
-│       ├── Release         # Release info
-│       ├── update-repo.sh  # Repository update script
-│       └── setup-apt-source.sh # APT configuration script
+│   └── ${PROJECT_NAME}/          # Project-specific directory
+│       └── python/          # Python-specific repository
+│           ├── *.deb           # DEB packages
+│           ├── Packages        # Repository index
+│           ├── Packages.gz     # Compressed index
+│           ├── Release         # Release info
+│           ├── update-repo.sh  # Repository update script
+│           └── setup-apt-source.sh # APT configuration script
 └── install-repository.sh   # Main installation script
 
 ## Installation
@@ -222,7 +223,7 @@ sudo tar -xzf ${tarball_name} -C /
 
 2. Update repository index:
 \`\`\`bash
-cd /opt/caosdba/repositories/${PROJECT_NAME}
+cd /opt/caosdba/repositories/${PROJECT_NAME}/python
 ./update-repo.sh
 \`\`\`
 
@@ -233,7 +234,7 @@ cd /opt/caosdba/repositories/${PROJECT_NAME}
 
 ## Usage
 
-After installation, you can install ${PROJECT_NAME^^} Python extension via APT:
+After installation, you can install ${PROJECT_NAME} Python extension via APT:
 
 \`\`\`bash
 # Install meta-package (recommended)
@@ -273,7 +274,7 @@ python3.12 -c "import ${PROJECT_NAME}; print(${PROJECT_NAME}.get_build_info())"
 
 To update the repository after adding new packages:
 \`\`\`bash
-cd /opt/caosdba/repositories/${PROJECT_NAME}
+cd /opt/caosdba/repositories/${PROJECT_NAME}/python
 ./update-repo.sh
 sudo apt update
 \`\`\`
@@ -289,7 +290,7 @@ sudo rm -f /etc/apt/sources.list.d/${PROJECT_NAME}-python-local.list
 
 2. Remove repository files:
 \`\`\`bash
-sudo rm -rf /opt/caosdba/repositories/${PROJECT_NAME}
+sudo rm -rf /opt/caosdba/repositories/${PROJECT_NAME}/python
 \`\`\`
 
 3. Update APT cache:
@@ -297,23 +298,25 @@ sudo rm -rf /opt/caosdba/repositories/${PROJECT_NAME}
 sudo apt update
 \`\`\`
 
-## Multiple Projects Support
+## Multiple Projects and Languages Support
 
-The system supports multiple CAOS-based projects installed simultaneously. Each project has its own isolated repository:
+The system supports multiple CAOS-based projects with different languages:
 
 \`\`\`
-/opt/caosdba/repositories/my_app/      # First project
-/opt/caosdba/repositories/my_app2/     # Second project
-/opt/caosdba/repositories/another_app/ # Third project
+/opt/caosdba/repositories/my_app/python/      # Python extension
+/opt/caosdba/repositories/my_app/php/         # PHP extension
+/opt/caosdba/repositories/another_app/python/ # Another project Python
+/opt/caosdba/repositories/another_app/php/    # Another project PHP
 \`\`\`
 
-Each repository has its own APT source configuration and packages.
+Each language has its own isolated repository with separate APT configuration.
 
 ---
 Generated: $(date)
 Build: $VERSION
 Database: $DB_BACKEND
 Project: $PROJECT_NAME
+Language: Python
 EOF
 
     echo "Created README.md"
@@ -323,9 +326,9 @@ create_env_documentation() {
     local env_file="$DIST_DIR/ENV.md"
 
     cat > "$env_file" << EOF
-# ${PROJECT_NAME^^} Environment Variables
+# ${PROJECT_NAME} Environment Variables
 
-This document describes all environment variables used by the ${PROJECT_NAME^^} extension.
+This document describes all environment variables used by the ${PROJECT_NAME} extension.
 
 ## Cache Configuration (Redis)
 
@@ -412,7 +415,7 @@ Timeouts: Set appropriate timeouts based on your network latency and application
 
 Validation: Connection validation adds overhead but improves reliability in unstable network environments.
 
-For more information, refer to the ${PROJECT_NAME^^} documentation.
+For more information, refer to the ${PROJECT_NAME} documentation.
 EOF
 
     echo "Created environment documentation: $env_file"
@@ -423,18 +426,18 @@ create_tarball() {
     local tarball_name="${PROJECT_NAME_SANITIZED}-python-deb-repository-${DB_BACKEND_LOWER}-${VERSION}.tar.gz"
     local tarball_path="$DIST_DIR/$tarball_name"
 
-    echo "Creating tarball: $tarball_name"
+    echo "Creating Python tarball: $tarball_name"
 
     mkdir -p "$DIST_DIR"
     tar -czf "$tarball_path" -C "$temp_dir" opt
 
-    local repo_dir="$temp_dir/opt/caosdba/repositories/${PROJECT_NAME}"
+    local repo_dir="$temp_dir/opt/caosdba/repositories/${PROJECT_NAME}/python"
     local deb_count=$(ls "$repo_dir"/*.deb 2>/dev/null | wc -l)
 
     rm -rf "$temp_dir"
 
-    echo "Tarball created: $tarball_path"
-    echo "Contains $deb_count DEB package(s)"
+    echo "Python tarball created: $tarball_path"
+    echo "Contains $deb_count Python DEB package(s)"
     echo ""
     echo "To deploy:"
     echo "  sudo tar -xzf $tarball_path -C /"
@@ -454,7 +457,7 @@ To deploy:
 2. Run the installation script:
    sudo /opt/caosdba/install-repository.sh
 
-3. Install ${PROJECT_NAME^^} Python extension:
+3. Install ${PROJECT_NAME} Python extension:
    sudo apt install ${PROJECT_NAME_SANITIZED}-python-${DB_BACKEND_LOWER}
 EOF
 
