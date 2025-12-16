@@ -32,7 +32,7 @@ if(PHP_CONFIG)
 
   separate_arguments(PHP_INCLUDE_FLAGS)
 
-  # MODIFICATION: Added call_context.cpp to source files
+  # Add call_context.cpp to source files
   add_library(${PROJECT_NAME} MODULE
     src/bindings.cpp
     src/call_context.cpp
@@ -56,7 +56,7 @@ if(PHP_CONFIG)
     SUFFIX ".so"
   )
 
-  # MODIFICATION: Added libcaos to link libraries
+  # Add libcaos to link libraries
   target_link_libraries(${PROJECT_NAME} PRIVATE libcaos ${PHP_LIBRARIES})
   target_compile_options(${PROJECT_NAME} PRIVATE ${PHP_INCLUDE_FLAGS})
   target_compile_definitions(${PROJECT_NAME} PUBLIC CAOS_BUILD_PHP_BINDING)
@@ -72,7 +72,7 @@ if(PHP_CONFIG)
   set(CAOS_INI_CONTENT "extension=${PROJECT_NAME}.so\n")
   file(WRITE ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.ini "${CAOS_INI_CONTENT}")
 
-  # MODIFICATION: Unified build counter logic
+  # Unified build counter logic (same as Python)
   set(BUILD_COUNTER_FILE "${CMAKE_BINARY_DIR}/build_counter.txt")
   if(EXISTS "${BUILD_COUNTER_FILE}")
     file(READ "${BUILD_COUNTER_FILE}" CAOS_BUILD_COUNT)
@@ -85,31 +85,38 @@ if(PHP_CONFIG)
   file(WRITE "${BUILD_COUNTER_FILE}" "${CAOS_BUILD_COUNT}")
   string(TOLOWER "${CAOS_DB_BACKEND}" CAOS_DB_BACKEND_LOWER)
 
-  # MODIFICATION: Organized package directory
+  # Organized package directory
   set(PHP_PACKAGE_DIR "${CMAKE_BINARY_DIR}/php_package")
   file(MAKE_DIRECTORY ${PHP_PACKAGE_DIR})
 
+  # Create nested repository directory structure: repositories/${PROJECT_NAME}/php/
+  set(PHP_REPO_DIR "${CMAKE_SOURCE_DIR}/dist/repositories/${PROJECT_NAME}/php")
+  file(MAKE_DIRECTORY ${PHP_REPO_DIR})
+
   add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     # Copy to organized package directory
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_SOURCE_DIR}/dist/repositories/${PROJECT_NAME}
-    COMMAND ${CMAKE_COMMAND} -E copy
-        $<TARGET_FILE:${PROJECT_NAME}>
-        ${CMAKE_SOURCE_DIR}/dist/repositories/${PROJECT_NAME}/${PROJECT_NAME}-${CAOS_DB_BACKEND_LOWER}-${CAOS_BUILD_COUNT}.so
-    COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.ini
-        ${CMAKE_SOURCE_DIR}/dist/repositories/${PROJECT_NAME}/${PROJECT_NAME}-${CAOS_DB_BACKEND_LOWER}-${CAOS_BUILD_COUNT}.ini
-    # Also copy to package directory for structured access
     COMMAND ${CMAKE_COMMAND} -E copy
         $<TARGET_FILE:${PROJECT_NAME}>
         ${PHP_PACKAGE_DIR}/${PROJECT_NAME}.so
-    COMMENT "Copying ${PROJECT_NAME}-${CAOS_DB_BACKEND_LOWER}-${CAOS_BUILD_COUNT}.so and ${PROJECT_NAME}-${CAOS_DB_BACKEND_LOWER}-${CAOS_BUILD_COUNT}.ini to dist directory"
+
+    # Copy to project-specific nested repository directory
+    COMMAND ${CMAKE_COMMAND} -E copy
+        $<TARGET_FILE:${PROJECT_NAME}>
+        ${PHP_REPO_DIR}/${PROJECT_NAME}-${CAOS_DB_BACKEND_LOWER}-${CAOS_BUILD_COUNT}.so
+
+    # Copy ini file to repository directory
+    COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.ini
+        ${PHP_REPO_DIR}/${PROJECT_NAME}-${CAOS_DB_BACKEND_LOWER}-${CAOS_BUILD_COUNT}.ini
+
+    COMMENT "Building ${PROJECT_NAME} for PHP ${PHP_VERSION}"
     VERBATIM
   )
 
-  # MODIFICATION: Add copy to dist target for package dependency
-  add_custom_target(${PROJECT_NAME}_copy_to_dist
+  # Add copy to repository target for package dependency
+  add_custom_target(do_copy_to_dist
     DEPENDS ${PROJECT_NAME}
-    COMMENT "Target for copying PHP extension to dist directory"
+    COMMENT "Target for copying PHP extension to repository directory"
   )
 
   install(TARGETS ${PROJECT_NAME}
@@ -140,30 +147,29 @@ if(PHP_CONFIG)
   message(STATUS "PHP ini file will be installed to: ${PHP_MODS_AVAILABLE_DIR}/${PROJECT_NAME}.ini")
 
   if(CMAKE_BUILD_TYPE STREQUAL "release")
-      add_custom_target(${PROJECT_NAME}_package_deb
+      add_custom_target(make_package_deb
           COMMAND ${CMAKE_SOURCE_DIR}/scripts/create_package_deb.sh ${CAOS_DB_BACKEND} ${PROJECT_NAME}
-          DEPENDS libcaos ${PROJECT_NAME}_copy_to_dist
+          DEPENDS libcaos do_copy_to_dist
           WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-          COMMENT "Building DEB package for PHP extension with ${CAOS_DB_BACKEND} backend"
+          COMMENT "Building DEB package for PHP extension '${PROJECT_NAME}' with ${CAOS_DB_BACKEND} backend"
       )
 
-      add_custom_target(${PROJECT_NAME}_distribution_tarball
+      add_custom_target(make_distribution_tarball
           COMMAND ${CMAKE_SOURCE_DIR}/scripts/create_distribution_tarball.sh ${CAOS_DB_BACKEND} ${PROJECT_NAME}
-          DEPENDS ${PROJECT_NAME}_package_deb
+          DEPENDS make_package_deb
           WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-          COMMENT "Creating distribution tarball with ${CAOS_DB_BACKEND} backend"
+          COMMENT "Creating distribution tarball for PHP extension '${PROJECT_NAME}' with ${CAOS_DB_BACKEND} backend"
       )
   else()
-      # Dummy target that displays an error
-      add_custom_target(${PROJECT_NAME}_package_deb
+      add_custom_target(make_package_deb
           COMMAND ${CMAKE_COMMAND} -E echo "ERROR: CMAKE_BUILD_TYPE must be 'release' to build packages. Current value: ${CMAKE_BUILD_TYPE}"
           COMMAND false
       )
 
-      add_custom_target(${PROJECT_NAME}_distribution_tarball
+      add_custom_target(make_distribution_tarball
           COMMAND ${CMAKE_COMMAND} -E echo "ERROR: CMAKE_BUILD_TYPE must be 'release' to build packages. Current value: ${CMAKE_BUILD_TYPE}"
           COMMAND false
-          DEPENDS ${PROJECT_NAME}_package_deb
+          DEPENDS make_package_deb
       )
   endif()
 else()

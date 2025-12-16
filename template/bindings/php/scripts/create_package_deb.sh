@@ -2,7 +2,7 @@
 
 # Get database backend and project name from command line
 DB_BACKEND=${1:-"MYSQL"}
-PROJECT_NAME=${2:-"caos"}  # Default to 'caos' for backward compatibility
+PROJECT_NAME=${2:-"caos"}
 PROJECT_NAME_SANITIZED=$(echo "$PROJECT_NAME" | tr '_' '-')
 DB_BACKEND_LOWER=$(echo "$DB_BACKEND" | tr '[:upper:]' '[:lower:]')
 
@@ -10,7 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../" && pwd)"
 BUILD_DIR="$PROJECT_ROOT/build/release"
 DIST_DIR="$PROJECT_ROOT/dist"
-REPO_DIR="$DIST_DIR/repository"
+REPO_DIR="$DIST_DIR/repositories/${PROJECT_NAME}/php"
 PACKAGE_BASE_NAME="${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}"
 
 if [ -f "$BUILD_DIR/build_counter.txt" ]; then
@@ -18,14 +18,14 @@ if [ -f "$BUILD_DIR/build_counter.txt" ]; then
     VERSION="1.0.0+${CAOS_BUILD_COUNTER}"
 else
     VERSION="1.0.0+1"
-    echo "WARNING: $BUILD_DIR/build_counter.txt not found, using default version"
+    echo "WARNING: build_counter.txt not found, using default version"
 fi
 
-echo "Building DEB packages for ${PROJECT_NAME} - ALL PHP versions (8.0+)"
+echo "Building DEB packages for ${PROJECT_NAME} PHP extension"
 echo "Project: $PROJECT_NAME"
 echo "Version: $VERSION"
 echo "Database backend: $DB_BACKEND_LOWER"
-echo "Output directory: $DIST_DIR"
+echo "Repository directory: $REPO_DIR"
 
 PHP_VERSIONS="8.0 8.1 8.2 8.3 8.4"
 
@@ -46,28 +46,36 @@ calculate_php_paths() {
     PHP_API=$(get_php_api_version "$php_version")
     PHP_EXT_DIR="/usr/lib/php/$PHP_API"
     MODS_AVAILABLE_DIR="/etc/php/$php_version/mods-available"
-
-    echo "Config for PHP $php_version:"
-    echo "   API: $PHP_API"
-    echo "   Extension dir: $PHP_EXT_DIR"
-    echo "   Mods available: $MODS_AVAILABLE_DIR"
 }
 
 check_prerequisites() {
-    if [ ! -f "$BUILD_DIR/${PROJECT_NAME}.so" ]; then
-        echo "ERROR: ${PROJECT_NAME}.so not found. Build the extension first at $BUILD_DIR/${PROJECT_NAME}.so"
+    # Check if extension files exist in nested repository directory
+    local so_pattern="${PROJECT_NAME}-${DB_BACKEND_LOWER}-*.so"
+    local ini_pattern="${PROJECT_NAME}-${DB_BACKEND_LOWER}-*.ini"
+
+    local so_files=$(find "$REPO_DIR" -name "$so_pattern" -type f 2>/dev/null)
+    local ini_files=$(find "$REPO_DIR" -name "$ini_pattern" -type f 2>/dev/null)
+
+    if [ -z "$so_files" ]; then
+        echo "ERROR: No PHP extension files found in $REPO_DIR"
+        echo "Expected pattern: $so_pattern"
+        echo "Please build the extension first:"
+        echo "  cmake --build build/release --target ${PROJECT_NAME}"
         exit 1
     fi
 
-    if [ ! -f "$BUILD_DIR/${PROJECT_NAME}.ini" ]; then
-        echo "ERROR: ${PROJECT_NAME}.ini not found at $BUILD_DIR/${PROJECT_NAME}.ini"
+    if [ -z "$ini_files" ]; then
+        echo "ERROR: No PHP ini files found in $REPO_DIR"
+        echo "Expected pattern: $ini_pattern"
         exit 1
     fi
 
     if ! command -v dpkg-deb >/dev/null 2>&1; then
-        echo "ERROR: dpkg-deb not found. Install dpkg-dev package: sudo apt install dpkg-dev"
+        echo "ERROR: dpkg-deb not found. Install dpkg-dev package"
         exit 1
     fi
+
+    echo "Found PHP extension files in nested repository directory"
 }
 
 create_structure() {
@@ -80,17 +88,24 @@ create_structure() {
 
 copy_files() {
     local deb_dir=$1
-    echo "Copying files for PHP $PHP_VERSION"
+    local php_version=$2
+
+    # Find the latest .so and .ini files for this build
+    local latest_so=$(find "$REPO_DIR" -name "${PROJECT_NAME}-${DB_BACKEND_LOWER}-*.so" -type f | sort -V | tail -1)
+    local latest_ini=$(find "$REPO_DIR" -name "${PROJECT_NAME}-${DB_BACKEND_LOWER}-*.ini" -type f | sort -V | tail -1)
+
+    if [ -z "$latest_so" ] || [ -z "$latest_ini" ]; then
+        echo "ERROR: Could not find extension files for PHP $php_version"
+        return 1
+    fi
 
     # Copy the extension .so file
-    cp "$BUILD_DIR/${PROJECT_NAME}.so" "$deb_dir/$PHP_EXT_DIR/"
+    cp "$latest_so" "$deb_dir/$PHP_EXT_DIR/${PROJECT_NAME}.so"
 
     # Copy the .ini configuration file
-    cp "$BUILD_DIR/${PROJECT_NAME}.ini" "$deb_dir/$MODS_AVAILABLE_DIR/"
+    cp "$latest_ini" "$deb_dir/$MODS_AVAILABLE_DIR/${PROJECT_NAME}.ini"
 
-    echo "Files copied successfully:"
-    echo "  - $deb_dir/$PHP_EXT_DIR/${PROJECT_NAME}.so"
-    echo "  - $deb_dir/$MODS_AVAILABLE_DIR/${PROJECT_NAME}.ini"
+    return 0
 }
 
 create_postinst() {
@@ -98,7 +113,6 @@ create_postinst() {
     local php_version=$2
     cat > "$deb_dir/DEBIAN/postinst" << EOF
 #!/bin/bash
-# postinst
 set -e
 
 PHP_VERSION="$php_version"
@@ -152,7 +166,6 @@ create_prerm() {
     local php_version=$2
     cat > "$deb_dir/DEBIAN/prerm" << EOF
 #!/bin/bash
-# prerm
 set -e
 
 PHP_VERSION="$php_version"
@@ -198,10 +211,8 @@ create_control() {
     local php_version=$3
     local architecture="amd64"
 
-    # Only php-common dependency - libraries are statically linked
     local common_depends="php${php_version}-common, ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}"
 
-    # Generate conflicts based on project name and other backends
     local conflicts_clause=""
     case "${DB_BACKEND_LOWER}" in
         "mysql")
@@ -221,8 +232,8 @@ create_control() {
 Package: $package_name
 Version: $VERSION
 Architecture: $architecture
-Maintainer: Alessandro Bianco <mydevhero@gmail.com>
-Description: ${PROJECT_NAME^^} - Cache App On Steroids extension for PHP $php_version with $DB_BACKEND_LOWER backend
+Maintainer: CAOS Development Team
+Description: ${PROJECT_NAME} - Cache App On Steroids extension for PHP $php_version with $DB_BACKEND_LOWER backend
  High-performance database access extension (Cache App On Steroids).
  Supports: CLI, FPM, Apache, Nginx for PHP $php_version with $DB_BACKEND_LOWER backend.
 Depends: $common_depends
@@ -245,7 +256,7 @@ build_single_package() {
     echo "Building package: $package_name"
 
     create_structure "$deb_dir"
-    if ! copy_files "$deb_dir"; then
+    if ! copy_files "$deb_dir" "$php_version"; then
         echo "ERROR: Failed to copy files for PHP $php_version"
         return 1
     fi
@@ -253,7 +264,7 @@ build_single_package() {
     create_prerm "$deb_dir" "$php_version"
     create_control "$deb_dir" "$package_name" "$php_version"
 
-    dpkg-deb --build "$deb_dir" "$BUILD_DIR/${package_name}_${VERSION}_amd64.deb"
+    dpkg-deb --build "$deb_dir" "$BUILD_DIR/${package_name}_${VERSION}_amd64.deb" >/dev/null 2>&1
 
     rm -rf "$deb_dir"
 
@@ -300,7 +311,7 @@ Package: ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}
 Version: $VERSION
 Architecture: all
 Maintainer: Alessandro Bianco <mydevhero@gmail.com>
-Description: ${PROJECT_NAME^^} - Cache App On Steroids PHP extension with $DB_BACKEND_LOWER backend (metapackage)
+Description: ${PROJECT_NAME} - Cache App On Steroids PHP extension with $DB_BACKEND_LOWER backend (metapackage)
  High-performance database access extension (Cache App On Steroids).
  This metapackage will install the appropriate version for your PHP.
  Removing this metapackage will also remove the specific PHP version packages.
@@ -325,7 +336,9 @@ EOF
     echo "Meta-package built: ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}-${VERSION}_all.deb"
 }
 
-create_update_repo_script() {
+create_repository_scripts() {
+    mkdir -p "$REPO_DIR"
+
     cat > "$REPO_DIR/update-repo.sh" << EOF
 #!/bin/bash
 
@@ -333,14 +346,9 @@ REPO_DIR="\$(cd "\$(dirname "\$0")" && pwd)"
 CONF_DIR="\$REPO_DIR/conf"
 OVERRIDE_FILE="\$CONF_DIR/override"
 
-echo "Updating ${PROJECT_NAME^^} repository index in \$REPO_DIR"
-
 mkdir -p "\$CONF_DIR"
 
-# Generate override file dynamically based on actual packages
-echo "Generating override file based on available packages..."
 > "\$OVERRIDE_FILE"
-
 for deb_file in "\$REPO_DIR"/*.deb; do
     if [ -f "\$deb_file" ]; then
         package_name=\$(dpkg-deb -f "\$deb_file" Package 2>/dev/null || basename "\$deb_file" | cut -d'_' -f1)
@@ -350,8 +358,6 @@ for deb_file in "\$REPO_DIR"/*.deb; do
     fi
 done
 
-echo "Override file generated with \$(wc -l < "\$OVERRIDE_FILE") entries"
-
 cd "\$REPO_DIR" || exit 1
 
 rm -f Release.gpg InRelease
@@ -360,14 +366,14 @@ dpkg-scanpackages --multiversion . "\$OVERRIDE_FILE" > Packages
 gzip -k -f Packages
 
 cat > Release << RELEASE_CONTENT
-Origin: ${PROJECT_NAME^^} Repository
-Label: ${PROJECT_NAME^^}
+Origin: ${PROJECT_NAME} PHP Repository
+Label: ${PROJECT_NAME} PHP
 Suite: stable
-Codename: ${PROJECT_NAME}
+Codename: ${PROJECT_NAME}-php
 Version: 1.0
-Architectures: amd64
+Architectures: amd64 all
 Components: main
-Description: ${PROJECT_NAME^^} - Cache App On Steroids PHP extension
+Description: ${PROJECT_NAME} - CAOS PHP extension
 Date: \$(date -Ru)
 MD5Sum:
  \$(md5sum Packages | cut -d' ' -f1) \$(stat -c %s Packages) Packages
@@ -377,177 +383,54 @@ SHA256:
  \$(sha256sum Packages.gz | cut -d' ' -f1) \$(stat -c %s Packages.gz) Packages.gz
 RELEASE_CONTENT
 
-if [ \$? -eq 0 ]; then
-    echo "Repository index updated successfully"
-    echo ""
-    echo "Packages in repository: \$(grep "^Package:" Packages | wc -l)"
-    echo ""
-    echo "Now run: sudo apt update"
-else
-    echo "ERROR: Failed to update repository index"
-    exit 1
-fi
+echo "PHP repository index updated"
 EOF
     chmod +x "$REPO_DIR/update-repo.sh"
-    echo "Created: $REPO_DIR/update-repo.sh"
-}
 
-create_setup_repo_script() {
     cat > "$REPO_DIR/setup-apt-source.sh" << EOF
 #!/bin/bash
 
 REPO_DIR="\$(cd "\$(dirname "\$0")" && pwd)"
-APT_SOURCE_FILE="/etc/apt/sources.list.d/${PROJECT_NAME}-local.list"
-APT_PREFERENCES_FILE="/etc/apt/preferences.d/${PROJECT_NAME}-local"
+APT_SOURCE_FILE="/etc/apt/sources.list.d/${PROJECT_NAME}-php-local.list"
 
 if [ "\$EUID" -ne 0 ]; then
-    echo "ERROR: This script must be run as root (use sudo)"
+    echo "ERROR: This script must be run as root"
     exit 1
 fi
 
-echo "Setting up local repository for APT"
-
-if [ ! -d "\$REPO_DIR" ]; then
-    echo "ERROR: Repository directory not found: \$REPO_DIR"
+if [ ! -d "\$REPO_DIR" ] || [ ! -f "\$REPO_DIR/Packages.gz" ]; then
+    echo "ERROR: PHP repository not found or not indexed"
     exit 1
 fi
 
-if [ ! -f "\$REPO_DIR/Packages.gz" ]; then
-    echo "ERROR: Repository index not found. Run: ./update-repo.sh first"
-    exit 1
-fi
-
-# Remove any existing conflicting files
-for existing_file in /etc/apt/sources.list.d/*-local.list; do
-    if [ -f "\$existing_file" ]; then
-        echo "Removing existing APT source: \$existing_file"
-        rm -f "\$existing_file"
+# Clean up any existing PHP repository configurations
+echo "Cleaning up existing PHP repository configurations..."
+for file in /etc/apt/sources.list.d/*${PROJECT_NAME}*php*.list; do
+    if [ -f "\$file" ]; then
+        echo "  Removing: \$(basename "\$file")"
+        rm -f "\$file"
     fi
 done
 
 echo "deb [trusted=yes] file:\$REPO_DIR ./" > "\$APT_SOURCE_FILE"
 
-cat > "\$APT_PREFERENCES_FILE" << PREFERENCES
-Package: *
-Pin: origin ""
-Pin-Priority: 1000
+apt update
 
-Package: ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}*
-Pin: origin ""
-Pin-Priority: 1001
-PREFERENCES
-
-if [ \$? -eq 0 ]; then
-    echo "APT source configured: \$APT_SOURCE_FILE"
-    echo "APT preferences configured: \$APT_PREFERENCES_FILE"
-    echo ""
-    echo "Updating APT cache"
-    apt update
-    echo ""
-    echo "Setup completed"
-    echo ""
-    echo "Install PHP extension:"
-    echo "sudo apt install ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}"
-    echo ""
-    echo "Or install for specific PHP version:"
-    echo "sudo apt install ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}-8.3"
-else
-    echo "ERROR: Failed to create APT configuration"
-    exit 1
-fi
+echo "PHP repository configured"
+echo "Install: sudo apt install ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}"
 EOF
     chmod +x "$REPO_DIR/setup-apt-source.sh"
-    echo "Created: $REPO_DIR/setup-apt-source.sh"
-}
-
-create_install_repository_script() {
-    cat > "$DIST_DIR/install-repository.sh" << EOF
-#!/bin/bash
-
-set -e
-
-SCRIPT_DIR="\$(cd "\$(dirname "\$0")" && pwd)"
-REPO_DIR="\$SCRIPT_DIR/repository"
-
-if [ "\$EUID" -ne 0 ]; then
-    echo "ERROR: This script must be run as root (use sudo)"
-    exit 1
-fi
-
-echo "================================================================"
-echo "${PROJECT_NAME^^} Repository Installation"
-echo "================================================================"
-
-if [ ! -d "\$REPO_DIR" ]; then
-    echo "ERROR: Repository directory not found: \$REPO_DIR"
-    echo "Make sure this script is in the same directory as the 'repository' folder"
-    exit 1
-fi
-
-echo "Setting up ${PROJECT_NAME^^} repository from \$REPO_DIR"
-
-echo "Updating repository index..."
-cd "\$REPO_DIR"
-if [ -f "./update-repo.sh" ]; then
-    ./update-repo.sh
-else
-    echo "ERROR: update-repo.sh not found in \$REPO_DIR"
-    exit 1
-fi
-
-echo "Configuring APT repository..."
-if [ -f "./setup-apt-source.sh" ]; then
-    ./setup-apt-source.sh
-else
-    echo "ERROR: setup-apt-source.sh not found in \$REPO_DIR"
-    exit 1
-fi
-
-echo ""
-echo "================================================================"
-echo "${PROJECT_NAME^^} Repository Installation Completed"
-echo "================================================================"
-echo ""
-echo "You can now install ${PROJECT_NAME^^} packages:"
-echo "sudo apt install ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}"
-echo ""
-echo "Or for specific PHP version:"
-echo "sudo apt install ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}-8.3"
-echo ""
-echo "Repository location: \$REPO_DIR"
-echo ""
-EOF
-
-    chmod +x "$DIST_DIR/install-repository.sh"
-    echo "Created: $DIST_DIR/install-repository.sh"
 }
 
 move_packages_to_repository() {
-    echo ""
-    echo "Moving packages to repository directory: $REPO_DIR"
     mkdir -p "$REPO_DIR"
-
     mv "$BUILD_DIR"/*.deb "$REPO_DIR/" 2>/dev/null || true
-
-    local moved_count=$(ls -1 "$REPO_DIR"/*.deb 2>/dev/null | wc -l)
-    echo "Moved $moved_count package(s) to $REPO_DIR"
-
-    echo ""
-    echo "Packages created:"
-    for pkg in "$REPO_DIR"/*.deb; do
-        if [ -f "$pkg" ]; then
-            echo "  $(basename "$pkg")"
-        fi
-    done
 }
 
 main() {
-    echo "Starting DEB package creation for $PROJECT_NAME..."
+    echo "Starting DEB package creation for $PROJECT_NAME PHP extension..."
 
     check_prerequisites
-
-    echo "Building packages for PHP versions: $PHP_VERSIONS"
-    echo ""
 
     local built_count=0
     for version in $PHP_VERSIONS; do
@@ -563,25 +446,18 @@ main() {
     done
 
     if [ $built_count -gt 0 ]; then
-        echo "=== CREATING META PACKAGE ==="
-        create_meta_package
-        echo ""
+         create_meta_package
+         move_packages_to_repository
+         create_repository_scripts
 
-        move_packages_to_repository
-
-        echo "=== CREATING REPOSITORY SCRIPTS ==="
-        create_update_repo_script
-        create_setup_repo_script
-        create_install_repository_script
-
-        echo "Multi-version packaging completed"
-        echo "Built $built_count individual packages + 1 meta-package"
-        echo "Repository created in: $REPO_DIR"
-        exit 0
-    else
-        echo "ERROR: No packages were built successfully"
-        exit 1
-    fi
+         echo "PHP multi-version packaging completed"
+         echo "Built $built_count individual packages + 1 meta-package"
+         echo "PHP repository created in: $REPO_DIR"
+         exit 0
+     else
+         echo "ERROR: No PHP packages were built successfully"
+         exit 1
+     fi
 }
 
 main "$@"
