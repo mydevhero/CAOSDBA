@@ -4,7 +4,6 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../" && pwd)"
 BUILD_DIR="$PROJECT_ROOT/build/release"
 DIST_DIR="$PROJECT_ROOT/dist"
-CAOS_OPT_DIR="/opt/caosdba"
 
 DB_BACKEND=${1:-"MYSQL"}
 PROJECT_NAME=${2:-"caos"}
@@ -24,62 +23,69 @@ echo "Version: $VERSION"
 echo "Database backend: $DB_BACKEND_LOWER"
 
 check_prerequisites() {
-    if [ ! -d "$DIST_DIR/repository" ]; then
-        echo "ERROR: Repository directory not found in $DIST_DIR/repository"
+    local repo_dir="$DIST_DIR/repositories/${PROJECT_NAME}"
+
+    if [ ! -d "$repo_dir" ]; then
+        echo "ERROR: Repository directory not found in $repo_dir"
         echo "Please run the ${PROJECT_NAME}_package_deb target first:"
         echo "  cmake --build build/release --target ${PROJECT_NAME}_package_deb"
         exit 1
     fi
 
-    local deb_count=$(ls "$DIST_DIR/repository"/*.deb 2>/dev/null | wc -l)
+    local deb_count=$(ls "$repo_dir"/*.deb 2>/dev/null | wc -l)
     if [ "$deb_count" -eq 0 ]; then
-        echo "ERROR: No DEB packages found in $DIST_DIR/repository"
+        echo "ERROR: No DEB packages found in $repo_dir"
         echo "Please run the ${PROJECT_NAME}_package_deb target first"
         exit 1
     fi
 
-    echo "Found $deb_count DEB package(s) in dist/repository"
+    echo "Found $deb_count DEB package(s) in $repo_dir"
 }
 
 create_tarball_structure() {
     local temp_dir="$DIST_DIR/temp_caos_python_deb"
+    local project_repo_dir="$temp_dir/opt/caosdba/repositories/${PROJECT_NAME}"
 
     echo "Creating tarball structure in $temp_dir"
 
     rm -rf "$temp_dir"
-    mkdir -p "$temp_dir$CAOS_OPT_DIR"
+    mkdir -p "$project_repo_dir"
 
-    if [ -d "$DIST_DIR/repository" ]; then
-        echo "Copying repository from $DIST_DIR/repository"
-        cp -r "$DIST_DIR/repository" "$temp_dir$CAOS_OPT_DIR/"
+    local source_repo_dir="$DIST_DIR/repositories/${PROJECT_NAME}"
+    if [ -d "$source_repo_dir" ]; then
+        echo "Copying repository from $source_repo_dir"
+        cp -r "$source_repo_dir"/* "$project_repo_dir/"
     else
-        echo "ERROR: $DIST_DIR/repository not found"
+        echo "ERROR: $source_repo_dir not found"
         exit 1
     fi
 
     if [ -f "$DIST_DIR/install-repository.sh" ]; then
         echo "Copying install-repository.sh from $DIST_DIR"
-        cp "$DIST_DIR/install-repository.sh" "$temp_dir$CAOS_OPT_DIR/"
+        mkdir -p "$temp_dir/opt/caosdba"
+        cp "$DIST_DIR/install-repository.sh" "$temp_dir/opt/caosdba/"
     fi
 
     if [ -f "$DIST_DIR/README.md" ]; then
         echo "Copying README.md from $DIST_DIR"
-        cp "$DIST_DIR/README.md" "$temp_dir$CAOS_OPT_DIR/"
+        mkdir -p "$temp_dir/opt/caosdba"
+        cp "$DIST_DIR/README.md" "$temp_dir/opt/caosdba/"
     fi
 
     if [ -f "$DIST_DIR/ENV.md" ]; then
         echo "Copying ENV.md from $DIST_DIR"
-        cp "$DIST_DIR/ENV.md" "$temp_dir$CAOS_OPT_DIR/"
+        mkdir -p "$temp_dir/opt/caosdba"
+        cp "$DIST_DIR/ENV.md" "$temp_dir/opt/caosdba/"
     fi
 
-    chown -R root:root "$temp_dir$CAOS_OPT_DIR"
-    chmod 755 "$temp_dir$CAOS_OPT_DIR"
-    find "$temp_dir$CAOS_OPT_DIR" -type d -exec chmod 755 {} \;
-    find "$temp_dir$CAOS_OPT_DIR" -type f -exec chmod 644 {} \;
+    chown -R root:root "$temp_dir"
+    chmod 755 "$temp_dir/opt/caosdba" 2>/dev/null || true
+    find "$temp_dir" -type d -exec chmod 755 {} \;
+    find "$temp_dir" -type f -exec chmod 644 {} \;
 
-    chmod 755 "$temp_dir$CAOS_OPT_DIR/install-repository.sh" 2>/dev/null || true
-    chmod 755 "$temp_dir$CAOS_OPT_DIR/repository/update-repo.sh" 2>/dev/null || true
-    chmod 755 "$temp_dir$CAOS_OPT_DIR/repository/setup-apt-source.sh" 2>/dev/null || true
+    chmod 755 "$temp_dir/opt/caosdba/install-repository.sh" 2>/dev/null || true
+    chmod 755 "$project_repo_dir/update-repo.sh" 2>/dev/null || true
+    chmod 755 "$project_repo_dir/setup-apt-source.sh" 2>/dev/null || true
 
     echo "Tarball structure created"
 }
@@ -87,16 +93,16 @@ create_tarball_structure() {
 create_install_script() {
     local temp_dir="$DIST_DIR/temp_caos_python_deb"
 
-    mkdir -p "$temp_dir$CAOS_OPT_DIR"
+    mkdir -p "$temp_dir/opt/caosdba"
 
-    cat > "$temp_dir$CAOS_OPT_DIR/install-repository.sh" << EOF
+    cat > "$temp_dir/opt/caosdba/install-repository.sh" << EOF
 #!/bin/bash
 # ${PROJECT_NAME^^} Python Repository Installation Script
 
 set -e
 
 CAOS_OPT_DIR="/opt/caosdba"
-REPO_DIR="\$CAOS_OPT_DIR/repository"
+REPO_DIR="\$CAOS_OPT_DIR/repositories/${PROJECT_NAME}"
 
 if [ "\$EUID" -ne 0 ]; then
     echo "ERROR: This script must be run as root (use sudo)"
@@ -115,18 +121,14 @@ fi
 
 echo "Setting up ${PROJECT_NAME^^} Python repository from \$REPO_DIR"
 
-if [ -f "/etc/apt/sources.list.d/caos-local.list" ]; then
-    echo "Removing existing caos-local.list to avoid conflicts..."
-    rm -f "/etc/apt/sources.list.d/caos-local.list"
-fi
-if [ -f "/etc/apt/sources.list.d/${PROJECT_NAME}-local.list" ]; then
-    echo "Removing existing ${PROJECT_NAME}-local.list to avoid conflicts..."
-    rm -f "/etc/apt/sources.list.d/${PROJECT_NAME}-local.list"
-fi
-if [ -f "/etc/apt/sources.list.d/${PROJECT_NAME}-python-local.list" ]; then
-    echo "Removing existing ${PROJECT_NAME}-python-local.list to avoid conflicts..."
-    rm -f "/etc/apt/sources.list.d/${PROJECT_NAME}-python-local.list"
-fi
+# Clean up any existing conflicting source files
+echo "Cleaning up existing repository configurations..."
+for file in /etc/apt/sources.list.d/*${PROJECT_NAME}*.list; do
+    if [ -f "\$file" ]; then
+        echo "  Removing: \$(basename "\$file")"
+        rm -f "\$file"
+    fi
+done
 
 echo "Updating repository index..."
 cd "\$REPO_DIR"
@@ -163,7 +165,7 @@ echo "Repository location: \$REPO_DIR"
 echo ""
 EOF
 
-    chmod 755 "$temp_dir$CAOS_OPT_DIR/install-repository.sh"
+    chmod 755 "$temp_dir/opt/caosdba/install-repository.sh"
     echo "Created install-repository.sh in tarball structure"
 }
 
@@ -185,13 +187,14 @@ This tarball contains the ${PROJECT_NAME^^} Python DEB packages and local APT re
 ### Directory Structure
 
 /opt/caosdba/
-├── repository/          # Local APT repository
-│   ├── *.deb           # DEB packages
-│   ├── Packages        # Repository index
-│   ├── Packages.gz     # Compressed index
-│   ├── Release         # Release info
-│   ├── update-repo.sh  # Repository update script
-│   └── setup-apt-source.sh # APT configuration script
+├── repositories/
+│   └── ${PROJECT_NAME}/          # Project-specific repository
+│       ├── *.deb           # DEB packages
+│       ├── Packages        # Repository index
+│       ├── Packages.gz     # Compressed index
+│       ├── Release         # Release info
+│       ├── update-repo.sh  # Repository update script
+│       └── setup-apt-source.sh # APT configuration script
 └── install-repository.sh   # Main installation script
 
 ## Installation
@@ -219,7 +222,7 @@ sudo tar -xzf ${tarball_name} -C /
 
 2. Update repository index:
 \`\`\`bash
-cd /opt/caosdba/repository
+cd /opt/caosdba/repositories/${PROJECT_NAME}
 ./update-repo.sh
 \`\`\`
 
@@ -270,7 +273,7 @@ python3.12 -c "import ${PROJECT_NAME}; print(${PROJECT_NAME}.get_build_info())"
 
 To update the repository after adding new packages:
 \`\`\`bash
-cd /opt/caosdba/repository
+cd /opt/caosdba/repositories/${PROJECT_NAME}
 ./update-repo.sh
 sudo apt update
 \`\`\`
@@ -286,13 +289,25 @@ sudo rm -f /etc/apt/sources.list.d/${PROJECT_NAME}-python-local.list
 
 2. Remove repository files:
 \`\`\`bash
-sudo rm -rf /opt/caosdba
+sudo rm -rf /opt/caosdba/repositories/${PROJECT_NAME}
 \`\`\`
 
 3. Update APT cache:
 \`\`\`bash
 sudo apt update
 \`\`\`
+
+## Multiple Projects Support
+
+The system supports multiple CAOS-based projects installed simultaneously. Each project has its own isolated repository:
+
+\`\`\`
+/opt/caosdba/repositories/my_app/      # First project
+/opt/caosdba/repositories/my_app2/     # Second project
+/opt/caosdba/repositories/another_app/ # Third project
+\`\`\`
+
+Each repository has its own APT source configuration and packages.
 
 ---
 Generated: $(date)
@@ -413,7 +428,8 @@ create_tarball() {
     mkdir -p "$DIST_DIR"
     tar -czf "$tarball_path" -C "$temp_dir" opt
 
-    local deb_count=$(ls "$temp_dir$CAOS_OPT_DIR/repository"/*.deb 2>/dev/null | wc -l)
+    local repo_dir="$temp_dir/opt/caosdba/repositories/${PROJECT_NAME}"
+    local deb_count=$(ls "$repo_dir"/*.deb 2>/dev/null | wc -l)
 
     rm -rf "$temp_dir"
 

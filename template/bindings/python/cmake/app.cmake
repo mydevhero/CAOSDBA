@@ -107,8 +107,8 @@ foreach(PYTHON_VER IN LISTS SUPPORTED_PYTHON_VERSIONS)
         list(APPEND PYTHON_PACKAGE_DIRS ${PYTHON_PACKAGE_DIR})
 
         # Create __init__.py for this Python version
-        file(WRITE ${PYTHON_PACKAGE_DIR}/__init__.py
-"\"\"\"
+        file(WRITE ${PYTHON_PACKAGE_DIR}/__init__.py [[
+"""
 ${PROJECT_NAME} - CAOS Native Python Bindings
 ==============================================
 
@@ -119,7 +119,7 @@ Python: ${Python3_VERSION}
 
 Usage:
     import ${PROJECT_NAME}
-\"\"\"
+"""
 
 import importlib.util
 import sys
@@ -127,14 +127,14 @@ import os
 import glob
 
 def _load_correct_module():
-    \"\"\"Load the correct .so module for current Python version.\"\"\"
+    """Load the correct .so module for current Python version."""
     package_dir = os.path.dirname(__file__)
-    so_files = glob.glob(os.path.join(package_dir, \"*.cpython-*.so\"))
+    so_files = glob.glob(os.path.join(package_dir, "*.cpython-*.so"))
 
     if not so_files:
-        raise ImportError(f\"No native module found in {package_dir}\")
+        raise ImportError(f"No native module found in {package_dir}")
 
-    current_suffix = f\"cpython-{sys.version_info.major}{sys.version_info.minor}\"
+    current_suffix = f"cpython-{sys.version_info.major}{sys.version_info.minor}"
 
     for so_file in so_files:
         if current_suffix in so_file:
@@ -158,27 +158,34 @@ for attr in dir(module):
 __version__ = '0.1.0'
 __build__ = ${CAOS_BUILD_COUNT}
 __backend__ = '${CAOS_DB_BACKEND_LOWER}'
-__python_version__ = f\"{sys.version_info.major}.{sys.version_info.minor}\"
+__python_version__ = f"{sys.version_info.major}.{sys.version_info.minor}"
 
 def get_build_info():
-    \"\"\"Return build information.\"\"\"
+    """Return build information."""
     return {
         'module': '${PROJECT_NAME}',
         'version': __version__,
         'build': __build__,
         'backend': __backend__,
         'python_version': __python_version__
-    }")
+    }
+]])
 
-        # Post-build: copy compiled module
+        # Post-build: copy compiled module to project-specific repository directory
         add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_SOURCE_DIR}/dist
+            # Create project-specific repository directory
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_SOURCE_DIR}/dist/repositories/${PROJECT_NAME}
+
+            # Copy .so file to project-specific repository directory
             COMMAND ${CMAKE_COMMAND} -E copy
                 $<TARGET_FILE:${TARGET_NAME}>
-                ${CMAKE_SOURCE_DIR}/dist/${PROJECT_NAME}${PYTHON_MODULE_SUFFIX}
+                ${CMAKE_SOURCE_DIR}/dist/repositories/${PROJECT_NAME}/${PROJECT_NAME}${PYTHON_MODULE_SUFFIX}
+
+            # Copy also to Python package directory for local testing
             COMMAND ${CMAKE_COMMAND} -E copy
                 $<TARGET_FILE:${TARGET_NAME}>
                 ${PYTHON_PACKAGE_DIR}/${PROJECT_NAME}${PYTHON_MODULE_SUFFIX}
+
             COMMENT "Building ${PROJECT_NAME} for Python ${Python3_VERSION}"
             VERBATIM
         )
@@ -248,7 +255,7 @@ set(AGGREGATE_PYTHON_PACKAGE_DIR "${CMAKE_BINARY_DIR}/python_package/${PROJECT_N
 file(MAKE_DIRECTORY ${AGGREGATE_PYTHON_PACKAGE_DIR})
 
 # Create aggregated __init__.py that works for all Python versions
-file(WRITE ${PYTHON_PACKAGE_DIR}/__init__.py [[
+file(WRITE ${AGGREGATE_PYTHON_PACKAGE_DIR}/__init__.py [[
 """
 ${PROJECT_NAME} - CAOS Native Python Bindings
 ==============================================
@@ -256,7 +263,9 @@ ${PROJECT_NAME} - CAOS Native Python Bindings
 Native extension for CAOS database operations.
 Backend: ${CAOS_DB_BACKEND} (${CAOS_DB_BACKEND_LOWER})
 Build: ${CAOS_BUILD_COUNT}
-Python: ${Python3_VERSION}
+
+This package contains native extensions for multiple Python versions.
+The correct version will be loaded automatically based on your Python interpreter.
 
 Usage:
     import ${PROJECT_NAME}
@@ -323,8 +332,8 @@ foreach(PYTHON_PACKAGE_DIR IN LISTS PYTHON_PACKAGE_DIRS)
 endforeach()
 
 # Create aggregated setup.py
-file(WRITE ${CMAKE_BINARY_DIR}/python_package/setup.py
-"from setuptools import setup, find_packages
+file(WRITE ${CMAKE_BINARY_DIR}/python_package/setup.py [[
+from setuptools import setup, find_packages
 import sys
 import os
 
@@ -332,7 +341,7 @@ import os
 with open(os.path.join('${PROJECT_NAME}', '__init__.py'), 'r') as f:
     for line in f:
         if line.startswith('__version__'):
-            version = line.split('=')[1].strip().strip('\"\\'')
+            version = line.split('=')[1].strip().strip('\"\'')
             break
 
 setup(
@@ -353,7 +362,8 @@ setup(
         'Programming Language :: Python :: 3.12',
     ],
     python_requires='>=3.8',
-)")
+)
+]])
 
 # Installation messages for all Python versions
 install(CODE "

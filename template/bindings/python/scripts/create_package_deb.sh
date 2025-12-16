@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../" && pwd)"
 BUILD_DIR="$PROJECT_ROOT/build/release"
 DIST_DIR="$PROJECT_ROOT/dist"
-REPO_DIR="$DIST_DIR/repository"
+REPO_DIR="$DIST_DIR/repositories/${PROJECT_NAME}"
 
 if [ -f "$BUILD_DIR/build_counter.txt" ]; then
     CAOS_BUILD_COUNTER=$(cat "$BUILD_DIR/build_counter.txt")
@@ -220,23 +220,13 @@ POSTINST_EOF
     chmod +x "$deb_dir/DEBIAN/postinst"
 }
 
-create_meta_prerm() {
-    local deb_dir="$1"
-    cat > "$deb_dir/DEBIAN/prerm" << 'PRERM_EOF'
+create_prerm() {
+    local deb_dir=$1
+    local python_version=$2
+    cat > "$deb_dir/DEBIAN/prerm" << EOF
 #!/bin/bash
 set -e
-
-# When removing the meta-package, also remove the specific version packages
-if [ "$1" = "remove" ] || [ "$1" = "deconfigure" ]; then
-    echo "Removing ${PROJECT_NAME} Python specific version packages..."
-
-    # Find all installed packages for this backend
-    for pkg in $(dpkg -l | grep "^ii" | awk '{print $2}' | grep "${PROJECT_NAME}-python-${DB_BACKEND_LOWER}-[0-9]"); do
-        echo "  Removing $pkg..."
-        apt-get remove -y "$pkg" || true
-    done
-fi
-PRERM_EOF
+EOF
     chmod +x "$deb_dir/DEBIAN/prerm"
 }
 
@@ -415,6 +405,15 @@ if [ ! -d "\$REPO_DIR" ] || [ ! -f "\$REPO_DIR/Packages.gz" ]; then
     echo "ERROR: Repository not found or not indexed"
     exit 1
 fi
+
+# Clean up any existing conflicting source files
+echo "Cleaning up existing repository configurations..."
+for file in /etc/apt/sources.list.d/*${PROJECT_NAME}*.list; do
+    if [ -f "\$file" ]; then
+        echo "  Removing: \$(basename "\$file")"
+        rm -f "\$file"
+    fi
+done
 
 echo "deb [trusted=yes] file:\$REPO_DIR ./" > "\$APT_SOURCE_FILE"
 

@@ -379,33 +379,45 @@ NOTE: target prepends "my_app", like the PROJECT_NAME in CMakeLists.txt
 sudo cmake --build . --target my_app_distribution_tarball
 ```
 
-Find the tarball in the `dist` directory and extract:
+&nbsp;
 
-NOTE: tarball prepends "my_app", like the PROJECT_NAME in CMakeLists.txt
+## Multiple Projects Support
 
-```bash
-sudo tar -xzf dist/my-app-deb-repository-postgresql-1.0.0+1.tar.gz -C /
+This system supports multiple CAOSDBA-based projects installed simultaneously on the same system. Each project has its own isolated repository:
+
+```text
+/opt/caosdba/
+├── repositories/
+│ ├── my_app/ # First project repository
+│ ├── my_app2/ # Second project repository
+│ └── another_app/ # Third project repository
+└── install-repository.sh
 ```
 
-Now you have in `/opt/caosdba` all you need to install into the system:
+### Deb package features:
+
+- **Isolated repositories**: Each project maintains its own APT repository
+- **No conflicts**: Projects don't interfere with each other
+- **Parallel installation**: Install multiple projects side-by-side
+- **Independent updates**: Update each project independently
+
+### How It Works:
+
+1. **Project-specific paths**: Each project's repository is stored in `/opt/caosdba/repositories/<project_name>/`
+2. **APT source isolation**: Each project configures its own APT source file
+3. **Package namespacing**: Packages include the project name (e.g., `my_app-python-postgresql-3.12`)
+
+### Installation workflow:
 
 ```bash
+cd build/release
+
+# Install first project
+sudo tar -xzf my_app-python-deb-repository-postgresql-1.0.0+1.tar.gz -C /
 sudo /opt/caosdba/install-repository.sh
-```
 
-There you'll find deb packages for a regular installation on Debian/Ubuntu:
-
-NOTE: package prepends "my_app", like the PROJECT_NAME in CMakeLists.txt
-
-```bash
-# Install
-sudo apt install my-app-php-postgresql
-```
-
-Once the app is installed, you can try the example query by typing:
-
-```bash
-php -r 'print_r(IQuery_Template_echoString("ARBJi7cJuOYPXmFPPLVWsGrXmD4SU3LW","test"));'
+# Both projects are now available via APT
+sudo apt install my-app-python-postgresql
 ```
 
 &nbsp;
