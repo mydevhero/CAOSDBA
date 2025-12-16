@@ -373,10 +373,8 @@ python3 -c "import my_app; print(my_app.IQuery_Template_echoString({'token':'ARB
 
 # Prepare to release your CAOSDBA app
 
-NOTE: target prepends "my_app", like the PROJECT_NAME in CMakeLists.txt
-
 ```bash
-sudo cmake --build . --target my_app_distribution_tarball
+sudo cmake --build . --target make_distribution_tarball
 ```
 
 &nbsp;

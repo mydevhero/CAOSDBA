@@ -171,12 +171,18 @@ def get_build_info():
     }
 ]])
 
-        # POST_BUILD: copy ONLY to build directory (never to source/dist directories)
+        # POST_BUILD: copy to both structured directory AND direct location
         add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
             # Copy .so file to Python package directory in build directory
             COMMAND ${CMAKE_COMMAND} -E copy
                 $<TARGET_FILE:${TARGET_NAME}>
                 ${PYTHON_PACKAGE_DIR}/${PROJECT_NAME}${PYTHON_MODULE_SUFFIX}
+
+            # ALSO copy to direct location in build root with simple name (for easy testing)
+            COMMAND ${CMAKE_COMMAND} -E copy
+                $<TARGET_FILE:${TARGET_NAME}>
+                ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.so
+
             COMMENT "Building ${PROJECT_NAME} for Python ${Python3_VERSION}"
             VERBATIM
         )
