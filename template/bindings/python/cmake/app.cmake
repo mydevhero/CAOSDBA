@@ -101,12 +101,12 @@ foreach(PYTHON_VER IN LISTS SUPPORTED_PYTHON_VERSIONS)
             PYTHON_VERSION_MINOR=${PYTHON_VERSION_MINOR}
         )
 
-        # Create Python package directory for this version
+        # Create Python package directory for this version (in build directory)
         set(PYTHON_PACKAGE_DIR "${CMAKE_BINARY_DIR}/python_package_${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}/${PROJECT_NAME}")
         file(MAKE_DIRECTORY ${PYTHON_PACKAGE_DIR})
         list(APPEND PYTHON_PACKAGE_DIRS ${PYTHON_PACKAGE_DIR})
 
-        # Create __init__.py for this Python version
+        # Create __init__.py for this Python version (in build directory)
         file(WRITE ${PYTHON_PACKAGE_DIR}/__init__.py [[
 """
 ${PROJECT_NAME} - CAOS Native Python Bindings
@@ -171,23 +171,30 @@ def get_build_info():
     }
 ]])
 
-        # Post-build: copy compiled module to project-specific repository directory
+        # POST_BUILD: copy ONLY to build directory (never to source/dist directories)
         add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
-            # Create project-specific repository directory
-            COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_SOURCE_DIR}/dist/repositories/${PROJECT_NAME}
-
-            # Copy .so file to project-specific repository directory
-            COMMAND ${CMAKE_COMMAND} -E copy
-                $<TARGET_FILE:${TARGET_NAME}>
-                ${CMAKE_SOURCE_DIR}/dist/repositories/${PROJECT_NAME}/${PROJECT_NAME}${PYTHON_MODULE_SUFFIX}
-
-            # Copy also to Python package directory for local testing
+            # Copy .so file to Python package directory in build directory
             COMMAND ${CMAKE_COMMAND} -E copy
                 $<TARGET_FILE:${TARGET_NAME}>
                 ${PYTHON_PACKAGE_DIR}/${PROJECT_NAME}${PYTHON_MODULE_SUFFIX}
-
             COMMENT "Building ${PROJECT_NAME} for Python ${Python3_VERSION}"
             VERBATIM
+        )
+
+        # Create a separate target for copying to dist/ (only executed when explicitly requested)
+        add_custom_target(${TARGET_NAME}_copy_to_dist
+            # Create dist directory if needed
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_SOURCE_DIR}/dist/repositories/${PROJECT_NAME}
+            # Copy .so file from build directory to dist directory
+            COMMAND ${CMAKE_COMMAND} -E copy
+                ${PYTHON_PACKAGE_DIR}/${PROJECT_NAME}${PYTHON_MODULE_SUFFIX}
+                ${CMAKE_SOURCE_DIR}/dist/repositories/${PROJECT_NAME}/${PROJECT_NAME}${PYTHON_MODULE_SUFFIX}
+            # Copy __init__.py from build directory to dist directory
+            COMMAND ${CMAKE_COMMAND} -E copy
+                ${PYTHON_PACKAGE_DIR}/__init__.py
+                ${CMAKE_SOURCE_DIR}/dist/repositories/${PROJECT_NAME}/__init__.py
+            DEPENDS ${TARGET_NAME}
+            COMMENT "Copying ${PROJECT_NAME} Python files to dist directory for packaging"
         )
 
         # Installation for this Python version - Ubuntu/Debian uses dist-packages
@@ -246,6 +253,12 @@ message(STATUS "  - Linked with: libcaos, repoexception")
 
 # Create a meta-target that depends on all Python version targets
 add_custom_target(${PROJECT_NAME}_python_all DEPENDS ${PYTHON_TARGETS})
+
+# Create a target that copies ALL Python versions to dist/
+add_custom_target(do_copy_all_to_dist)
+foreach(TARGET_NAME IN LISTS PYTHON_TARGETS)
+    add_dependencies(do_copy_all_to_dist ${TARGET_NAME}_copy_to_dist)
+endforeach()
 
 # Ensure Python extensions are built when main target is built
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_python_all)
@@ -381,28 +394,28 @@ install(CODE "
 
 # Package targets
 if(CMAKE_BUILD_TYPE STREQUAL "release")
-    add_custom_target(${PROJECT_NAME}_package_deb
+    add_custom_target(make_package_deb
         COMMAND ${CMAKE_SOURCE_DIR}/scripts/create_package_deb.sh ${CAOS_DB_BACKEND} ${PROJECT_NAME}
-        DEPENDS libcaos ${PROJECT_NAME}_python_all
+        DEPENDS libcaos do_copy_all_to_dist
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
         COMMENT "Building DEB package for Python extension '${PROJECT_NAME}' with ${CAOS_DB_BACKEND} backend"
     )
 
-    add_custom_target(${PROJECT_NAME}_distribution_tarball
+    add_custom_target(make_distribution_tarball
         COMMAND ${CMAKE_SOURCE_DIR}/scripts/create_distribution_tarball.sh ${CAOS_DB_BACKEND} ${PROJECT_NAME}
-        DEPENDS ${PROJECT_NAME}_package_deb
+        DEPENDS make_package_deb
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
         COMMENT "Creating distribution tarball for Python extension '${PROJECT_NAME}' with ${CAOS_DB_BACKEND} backend"
     )
 else()
-    add_custom_target(${PROJECT_NAME}_package_deb
+    add_custom_target(make_package_deb
         COMMAND ${CMAKE_COMMAND} -E echo "ERROR: CMAKE_BUILD_TYPE must be 'release' to build packages. Current value: ${CMAKE_BUILD_TYPE}"
         COMMAND false
     )
 
-    add_custom_target(${PROJECT_NAME}_distribution_tarball
+    add_custom_target(make_distribution_tarball
         COMMAND ${CMAKE_COMMAND} -E echo "ERROR: CMAKE_BUILD_TYPE must be 'release' to build packages. Current value: ${CMAKE_BUILD_TYPE}"
         COMMAND false
-        DEPENDS ${PROJECT_NAME}_package_deb
+        DEPENDS make_package_deb
     )
 endif()
