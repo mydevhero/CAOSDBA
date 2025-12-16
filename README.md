@@ -44,7 +44,7 @@ $result = $db->query("SELECT * FROM users WHERE id = ?", [$id]);
 **With CAOSDBA:**
 ```php
 // DBA-optimized C++ query, cached automatically
-$result = IQuery_GetUserById($token, $id);
+$result = IQuery_GetUserById($call_context, $id);
 // Guaranteed performance, secure
 ```
 
@@ -363,7 +363,7 @@ NOTE: library is called "my_app", like the PROJECT_NAME in CMakeLists.txt
 
 ```bash
 # PHP
-php -d extension=./my_app.so -r 'print_r(IQuery_Template_echoString("ARBJi7cJuOYPXmFPPLVWsGrXmD4SU3LW","test"));'
+php -d extension=./my_app.so -r 'print_r(IQuery_Template_echoString(["token" => "ARBJi7cJuOYPXmFPPLVWsGrXmD4SU3LW"], "test"));'
 
 # Python
 python3 -c "import my_app; print(my_app.IQuery_Template_echoString({'token':'ARBJi7cJuOYPXmFPPLVWsGrXmD4SU3LW'}, 'test'))"
