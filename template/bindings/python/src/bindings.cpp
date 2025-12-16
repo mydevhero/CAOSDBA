@@ -17,11 +17,70 @@
 #include "error.hpp"
 
 // =================================================================================================
+// LAZY INITIALIZATION HELPER
+// =================================================================================================
+
+/**
+ * RAII-style lazy initializer for CAOS library
+ * Ensures CAOS is initialized only when needed and cleaned up properly
+ */
+class CaosLazyInitializer
+{
+  private:
+    static bool initialized_;
+
+    static void initialize_if_needed()
+    {
+      if (!initialized_)
+      {
+        libcaos();
+        initialized_ = true;
+      }
+    }
+
+  public:
+    /**
+     * Ensure CAOS library is initialized
+     * Safe to call multiple times - initialization happens only once
+     */
+    static void ensure_initialized()
+    {
+      initialize_if_needed();
+    }
+
+    /**
+     * Check if CAOS library has been initialized
+     * @return true if CAOS is initialized
+     */
+    static bool is_initialized()
+    {
+      return initialized_;
+    }
+
+    /**
+     * Clean up CAOS library resources
+     * Safe to call even if not initialized
+     */
+    static void cleanup()
+    {
+      if (initialized_)
+      {
+        caos_shutdown();
+        initialized_ = false;
+      }
+    }
+};
+
+// Static member initialization
+bool CaosLazyInitializer::initialized_ = false;
+
+// =================================================================================================
 // QUERY IMPLEMENTATION - IQuery_Template_echoString
 // =================================================================================================
 
 /**
  * IQuery_Template_echoString - Echo string through CAOS repository
+ * Requires call_context with optional token validation
  */
 static PyObject* IQuery_Template_echoString(PyObject* self, PyObject* args)
 {
@@ -42,6 +101,9 @@ static PyObject* IQuery_Template_echoString(PyObject* self, PyObject* args)
 
   try
   {
+    // Initialize CAOS only when needed (lazy initialization)
+    CaosLazyInitializer::ensure_initialized();
+
     // 1. Create call_context (token is optional)
     CallContext ctx = CallContext::from_python_dict(call_context_obj, "IQuery_Template_echoString");
 
@@ -93,7 +155,8 @@ static PyObject* IQuery_Template_echoString(PyObject* self, PyObject* args)
 // =================================================================================================
 
 /**
- * Get build information
+ * Get build information about the module
+ * Does not initialize CAOS library
  */
 static PyObject* get_build_info(PyObject* self, PyObject* args)
 {
@@ -118,6 +181,10 @@ static PyObject* get_build_info(PyObject* self, PyObject* args)
   PyDict_SetItemString(dict, "debug", Py_False);
 #endif
 
+  // Add CAOS initialization state for debugging purposes
+  PyDict_SetItemString(dict, "caos_initialized",
+                       CaosLazyInitializer::is_initialized() ? Py_True : Py_False);
+
   return dict;
 }
 
@@ -129,7 +196,7 @@ static PyObject* get_build_info(PyObject* self, PyObject* args)
  * Module method table
  */
 static PyMethodDef PYTHON_METHODS_TABLE[] = {
-  // Query function
+  // Query function - requires CAOS initialization
   {
     "IQuery_Template_echoString",
     IQuery_Template_echoString,
@@ -145,7 +212,7 @@ static PyMethodDef PYTHON_METHODS_TABLE[] = {
     "           On error: {'success': False, 'error_type': str, 'error_message': str}\n"
   },
 
-  // Helper functions
+  // Helper functions - does not require CAOS initialization
   {
     "get_build_info",
     get_build_info,
@@ -154,6 +221,7 @@ static PyMethodDef PYTHON_METHODS_TABLE[] = {
     "\n"
     "Returns:\n"
     "    dict: Module information including backend, build number, etc.\n"
+    "           caos_initialized: Boolean indicating if CAOS library is initialized\n"
   },
 
   // Sentinel
@@ -177,16 +245,17 @@ static PyModuleDef PYTHON_MODULE_DEF = {
 
 /**
  * Module initialization function
+ * Note: CAOS library is NOT initialized here for lazy loading
  */
 PyMODINIT_FUNC PYTHON_INIT_FUNCTION(void)
 {
-  // Initialize CAOS (lazy initialization)
-  libcaos();
+  // Register cleanup handler for CAOS library
+  // This ensures CAOS resources are cleaned up when Python exits
+  Py_AtExit([]() {
+    CaosLazyInitializer::cleanup();
+  });
 
-  // Register cleanup handler
-  Py_AtExit(caos_shutdown);
-
-  // Register default validators
+  // Register default validators for call context
   CallContext::register_validator(std::make_unique<CallContext::TokenValidator>());
 
   // Create the module
