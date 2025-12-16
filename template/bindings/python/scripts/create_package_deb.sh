@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../" && pwd)"
 BUILD_DIR="$PROJECT_ROOT/build/release"
 DIST_DIR="$PROJECT_ROOT/dist"
-REPO_DIR="$DIST_DIR/repositories/${PROJECT_NAME}"
+REPO_DIR="$DIST_DIR/repositories/${PROJECT_NAME}/python"
 
 if [ -f "$BUILD_DIR/build_counter.txt" ]; then
     CAOS_BUILD_COUNTER=$(cat "$BUILD_DIR/build_counter.txt")
@@ -61,13 +61,21 @@ calculate_python_paths() {
 }
 
 check_prerequisites() {
-    local ext_files=$(find_python_extension_files)
+    # Check if Python repository directory exists
+    if [ ! -d "$REPO_DIR" ]; then
+        echo "ERROR: Python repository directory not found: $REPO_DIR"
+        echo "Expected: $DIST_DIR/repositories/${PROJECT_NAME}/python/"
+        exit 1
+    fi
+
+    # Check for .so files in the Python repository directory
+    local ext_files=$(find "$REPO_DIR" -name "${PROJECT_NAME}.cpython-*.so" -type f 2>/dev/null)
 
     if [ -z "$ext_files" ]; then
-        echo "ERROR: No Python extension files found in $DIST_DIR"
+        echo "ERROR: No Python extension files found in $REPO_DIR"
         echo "Expected pattern: ${PROJECT_NAME}.cpython-*.so"
-        echo "Actual files in dist:"
-        find "$DIST_DIR" -name "*.so" -type f 2>/dev/null || echo "No .so files found"
+        echo "Actual files in $REPO_DIR:"
+        find "$REPO_DIR" -name "*.so" -type f 2>/dev/null || echo "No .so files found"
         exit 1
     fi
 
@@ -102,7 +110,7 @@ copy_files() {
 
     # Only create __init__.py if it doesn't exist
     if [ ! -f "$deb_dir/$PYTHON_PACKAGE_DIR/__init__.py" ]; then
-    cat > "$deb_dir/$PYTHON_PACKAGE_DIR/__init__.py" << 'EOF'
+      cat > "$deb_dir/$PYTHON_PACKAGE_DIR/__init__.py" << 'EOF'
 """
 ${PROJECT_NAME} - CAOS Native Python Bindings
 ==============================================
@@ -259,7 +267,7 @@ Package: $package_name
 Version: $VERSION
 Architecture: $architecture
 Maintainer: CAOS Development Team
-Description: ${PROJECT_NAME^^} - CAOS extension for Python $python_version with $DB_BACKEND_LOWER backend
+Description: ${PROJECT_NAME} - CAOS extension for Python $python_version with $DB_BACKEND_LOWER backend
 Depends: $python_dep
 Conflicts: $conflicts_clause
 Section: python
@@ -325,7 +333,7 @@ Package: ${PROJECT_NAME_SANITIZED}-python-${DB_BACKEND_LOWER}
 Version: $VERSION
 Architecture: all
 Maintainer: CAOS Development Team
-Description: ${PROJECT_NAME^^} - CAOS Python extension with $DB_BACKEND_LOWER backend (metapackage)
+Description: ${PROJECT_NAME} - CAOS Python extension with $DB_BACKEND_LOWER backend (metapackage)
  This metapackage will install the appropriate Python version packages.
 Recommends: $recommends_clause
 Conflicts: $meta_conflicts_clause
@@ -369,14 +377,14 @@ dpkg-scanpackages --multiversion . "\$OVERRIDE_FILE" > Packages
 gzip -k -f Packages
 
 cat > Release << RELEASE_CONTENT
-Origin: ${PROJECT_NAME^^} Python Repository
-Label: ${PROJECT_NAME^^}
+Origin: ${PROJECT_NAME} Python Repository
+Label: ${PROJECT_NAME}
 Suite: stable
 Codename: ${PROJECT_NAME}
 Version: 1.0
 Architectures: amd64 all
 Components: main
-Description: ${PROJECT_NAME^^} - CAOS Python extension
+Description: ${PROJECT_NAME} - CAOS Python extension
 Date: \$(date -Ru)
 MD5Sum:
  \$(md5sum Packages | cut -d' ' -f1) \$(stat -c %s Packages) Packages
@@ -432,7 +440,8 @@ move_packages_to_repository() {
 main() {
     check_prerequisites
 
-    local ext_files=$(find_python_extension_files)
+    # Look for extension files in the Python repository directory
+    local ext_files=$(find "$REPO_DIR" -name "${PROJECT_NAME}.cpython-*.so" -type f 2>/dev/null)
     local built_count=0
 
     while IFS= read -r source_file; do
