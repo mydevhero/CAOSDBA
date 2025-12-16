@@ -4,11 +4,9 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../" && pwd)"
 BUILD_DIR="$PROJECT_ROOT/build/release"
 DIST_DIR="$PROJECT_ROOT/dist"
-CAOS_OPT_DIR="/opt/caosdba"
 
-# Get database backend and project name from command line
 DB_BACKEND=${1:-"MYSQL"}
-PROJECT_NAME=${2:-"caos"}  # Default to 'caos' for backward compatibility
+PROJECT_NAME=${2:-"caos"}
 PROJECT_NAME_SANITIZED=$(echo "$PROJECT_NAME" | tr '_' '-')
 DB_BACKEND_LOWER=$(echo "$DB_BACKEND" | tr '[:upper:]' '[:lower:]')
 
@@ -17,143 +15,126 @@ if [ -f "$BUILD_DIR/build_counter.txt" ]; then
     VERSION="1.0.0+${CAOS_BUILD_COUNTER}"
 else
     VERSION="1.0.0+1"
-    echo "WARNING: $BUILD_DIR/build_counter.txt not found, using default version"
+    echo "WARNING: build_counter.txt not found, using default version"
 fi
 
-echo "Creating DEB packages tarball for ${PROJECT_NAME}"
+echo "Creating DEB packages tarball for ${PROJECT_NAME} PHP extension"
 echo "Version: $VERSION"
 echo "Database backend: $DB_BACKEND_LOWER"
 
 check_prerequisites() {
-    # Check if repository was created in dist directory
-    if [ ! -d "$DIST_DIR/repository" ]; then
-        echo "ERROR: Repository directory not found in $DIST_DIR/repository"
+    local repo_dir="$DIST_DIR/repositories/${PROJECT_NAME}/php"
+
+    if [ ! -d "$repo_dir" ]; then
+        echo "ERROR: PHP repository directory not found in $repo_dir"
         echo "Please run the ${PROJECT_NAME}_package_deb target first:"
         echo "  cmake --build build/release --target ${PROJECT_NAME}_package_deb"
         exit 1
     fi
 
-    local deb_count=$(ls "$DIST_DIR/repository"/*.deb 2>/dev/null | wc -l)
+    local deb_count=$(ls "$repo_dir"/*.deb 2>/dev/null | wc -l)
     if [ "$deb_count" -eq 0 ]; then
-        echo "ERROR: No DEB packages found in $DIST_DIR/repository"
+        echo "ERROR: No PHP DEB packages found in $repo_dir"
         echo "Please run the ${PROJECT_NAME}_package_deb target first"
         exit 1
     fi
 
-    echo "Found $deb_count DEB package(s) in dist/repository"
+    echo "Found $deb_count PHP DEB package(s) in nested repository"
 }
 
 create_tarball_structure() {
-    local temp_dir="$DIST_DIR/temp_caos_deb"
+    local temp_dir="$DIST_DIR/temp_caos_php_deb"
+    local project_repo_dir="$temp_dir/opt/caosdba/repositories/${PROJECT_NAME}/php"
 
     echo "Creating tarball structure in $temp_dir"
 
     rm -rf "$temp_dir"
-    mkdir -p "$temp_dir$CAOS_OPT_DIR"
+    mkdir -p "$project_repo_dir"
 
-    # Copy the entire repository structure from dist directory
-    if [ -d "$DIST_DIR/repository" ]; then
-        echo "Copying repository from $DIST_DIR/repository"
-        cp -r "$DIST_DIR/repository" "$temp_dir$CAOS_OPT_DIR/"
+    local source_repo_dir="$DIST_DIR/repositories/${PROJECT_NAME}/php"
+    if [ -d "$source_repo_dir" ]; then
+        echo "Copying PHP repository from $source_repo_dir"
+        cp -r "$source_repo_dir"/* "$project_repo_dir/"
     else
-        echo "ERROR: $DIST_DIR/repository not found"
+        echo "ERROR: $source_repo_dir not found"
         exit 1
     fi
 
-    # Copy install-repository.sh from dist directory
     if [ -f "$DIST_DIR/install-repository.sh" ]; then
         echo "Copying install-repository.sh from $DIST_DIR"
-        cp "$DIST_DIR/install-repository.sh" "$temp_dir$CAOS_OPT_DIR/"
-    else
-        echo "ERROR: $DIST_DIR/install-repository.sh not found"
-        exit 1
+        mkdir -p "$temp_dir/opt/caosdba"
+        cp "$DIST_DIR/install-repository.sh" "$temp_dir/opt/caosdba/"
     fi
 
-    # Copy README.md from dist directory
-    if [ -f "$DIST_DIR/README.md" ]; then
+    if [ -f "$DIST_DIR/README-PHP.md" ]; then
+        echo "Copying README-PHP.md from $DIST_DIR"
+        mkdir -p "$temp_dir/opt/caosdba"
+        cp "$DIST_DIR/README-PHP.md" "$temp_dir/opt/caosdba/"
+    elif [ -f "$DIST_DIR/README.md" ]; then
         echo "Copying README.md from $DIST_DIR"
-        cp "$DIST_DIR/README.md" "$temp_dir$CAOS_OPT_DIR/"
-    else
-        echo "ERROR: $DIST_DIR/README.md not found"
-        exit 1
+        mkdir -p "$temp_dir/opt/caosdba"
+        cp "$DIST_DIR/README.md" "$temp_dir/opt/caosdba/"
     fi
 
-    # Copy ENV.md from dist directory
     if [ -f "$DIST_DIR/ENV.md" ]; then
         echo "Copying ENV.md from $DIST_DIR"
-        cp "$DIST_DIR/ENV.md" "$temp_dir$CAOS_OPT_DIR/"
-    else
-        echo "ERROR: $DIST_DIR/ENV.md not found"
-        exit 1
+        mkdir -p "$temp_dir/opt/caosdba"
+        cp "$DIST_DIR/ENV.md" "$temp_dir/opt/caosdba/"
     fi
 
-    # Set correct ownership and permissions in temp directory
-    echo "Setting secure ownership and permissions in tarball..."
+    chown -R root:root "$temp_dir"
+    chmod 755 "$temp_dir/opt/caosdba" 2>/dev/null || true
+    find "$temp_dir" -type d -exec chmod 755 {} \;
+    find "$temp_dir" -type f -exec chmod 644 {} \;
 
-    # Set ownership to root:root for everything
-    chown -R root:root "$temp_dir$CAOS_OPT_DIR"
+    chmod 755 "$temp_dir/opt/caosdba/install-repository.sh" 2>/dev/null || true
+    chmod 755 "$project_repo_dir/update-repo.sh" 2>/dev/null || true
+    chmod 755 "$project_repo_dir/setup-apt-source.sh" 2>/dev/null || true
 
-    # Set directory permissions to 755 (readable e traversable da tutti)
-    chmod 755 "$temp_dir$CAOS_OPT_DIR"
-    find "$temp_dir$CAOS_OPT_DIR" -type d -exec chmod 755 {} \;
-
-    # Set file permissions to 644 (leggibili da tutti)
-    find "$temp_dir$CAOS_OPT_DIR" -type f -exec chmod 644 {} \;
-
-    # Set executable permissions to 755 for scripts
-    chmod 755 "$temp_dir$CAOS_OPT_DIR/install-repository.sh" 2>/dev/null || true
-    chmod 755 "$temp_dir$CAOS_OPT_DIR/repository/update-repo.sh" 2>/dev/null || true
-    chmod 755 "$temp_dir$CAOS_OPT_DIR/repository/setup-apt-source.sh" 2>/dev/null || true
-
-    echo "Tarball structure created"
+    echo "PHP tarball structure created"
 }
 
 create_install_script() {
-    local temp_dir="$DIST_DIR/temp_caos_deb"
+    local temp_dir="$DIST_DIR/temp_caos_php_deb"
 
-    # Crea la directory di destinazione
-    mkdir -p "$temp_dir$CAOS_OPT_DIR"
+    mkdir -p "$temp_dir/opt/caosdba"
 
-    cat > "$temp_dir$CAOS_OPT_DIR/install-repository.sh" << EOF
+    cat > "$temp_dir/opt/caosdba/install-repository.sh" << EOF
 #!/bin/bash
-# ${PROJECT_NAME^^} Repository Installation Script
+# ${PROJECT_NAME} PHP Repository Installation Script
 
 set -e
 
 CAOS_OPT_DIR="/opt/caosdba"
-REPO_DIR="\$CAOS_OPT_DIR/repository"
+REPO_DIR="\$CAOS_OPT_DIR/repositories/${PROJECT_NAME}/php"
 
-# Check if running as root
 if [ "\$EUID" -ne 0 ]; then
     echo "ERROR: This script must be run as root (use sudo)"
     exit 1
 fi
 
 echo "================================================================"
-echo "${PROJECT_NAME^^} Repository Installation"
+echo "${PROJECT_NAME} PHP Repository Installation"
 echo "================================================================"
 
-# Verify we're in the correct location
 if [ ! -d "\$REPO_DIR" ]; then
-    echo "ERROR: Repository directory not found: \$REPO_DIR"
+    echo "ERROR: PHP repository directory not found: \$REPO_DIR"
     echo "Make sure the tarball was extracted to /opt/caosdba"
     exit 1
 fi
 
-echo "Setting up ${PROJECT_NAME^^} repository from \$REPO_DIR"
+echo "Setting up ${PROJECT_NAME} PHP repository from \$REPO_DIR"
 
-# Remove existing APT source files to avoid conflicts
-if [ -f "/etc/apt/sources.list.d/caos-local.list" ]; then
-    echo "Removing existing caos-local.list to avoid conflicts..."
-    rm -f "/etc/apt/sources.list.d/caos-local.list"
-fi
-if [ -f "/etc/apt/sources.list.d/${PROJECT_NAME}-local.list" ]; then
-    echo "Removing existing ${PROJECT_NAME}-local.list to avoid conflicts..."
-    rm -f "/etc/apt/sources.list.d/${PROJECT_NAME}-local.list"
-fi
+# Clean up any existing PHP repository configurations
+echo "Cleaning up existing PHP repository configurations..."
+for file in /etc/apt/sources.list.d/*${PROJECT_NAME}*php*.list; do
+    if [ -f "\$file" ]; then
+        echo "  Removing: \$(basename "\$file")"
+        rm -f "\$file"
+    fi
+done
 
-# Update repository index
-echo "Updating repository index..."
+echo "Updating PHP repository index..."
 cd "\$REPO_DIR"
 if [ -f "./update-repo.sh" ]; then
     ./update-repo.sh
@@ -162,8 +143,7 @@ else
     exit 1
 fi
 
-# Configure APT
-echo "Configuring APT repository..."
+echo "Configuring APT repository for PHP..."
 if [ -f "./setup-apt-source.sh" ]; then
     ./setup-apt-source.sh
 else
@@ -173,27 +153,32 @@ fi
 
 echo ""
 echo "================================================================"
-echo "${PROJECT_NAME^^} Repository Installation Completed"
+echo "${PROJECT_NAME} PHP Repository Installation Completed"
 echo "================================================================"
 echo ""
-echo "You can now install ${PROJECT_NAME^^} packages:"
+echo "You can now install ${PROJECT_NAME} PHP extension:"
 echo "  sudo apt install ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}"
 echo ""
 echo "Or for specific PHP version:"
 echo "  sudo apt install ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}-8.3"
 echo ""
-echo "Repository location: \$REPO_DIR"
+echo "To test the installation:"
+echo "  php -m | grep ${PROJECT_NAME}"
+echo ""
+echo "PHP repository location: \$REPO_DIR"
 echo ""
 EOF
 
-    chmod 755 "$temp_dir$CAOS_OPT_DIR/install-repository.sh"
-    echo "Created install-repository.sh in tarball structure"
+    chmod 755 "$temp_dir/opt/caosdba/install-repository.sh"
+    echo "Created PHP install-repository.sh in tarball structure"
 }
+
 create_readme() {
-    local readme_file="$DIST_DIR/README.md"
+    local readme_file="$DIST_DIR/README-PHP.md"
+    local tarball_name="${PROJECT_NAME_SANITIZED}-php-deb-repository-${DB_BACKEND_LOWER}-${VERSION}.tar.gz"
 
     cat > "$readme_file" << EOF
-# ${PROJECT_NAME^^} DEB Packages Repository
+# ${PROJECT_NAME} PHP DEB Packages Repository
 
 Version: $VERSION
 Database Backend: $DB_BACKEND
@@ -201,21 +186,21 @@ Project: $PROJECT_NAME
 
 ## Contents
 
-This tarball contains the ${PROJECT_NAME^^} DEB packages and local APT repository.
+This tarball contains the ${PROJECT_NAME} PHP DEB packages and local APT repository.
 
 ### Directory Structure
 
 /opt/caosdba/
-├── repository/          # Local APT repository
-│   ├── *.deb           # DEB packages
-│   ├── Packages        # Repository index
-│   ├── Packages.gz     # Compressed index
-│   ├── Release         # Release info
-│   ├── conf/           # Configuration
-│   ├── i18n/           # Translations
-│   ├── update-repo.sh  # Repository update script
-│   └── setup-apt-source.sh # APT configuration script
-└── install-repository.sh   # Main installation script
+├── repositories/
+│   └── ${PROJECT_NAME}/
+│       └── php/              # PHP-specific repository
+│           ├── *.deb         # PHP DEB packages
+│           ├── Packages      # Repository index
+│           ├── Packages.gz   # Compressed index
+│           ├── Release       # Release info
+│           ├── update-repo.sh  # PHP repository update script
+│           └── setup-apt-source.sh # PHP APT configuration script
+└── install-repository.sh     # Main installation script
 
 ## Installation
 
@@ -223,7 +208,7 @@ This tarball contains the ${PROJECT_NAME^^} DEB packages and local APT repositor
 
 1. Extract the tarball to /opt:
 \`\`\`bash
-sudo tar -xzf ${PROJECT_NAME_SANITIZED}-deb-repository-${DB_BACKEND_LOWER}-${VERSION}.tar.gz -C /
+sudo tar -xzf ${tarball_name} -C /
 \`\`\`
 
 2. Run the installation script:
@@ -237,65 +222,79 @@ If you prefer manual setup:
 
 1. Extract tarball:
 \`\`\`bash
-sudo tar -xzf ${PROJECT_NAME_SANITIZED}-deb-repository-${DB_BACKEND_LOWER}-${VERSION}.tar.gz -C /
+sudo tar -xzf ${tarball_name} -C /
 \`\`\`
 
-2. Update repository index:
+2. Update PHP repository index:
 \`\`\`bash
-cd /opt/caosdba/repository
+cd /opt/caosdba/repositories/${PROJECT_NAME}/php
 ./update-repo.sh
 \`\`\`
 
-3. Configure APT:
+3. Configure APT for PHP:
 \`\`\`bash
 ./setup-apt-source.sh
 \`\`\`
 
 ## Usage
 
-After installation, you can install ${PROJECT_NAME^^} packages via APT:
+After installation, you can install ${PROJECT_NAME} PHP extension via APT:
 
 \`\`\`bash
-# Install meta-package (recommended)
+# Install PHP meta-package (recommended)
 sudo apt install ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}
 
 # Install specific PHP version
 sudo apt install ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}-8.3
 
-# See all available packages
+# See all available PHP packages
 apt list ${PROJECT_NAME_SANITIZED}-php*
 \`\`\`
 
-## Available Packages
+## Available PHP Packages
 
-- ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER} - Meta-package
+- ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER} - PHP meta-package
 - ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}-8.0 - PHP 8.0 extension
 - ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}-8.1 - PHP 8.1 extension
 - ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}-8.2 - PHP 8.2 extension
 - ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}-8.3 - PHP 8.3 extension
 - ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}-8.4 - PHP 8.4 extension
 
+## Testing
+
+To verify the PHP installation:
+
+\`\`\`bash
+php -m | grep ${PROJECT_NAME}
+\`\`\`
+
+For specific PHP version:
+
+\`\`\`bash
+php8.3 -m | grep ${PROJECT_NAME}
+\`\`\`
+
 ## Maintenance
 
-To update the repository after adding new packages:
+To update the PHP repository after adding new packages:
 \`\`\`bash
-cd /opt/caosdba/repository
+cd /opt/caosdba/repositories/${PROJECT_NAME}/php
 ./update-repo.sh
 sudo apt update
 \`\`\`
 
 ## Uninstallation
 
-To remove the repository:
+To remove the PHP repository:
 
-1. Remove APT source:
+1. Remove PHP APT source:
 \`\`\`bash
-sudo rm -f /etc/apt/sources.list.d/${PROJECT_NAME}-local.list
+sudo rm -f /etc/apt/sources.list.d/${PROJECT_NAME}-php-local.list
 \`\`\`
 
-2. Remove repository files:
+2. Remove PHP repository files:
 \`\`\`bash
-sudo rm -rf /opt/caosdba
+sudo rm -rf /opt/caosdba/repositories/${PROJECT_NAME}/php
 \`\`\`
 
 3. Update APT cache:
@@ -303,67 +302,37 @@ sudo rm -rf /opt/caosdba
 sudo apt update
 \`\`\`
 
+## Multiple Projects and Languages Support
+
+The system supports multiple CAOS-based projects with different languages:
+
+\`\`\`
+/opt/caosdba/repositories/my_app/python/      # Python extension
+/opt/caosdba/repositories/my_app/php/         # PHP extension
+/opt/caosdba/repositories/another_app/python/ # Another project Python
+/opt/caosdba/repositories/another_app/php/    # Another project PHP
+\`\`\`
+
+Each language has its own isolated repository with separate APT configuration.
+
 ---
 Generated: $(date)
 Build: $VERSION
 Database: $DB_BACKEND
 Project: $PROJECT_NAME
+Language: PHP
 EOF
 
-    echo "Created README.md"
-}
-
-create_tarball() {
-    local temp_dir="$DIST_DIR/temp_caos_deb"
-    local tarball_name="${PROJECT_NAME_SANITIZED}-deb-repository-${DB_BACKEND_LOWER}-${VERSION}.tar.gz"
-    local tarball_path="$DIST_DIR/$tarball_name"
-
-    echo "Creating tarball: $tarball_name"
-
-    mkdir -p "$DIST_DIR"
-    tar -czf "$tarball_path" -C "$temp_dir" opt
-
-    # Get package info
-    local deb_count=$(ls "$temp_dir$CAOS_OPT_DIR/repository"/*.deb 2>/dev/null | wc -l)
-
-    # Cleanup
-    rm -rf "$temp_dir"
-
-    echo "Tarball created: $tarball_path"
-    echo "Contains $deb_count DEB package(s)"
-    echo ""
-    echo "To deploy:"
-    echo "  sudo tar -xzf $tarball_path -C /"
-    echo "  sudo /opt/caosdba/install-repository.sh"
-    echo ""
-}
-
-create_deployment_readme() {
-    local tarball_name="${PROJECT_NAME_SANITIZED}-deb-repository-${DB_BACKEND_LOWER}-${VERSION}.tar.gz"
-    local readme_file="$DIST_DIR/${tarball_name}.README.txt"
-
-    cat > "$readme_file" << EOF
-To deploy:
-1. Extract the tarball:
-   sudo tar -xzf $tarball_name -C /
-
-2. Run the installation script:
-   sudo /opt/caosdba/install-repository.sh
-
-3. Install ${PROJECT_NAME^^} PHP extension:
-   sudo apt install ${PROJECT_NAME_SANITIZED}-php-${DB_BACKEND_LOWER}
-EOF
-
-    echo "Created deployment README: ${tarball_name}.README.txt"
+    echo "Created README-PHP.md"
 }
 
 create_env_documentation() {
     local env_file="$DIST_DIR/ENV.md"
 
     cat > "$env_file" << EOF
-# ${PROJECT_NAME^^} Environment Variables
+# ${PROJECT_NAME} Environment Variables
 
-This document describes all environment variables used by the ${PROJECT_NAME^^} PHP extension.
+This document describes all environment variables used by the ${PROJECT_NAME} PHP extension.
 
 ## Cache Configuration (Redis)
 
@@ -450,25 +419,47 @@ Timeouts: Set appropriate timeouts based on your network latency and application
 
 Validation: Connection validation adds overhead but improves reliability in unstable network environments.
 
-For more information, refer to the ${PROJECT_NAME^^} documentation.
+For more information, refer to the ${PROJECT_NAME} documentation.
 EOF
 
     echo "Created environment documentation: $env_file"
 }
 
+create_tarball() {
+    local temp_dir="$DIST_DIR/temp_caos_php_deb"
+    local tarball_name="${PROJECT_NAME_SANITIZED}-php-deb-repository-${DB_BACKEND_LOWER}-${VERSION}.tar.gz"
+    local tarball_path="$DIST_DIR/$tarball_name"
+
+    echo "Creating PHP tarball: $tarball_name"
+
+    mkdir -p "$DIST_DIR"
+    tar -czf "$tarball_path" -C "$temp_dir" opt
+
+    local repo_dir="$temp_dir/opt/caosdba/repositories/${PROJECT_NAME}/php"
+    local deb_count=$(ls "$repo_dir"/*.deb 2>/dev/null | wc -l)
+
+    rm -rf "$temp_dir"
+
+    echo "PHP tarball created: $tarball_path"
+    echo "Contains $deb_count PHP DEB package(s)"
+    echo ""
+    echo "To deploy:"
+    echo "  sudo tar -xzf $tarball_path -C /"
+    echo "  sudo /opt/caosdba/install-repository.sh"
+    echo ""
+}
 
 main() {
-    echo "Starting DEB repository tarball creation for $PROJECT_NAME..."
+    echo "Starting PHP DEB repository tarball creation for $PROJECT_NAME..."
 
     check_prerequisites
+    create_tarball_structure
     create_install_script
     create_readme
     create_env_documentation
-    create_tarball_structure
     create_tarball
-    create_deployment_readme
 
-    echo "DEB repository tarball creation completed successfully"
+    echo "PHP DEB repository tarball creation completed successfully"
 }
 
 main "$@"
