@@ -127,7 +127,7 @@ echo "Setting up ${PROJECT_NAME} PHP repository from \$REPO_DIR"
 
 # Clean up any existing PHP repository configurations
 echo "Cleaning up existing PHP repository configurations..."
-for file in /etc/apt/sources.list.d/*${PROJECT_NAME}*php*.list; do
+for file in /etc/apt/sources.list.d/${PROJECT_NAME}-php-local.list; do
     if [ -f "\$file" ]; then
         echo "  Removing: \$(basename "\$file")"
         rm -f "\$file"
