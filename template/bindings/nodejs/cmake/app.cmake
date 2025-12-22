@@ -1,0 +1,382 @@
+message(STATUS "Building CAOSDBA as Node.js extension")
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# Define supported Node.js versions
+set(SUPPORTED_NODE_VERSIONS "14" "16" "18" "20" "22" "24")
+set(NODE_TARGETS "")
+set(NODE_BUILD_VERSIONS "")
+set(NODE_PACKAGE_DIRS "")
+
+# Build counter logic - same as Python
+set(BUILD_COUNTER_FILE "${CMAKE_BINARY_DIR}/build_counter.txt")
+if(EXISTS "${BUILD_COUNTER_FILE}")
+  file(READ "${BUILD_COUNTER_FILE}" CAOS_BUILD_COUNT)
+  string(STRIP "${CAOS_BUILD_COUNT}" CAOS_BUILD_COUNT)
+  math(EXPR CAOS_BUILD_COUNT "${CAOS_BUILD_COUNT} + 1")
+else()
+  set(CAOS_BUILD_COUNT 1)
+endif()
+
+file(WRITE "${BUILD_COUNTER_FILE}" "${CAOS_BUILD_COUNT}")
+string(TOLOWER "${CAOS_DB_BACKEND}" CAOS_DB_BACKEND_LOWER)
+
+# Try to find each supported Node.js version
+foreach(NODE_MAJOR_VER IN LISTS SUPPORTED_NODE_VERSIONS)
+  # Find Node.js executable for this version
+  find_program(NODE_EXECUTABLE_${NODE_MAJOR_VER}
+    NAMES node${NODE_MAJOR_VER} node
+    PATHS /usr/bin /usr/local/bin /opt/homebrew/bin
+  )
+
+  if(NODE_EXECUTABLE_${NODE_MAJOR_VER})
+    # Get Node.js version
+    execute_process(
+      COMMAND ${NODE_EXECUTABLE_${NODE_MAJOR_VER}} --version
+      OUTPUT_VARIABLE NODE_FULL_VERSION
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+
+    # Extract version number (v14.21.3 -> 14)
+    string(REGEX REPLACE "^v([0-9]+)\\..*$" "\\1" NODE_DETECTED_MAJOR "${NODE_FULL_VERSION}")
+
+    if(NODE_DETECTED_MAJOR STREQUAL NODE_MAJOR_VER)
+      message(STATUS "Found Node.js ${NODE_FULL_VERSION}")
+
+      # Get Node.js installation directory
+      execute_process(
+        COMMAND ${NODE_EXECUTABLE_${NODE_MAJOR_VER}} -p "require('path').dirname(process.execPath)"
+        OUTPUT_VARIABLE NODE_DIR
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+      )
+
+      # Find Node.js headers
+      set(NODE_HEADERS_PATHS
+        "${NODE_DIR}/../include/node"
+        "/usr/include/node"
+        "/usr/local/include/node"
+        "/opt/homebrew/include/node"
+      )
+
+      set(NODE_HEADERS_DIR "")
+      foreach(HEADER_PATH ${NODE_HEADERS_PATHS})
+        if(EXISTS "${HEADER_PATH}/node_api.h")
+          set(NODE_HEADERS_DIR "${HEADER_PATH}")
+          break()
+        endif()
+      endforeach()
+
+      if(NOT NODE_HEADERS_DIR)
+        message(WARNING "Node.js headers not found for version ${NODE_MAJOR_VER}")
+        continue()
+      endif()
+
+      # Find node-addon-api
+      execute_process(
+        COMMAND ${NODE_EXECUTABLE_${NODE_MAJOR_VER}} -p "require('node-addon-api').include"
+        OUTPUT_VARIABLE NAPI_INCLUDE_DIR_RAW
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE NAPI_CHECK_RESULT
+        ERROR_QUIET
+      )
+
+      if(NOT NAPI_CHECK_RESULT EQUAL 0)
+        # Try to install node-addon-api
+        find_program(NPM_EXECUTABLE npm)
+        if(NPM_EXECUTABLE)
+          execute_process(
+            COMMAND ${NPM_EXECUTABLE} install node-addon-api
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            RESULT_VARIABLE NPM_INSTALL_RESULT
+            OUTPUT_QUIET
+            ERROR_QUIET
+          )
+
+          if(NPM_INSTALL_RESULT EQUAL 0)
+            execute_process(
+              COMMAND ${NODE_EXECUTABLE_${NODE_MAJOR_VER}} -p "require('node-addon-api').include"
+              OUTPUT_VARIABLE NAPI_INCLUDE_DIR_RAW
+              OUTPUT_STRIP_TRAILING_WHITESPACE
+              RESULT_VARIABLE NAPI_RECHECK_RESULT
+              ERROR_QUIET
+            )
+          endif()
+        endif()
+      endif()
+
+      if(NAPI_CHECK_RESULT EQUAL 0 OR NAPI_RECHECK_RESULT EQUAL 0)
+        string(STRIP "${NAPI_INCLUDE_DIR_RAW}" NAPI_INCLUDE_DIR)
+        string(REPLACE "\n" "" NAPI_INCLUDE_DIR "${NAPI_INCLUDE_DIR}")
+        string(REPLACE "\"" "" NAPI_INCLUDE_DIR "${NAPI_INCLUDE_DIR}")
+
+        if(NOT IS_ABSOLUTE "${NAPI_INCLUDE_DIR}")
+          set(NAPI_INCLUDE_DIR "${CMAKE_BINARY_DIR}/${NAPI_INCLUDE_DIR}")
+        endif()
+
+        # Create unique target name for this Node.js version
+        set(TARGET_NAME "${PROJECT_NAME}_node${NODE_MAJOR_VER}")
+        list(APPEND NODE_TARGETS ${TARGET_NAME})
+        list(APPEND NODE_BUILD_VERSIONS ${NODE_FULL_VERSION})
+
+        # Configure file
+        configure_file(
+          ${CMAKE_SOURCE_DIR}/src/include/extension_config.h.in
+          ${CMAKE_BINARY_DIR}/extension_config.h
+          @ONLY
+        )
+
+        # Create library target for this Node.js version
+        add_library(${TARGET_NAME} MODULE
+          src/bindings.cpp
+          src/call_context.cpp
+        )
+
+        target_include_directories(${TARGET_NAME} PRIVATE
+          ${CMAKE_BINARY_DIR}
+          ${CMAKE_SOURCE_DIR}/src
+          ${CMAKE_SOURCE_DIR}/src/include
+          ${NODE_HEADERS_DIR}
+          ${NAPI_INCLUDE_DIR}
+        )
+
+        # Set output properties
+        set_target_properties(${TARGET_NAME} PROPERTIES
+          PREFIX ""
+          OUTPUT_NAME "${PROJECT_NAME}"
+          SUFFIX ".node"
+          LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/node_${NODE_MAJOR_VER}"
+        )
+
+        target_link_libraries(${TARGET_NAME} PRIVATE libcaos)
+        target_compile_definitions(${TARGET_NAME} PRIVATE
+          CAOS_BUILD_NODE_BINDING
+          NODE_VERSION=${NODE_MAJOR_VER}
+          NAPI_CPP_EXCEPTIONS
+        )
+
+        # Create Node.js package directory for this version
+        set(NODE_PACKAGE_DIR "${CMAKE_BINARY_DIR}/node_package_${NODE_MAJOR_VER}/${PROJECT_NAME}")
+        file(MAKE_DIRECTORY ${NODE_PACKAGE_DIR})
+        list(APPEND NODE_PACKAGE_DIRS ${NODE_PACKAGE_DIR})
+
+        # Create package.json for this version
+        file(WRITE ${NODE_PACKAGE_DIR}/package.json
+          [[
+          {
+          "name": "${PROJECT_NAME}",
+          "version": "0.1.0",
+          "description": "Native CAOSDBA bindings for Node.js ${NODE_MAJOR_VER}",
+          "main": "index.js",
+          "engines": {
+          "node": ">=${NODE_MAJOR_VER}.0.0"
+          },
+          "gypfile": false
+          }
+          ]])
+
+        # Create index.js wrapper (similar to Python's __init__.py)
+        file(WRITE ${NODE_PACKAGE_DIR}/index.js
+          [[
+          const native = require('./${PROJECT_NAME}.node');
+
+          module.exports = {
+          // Query functions will be auto-exposed
+          getBuildInfo: native.getBuildInfo,
+
+          // Helper to check if native module loaded correctly
+          checkNative: function() {
+          return native.getBuildInfo !== undefined;
+          },
+
+          // Build information
+          __version__: '0.1.0',
+          __build__: ${CAOS_BUILD_COUNT},
+          __backend__: '${CAOS_DB_BACKEND_LOWER}',
+          __node_version__: '${NODE_MAJOR_VER}'
+          };
+          ]])
+
+        # POST_BUILD: copy to package directory
+        add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+          COMMAND ${CMAKE_COMMAND} -E copy
+          $<TARGET_FILE:${TARGET_NAME}>
+          ${NODE_PACKAGE_DIR}/${PROJECT_NAME}.node
+          COMMENT "Building ${PROJECT_NAME} for Node.js ${NODE_MAJOR_VER}"
+          VERBATIM
+        )
+
+        # Create directory in dist structure
+        set(NODE_REPO_DIR "${CMAKE_SOURCE_DIR}/dist/repositories/${PROJECT_NAME}/nodejs/v${NODE_MAJOR_VER}")
+        file(MAKE_DIRECTORY ${NODE_REPO_DIR})
+
+        # Target for copying to dist
+        add_custom_target(${TARGET_NAME}_copy_to_dist
+          COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_REPO_DIR}
+          COMMAND ${CMAKE_COMMAND} -E copy
+          ${NODE_PACKAGE_DIR}/${PROJECT_NAME}.node
+          ${NODE_REPO_DIR}/${PROJECT_NAME}.node
+          COMMAND ${CMAKE_COMMAND} -E copy
+          ${NODE_PACKAGE_DIR}/index.js
+          ${NODE_REPO_DIR}/index.js
+          COMMAND ${CMAKE_COMMAND} -E copy
+          ${NODE_PACKAGE_DIR}/package.json
+          ${NODE_REPO_DIR}/package.json
+          DEPENDS ${TARGET_NAME}
+          COMMENT "Copying ${PROJECT_NAME} Node.js files to dist directory"
+        )
+
+      else()
+        message(WARNING "node-addon-api not found for Node.js ${NODE_MAJOR_VER}")
+      endif()
+    endif()
+  endif()
+endforeach()
+
+# Check if any Node.js versions were found
+if(NOT NODE_TARGETS)
+  message(FATAL_ERROR "
+    No supported Node.js development packages found!
+
+    Required for building CAOSDBA Node.js extension.
+    Supported Node.js versions: ${SUPPORTED_NODE_VERSIONS}
+
+    Installation commands for Ubuntu/Debian:
+    sudo apt-get update
+    sudo apt-get install nodejs npm
+    # For specific versions use nodesource repository
+
+    After installation, re-run CMake with Node.js support.
+    ")
+endif()
+
+message(STATUS "Building for Node.js versions: ${NODE_BUILD_VERSIONS}")
+message(STATUS "Node targets created: ${NODE_TARGETS}")
+
+# Create main library target to satisfy parent CMake
+add_library(${PROJECT_NAME} OBJECT)
+target_link_libraries(${PROJECT_NAME} PRIVATE libcaos repoexception)
+
+# Add dummy source file
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/dummy_${PROJECT_NAME}.cpp
+  "// Dummy source for ${PROJECT_NAME} library\n")
+target_sources(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/dummy_${PROJECT_NAME}.cpp)
+
+# Create meta-target that depends on all Node.js version targets
+add_custom_target(make_node_all DEPENDS ${NODE_TARGETS})
+
+# Create target that copies ALL Node.js versions to dist
+add_custom_target(do_copy_all_to_dist)
+foreach(TARGET_NAME IN LISTS NODE_TARGETS)
+  add_dependencies(do_copy_all_to_dist ${TARGET_NAME}_copy_to_dist)
+endforeach()
+
+# Ensure Node.js extensions are built when main target is built
+add_dependencies(${PROJECT_NAME} make_node_all)
+
+# Create aggregated Node.js package with all versions
+set(AGGREGATE_NODE_PACKAGE_DIR "${CMAKE_BINARY_DIR}/node_package/${PROJECT_NAME}")
+file(MAKE_DIRECTORY ${AGGREGATE_NODE_PACKAGE_DIR})
+
+# Create aggregated index.js that works for all Node.js versions
+file(WRITE ${AGGREGATE_NODE_PACKAGE_DIR}/index.js
+  [[
+  const fs = require('fs');
+  const path = require('path');
+
+  /**
+  * ${PROJECT_NAME} - CAOSDBA Native Node.js Bindings
+  *
+  * Native extension for CAOSDBA database operations.
+  * Backend: ${CAOS_DB_BACKEND_LOWER}
+  * Build: ${CAOS_BUILD_COUNT}
+  *
+  * This package contains native extensions for multiple Node.js versions.
+  * The correct version will be loaded automatically based on your Node.js version.
+  */
+
+  function loadCorrectModule() {
+  const packageDir = __dirname;
+  const nodeVersion = process.versions.node;
+  const nodeMajor = nodeVersion.split('.')[0];
+
+  // Try to find version-specific module
+  const versionedModule = path.join(packageDir, `v${nodeMajor}`, `${PROJECT_NAME}.node`);
+
+  if (fs.existsSync(versionedModule)) {
+    return require(versionedModule);
+    }
+
+    // Fallback to any available module
+    const files = fs.readdirSync(packageDir);
+    for (const file of files) {
+    if (file.startsWith('v') && fs.existsSync(path.join(packageDir, file, `${PROJECT_NAME}.node`))) {
+      console.warn(`Using Node.js ${file} module for Node.js ${nodeVersion}`);
+      return require(path.join(packageDir, file, `${PROJECT_NAME}.node`));
+      }
+      }
+
+      throw new Error(`No native module found for Node.js ${nodeVersion} in ${packageDir}`);
+      }
+
+      const native = loadCorrectModule();
+
+      // Expose all public functions from native module
+      module.exports = native;
+
+      // Add metadata
+      module.exports.__version__ = '0.1.0';
+      module.exports.__build__ = ${CAOS_BUILD_COUNT};
+      module.exports.__backend__ = '${CAOS_DB_BACKEND_LOWER}';
+      module.exports.__node_version__ = process.versions.node;
+      ]])
+
+    # Copy all version-specific modules to aggregate package
+    foreach(NODE_PACKAGE_DIR IN LISTS NODE_PACKAGE_DIRS)
+      add_custom_command(TARGET make_node_all POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${NODE_PACKAGE_DIR}
+        ${AGGREGATE_NODE_PACKAGE_DIR}
+        COMMENT "Aggregating Node.js modules for all versions"
+      )
+  endforeach()
+
+  # Installation messages
+  install(CODE "
+    message(STATUS \"\")
+    message(STATUS \"Node.js extension '${PROJECT_NAME}' built for versions: ${NODE_BUILD_VERSIONS}\")
+    message(STATUS \"Build: ${CAOS_BUILD_COUNT}, Backend: ${CAOS_DB_BACKEND_LOWER}\")
+    message(STATUS \"\")
+    message(STATUS \"To test the installation:\")
+    message(STATUS \"  node -e \\\"const m = require('${PROJECT_NAME}'); console.log(m.getBuildInfo())\\\"\")
+    message(STATUS \"\")"
+    COMPONENT node
+  )
+
+# Package targets
+if(CMAKE_BUILD_TYPE STREQUAL "release")
+    add_custom_target(make_package_deb
+        COMMAND ${CMAKE_SOURCE_DIR}/scripts/create_package_deb.sh ${CAOS_DB_BACKEND} ${PROJECT_NAME}
+        DEPENDS libcaos do_copy_all_to_dist
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMENT "Building DEB package for Python extension '${PROJECT_NAME}' with ${CAOS_DB_BACKEND_LOWER} backend"
+    )
+
+    add_custom_target(make_distribution_tarball
+        COMMAND ${CMAKE_SOURCE_DIR}/scripts/create_distribution_tarball.sh ${CAOS_DB_BACKEND} ${PROJECT_NAME}
+        DEPENDS make_package_deb
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMENT "Creating distribution tarball for Python extension '${PROJECT_NAME}' with ${CAOS_DB_BACKEND_LOWER} backend"
+    )
+else()
+    add_custom_target(make_package_deb
+        COMMAND ${CMAKE_COMMAND} -E echo "ERROR: CMAKE_BUILD_TYPE must be 'release' to build packages. Current value: ${CMAKE_BUILD_TYPE}"
+        COMMAND false
+    )
+
+    add_custom_target(make_distribution_tarball
+        COMMAND ${CMAKE_COMMAND} -E echo "ERROR: CMAKE_BUILD_TYPE must be 'release' to build packages. Current value: ${CMAKE_BUILD_TYPE}"
+        COMMAND false
+        DEPENDS make_package_deb
+    )
+endif()

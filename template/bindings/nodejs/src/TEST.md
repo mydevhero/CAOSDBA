@@ -46,7 +46,7 @@ export CAOS_API_TOKEN=ARBJi7cJuOYPXmFPPLVWsGrXmD4SU3LW
 ## Testing template query
 
 ```bash
-node -e "const caos = require('./build/release/node_18/my_app');const result = caos.IQuery_Template_echoString({'token':'ARBJi7cJuOYPXmFPPLVWsGrXmD4SU3LW'}, 'Hello CAOSDBA\!');console.log(result);"
+node -e "const caos = require('./node_18/my_app');const result = caos.IQuery_Template_echoString({'token':'ARBJi7cJuOYPXmFPPLVWsGrXmD4SU3LW'}, 'Hello CAOSDBA\!');console.log(result);"
 ```
 
 ## Prepare for distribution
