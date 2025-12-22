@@ -22,18 +22,23 @@ endif()
 # BINDINGS -----------------------------------------------------------------------------------------
 
 # Select CAOS_DB_BACKEND +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+set(VALID_DB_BACKENDS "POSTGRESQL" "MYSQL" "MARIADB")
+
 if(EXISTS ${CMAKE_SOURCE_DIR}/cmake/db_backend.cmake)
   include(${CMAKE_SOURCE_DIR}/cmake/db_backend.cmake)
+
   set(CAOS_DB_BACKEND "${DB_BACKEND}" CACHE STRING "Database backend, got default from cmake/db_backend.cmake")
   message(STATUS "Using CAOS_DB_BACKEND from db_backend.cmake: ${CAOS_DB_BACKEND}")
 
-  # Update
-  if(DEFINED CAOS_DB_BACKEND AND NOT "${CAOS_DB_BACKEND}" STREQUAL "${DB_BACKEND}")
-    file(WRITE ${CMAKE_SOURCE_DIR}/cmake/db_backend.cmake "set(DB_BACKEND ${CAOS_DB_BACKEND})")
-    message(STATUS "Updated db_backend.cmake with: ${CAOS_DB_BACKEND}")
+elseif(DEFINED CAOS_DB_BACKEND)
+  if(NOT CAOS_DB_BACKEND IN_LIST VALID_DB_BACKENDS)
+    message(FATAL_ERROR
+      "Invalid database backend '${CAOS_DB_BACKEND}'\n"
+      "Valid options are (uppercase only): ${VALID_DB_BACKENDS}\n"
+      "Example: -DCAOS_DB_BACKEND=POSTGRESQL"
+    )
   endif()
 
-elseif(DEFINED CAOS_DB_BACKEND)
   message(STATUS "Using CAOS_DB_BACKEND from command line: ${CAOS_DB_BACKEND}")
 
   # Save
@@ -45,7 +50,7 @@ elseif(DEFINED CAOS_DB_BACKEND)
 
 else()
   message(FATAL_ERROR "CAOS_DB_BACKEND not defined. Please specify with -DCAOS_DB_BACKEND=<value>\n"
-          "Available options: POSTGRESQL, MYSQL, MARIADB")
+          "Available options (uppercase only): ${VALID_DB_BACKENDS}")
 endif()
 
 set_property(CACHE CAOS_DB_BACKEND PROPERTY STRINGS
@@ -53,6 +58,7 @@ set_property(CACHE CAOS_DB_BACKEND PROPERTY STRINGS
   "MYSQL"
   "MARIADB"
 )
+# Select CAOS_DB_BACKEND ---------------------------------------------------------------------------
 
 # Select CAOS_PROJECT_TYPE +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 if(EXISTS ${CMAKE_SOURCE_DIR}/cmake/project_type.cmake)
@@ -84,12 +90,24 @@ set_property(CACHE CAOS_PROJECT_TYPE PROPERTY STRINGS
 
 # Select CAOS_BINDING_LANGUAGE +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 if(DEFINED CAOS_PROJECT_TYPE AND CAOS_PROJECT_TYPE STREQUAL "BINDING")
+  # Definisci i linguaggi validi (solo maiuscoli)
+  set(VALID_BINDING_LANGUAGES "PHP" "NODEJS" "PYTHON")
+
   if(EXISTS ${CMAKE_SOURCE_DIR}/cmake/binding_language.cmake)
     include(${CMAKE_SOURCE_DIR}/cmake/binding_language.cmake)
+
     set(CAOS_BINDING_LANGUAGE "${BINDING_LANGUAGE}" CACHE STRING "Binding language, got default from cmake/binding_language.cmake")
     message(STATUS "Using CAOS_BINDING_LANGUAGE from binding_language.cmake: ${CAOS_BINDING_LANGUAGE}")
 
   elseif(DEFINED CAOS_BINDING_LANGUAGE)
+    if(NOT CAOS_BINDING_LANGUAGE IN_LIST VALID_BINDING_LANGUAGES)
+      message(FATAL_ERROR
+        "Invalid binding language '${CAOS_BINDING_LANGUAGE}'\n"
+        "Valid options are (uppercase only): ${VALID_BINDING_LANGUAGES}\n"
+        "Example: -DCAOS_BINDING_LANGUAGE=NODEJS"
+      )
+    endif()
+
     message(STATUS "Using CAOS_BINDING_LANGUAGE from command line: ${CAOS_BINDING_LANGUAGE}")
 
     # Save
@@ -101,12 +119,12 @@ if(DEFINED CAOS_PROJECT_TYPE AND CAOS_PROJECT_TYPE STREQUAL "BINDING")
 
   else()
     message(FATAL_ERROR "CAOS_BINDING_LANGUAGE not defined. Please specify with -DCAOS_BINDING_LANGUAGE=<value>\n"
-            "Available options: PHP, NODE, PYTHON")
+            "Available options (uppercase only): ${VALID_BINDING_LANGUAGES}")
   endif()
 
   set_property(CACHE CAOS_BINDING_LANGUAGE PROPERTY STRINGS
     "PHP"
-    "NODE"
+    "NODEJS"
     "PYTHON"
   )
 endif()
