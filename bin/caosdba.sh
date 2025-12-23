@@ -157,15 +157,15 @@ init_project() {
                 PHP)
                     LANG_DIR="php"
                     ;;
-                NODE)
-                    LANG_DIR="node"
+                NODEJS)
+                    LANG_DIR="nodejs"
                     ;;
                 PYTHON)
                     LANG_DIR="python"
                     ;;
                 *)
                     echo "Error: Invalid binding language '$BINDING_LANGUAGE' in binding_language.cmake"
-                    echo "Valid options: PHP, NODE, PYTHON"
+                    echo "Valid options: PHP, NODEJS, PYTHON"
                     exit 1
                     ;;
             esac

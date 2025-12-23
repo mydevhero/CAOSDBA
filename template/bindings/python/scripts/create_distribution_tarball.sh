@@ -123,7 +123,7 @@ echo "Setting up ${PROJECT_NAME} Python repository from \$REPO_DIR"
 
 # Clean up any existing conflicting source files
 echo "Cleaning up existing repository configurations..."
-for file in /etc/apt/sources.list.d/*${PROJECT_NAME}*.list; do
+for file in /etc/apt/sources.list.d/${PROJECT_NAME}-python-local.list; do
     if [ -f "\$file" ]; then
         echo "  Removing: \$(basename "\$file")"
         rm -f "\$file"
