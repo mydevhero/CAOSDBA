@@ -431,7 +431,6 @@ create_tarball_structure() {
     mkdir -p "$TEMP_REPO_DIR"
     mkdir -p "$TEMP_DOCS_DIR"
 
-    # CORREZIONE CRITICA: Copia dal repository sorgente corretto
     if [ -d "$REPO_DIR" ]; then
         echo "Copying Node.js repository from $REPO_DIR to $TEMP_REPO_DIR"
         cp -r "$REPO_DIR"/* "$TEMP_REPO_DIR/"
@@ -440,8 +439,6 @@ create_tarball_structure() {
         exit 1
     fi
 
-    # Copia README.md ed ENV.md che DEVONO già esistere in $DIST_DIR
-    # (creati dalle funzioni create_readme e create_env_documentation)
     if [ -f "$DIST_DIR/README.md" ]; then
         echo "Copying README.md from $DIST_DIR to $TEMP_DOCS_DIR"
         cp "$DIST_DIR/README.md" "$TEMP_DOCS_DIR/"
@@ -581,7 +578,6 @@ echo "Repository location: $REPO_DIR"
 echo ""
 EOF
 
-    # Sostituisci le variabili placeholder
     sed -i "s/__PROJECT_NAME__/${PROJECT_NAME}/g" "$TEMP_DIR${CAOSDBA_DIR}/install-repository.sh"
     sed -i "s/__PROJECT_NAME_SANITIZED__/${PROJECT_NAME_SANITIZED}/g" "$TEMP_DIR${CAOSDBA_DIR}/install-repository.sh"
     sed -i "s/__VERSION__/${VERSION}/g" "$TEMP_DIR${CAOSDBA_DIR}/install-repository.sh"
@@ -670,15 +666,14 @@ EOF
 main() {
     echo "Starting Node.js DEB repository tarball creation for $PROJECT_NAME..."
 
-    # Ordine corretto delle operazioni
     check_prerequisites
     create_temporary_structure
-    create_readme                    # Crea README.md in $DIST_DIR
-    create_env_documentation         # Crea ENV.md in $DIST_DIR
-    create_install_script           # Crea install script in $TEMP_DIR
-    create_tarball_structure        # Copia tutto in $TEMP_DIR (inclusi README.md ed ENV.md)
-    create_tarball                  # Crea il tarball finale
-    create_deployment_readme        # Crea le istruzioni di deployment
+    create_readme
+    create_env_documentation
+    create_install_script
+    create_tarball_structure
+    create_tarball
+    create_deployment_readme
 }
 
 main "$@"

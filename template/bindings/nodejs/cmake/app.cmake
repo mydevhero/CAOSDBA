@@ -3,6 +3,55 @@ message(STATUS "Building CAOSDBA as Node.js extension")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Check for required Node.js development packages
+set(NODEJS_MISSING_PACKAGES "")
+
+# Check for libnode-dev
+find_path(LIBNODE_DEV_INCLUDE node.h
+  PATHS
+    /usr/include/node
+    /usr/local/include/node
+    /opt/homebrew/include/node
+  NO_DEFAULT_PATH
+)
+if(NOT LIBNODE_DEV_INCLUDE)
+  list(APPEND NODEJS_MISSING_PACKAGES "libnode-dev")
+endif()
+
+# Check for node-gyp
+find_program(NODE_GYP_EXECUTABLE node-gyp
+  PATHS /usr/bin /usr/local/bin /opt/homebrew/bin
+)
+if(NOT NODE_GYP_EXECUTABLE)
+  list(APPEND NODEJS_MISSING_PACKAGES "node-gyp")
+endif()
+
+# Check for npm (required for node-addon-api installation)
+find_program(NPM_EXECUTABLE npm)
+if(NOT NPM_EXECUTABLE)
+  list(APPEND NODEJS_MISSING_PACKAGES "npm")
+endif()
+
+# If any required packages are missing, show error and stop
+if(NODEJS_MISSING_PACKAGES)
+  list(JOIN NODEJS_MISSING_PACKAGES ", " MISSING_PACKAGES_STR)
+  message(FATAL_ERROR "
+    Required Node.js development packages missing: ${MISSING_PACKAGES_STR}
+
+    Required for building CAOSDBA Node.js extension.
+
+    Installation commands for Ubuntu/Debian:
+        sudo apt-get update
+        sudo apt-get install libnode-dev node-gyp
+
+    Note: node-addon-api will be installed automatically during build if not present.
+
+    After installation, re-run CMake with Node.js support.
+    ")
+endif()
+
+message(STATUS "All required Node.js development packages found")
+
 # Define supported Node.js versions
 set(SUPPORTED_NODE_VERSIONS "14" "16" "18" "20" "22" "24")
 set(NODE_TARGETS "")
@@ -232,23 +281,6 @@ foreach(NODE_MAJOR_VER IN LISTS SUPPORTED_NODE_VERSIONS)
     endif()
   endif()
 endforeach()
-
-# Check if any Node.js versions were found
-if(NOT NODE_TARGETS)
-  message(FATAL_ERROR "
-    No supported Node.js development packages found!
-
-    Required for building CAOSDBA Node.js extension.
-    Supported Node.js versions: ${SUPPORTED_NODE_VERSIONS}
-
-    Installation commands for Ubuntu/Debian:
-    sudo apt-get update
-    sudo apt-get install nodejs npm
-    # For specific versions use nodesource repository
-
-    After installation, re-run CMake with Node.js support.
-    ")
-endif()
 
 message(STATUS "Building for Node.js versions: ${NODE_BUILD_VERSIONS}")
 message(STATUS "Node targets created: ${NODE_TARGETS}")
