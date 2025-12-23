@@ -431,10 +431,10 @@ NOTE: library is called "my_app", like the PROJECT_NAME in CMakeLists.txt
 php -r 'print_r(IQuery_Template_echoString(["token" => "ARBJi7cJuOYPXmFPPLVWsGrXmD4SU3LW"], "Hello CAOSDBA!"));'
 
 # Python
-python3 -c "import my_app; print(my_app.IQuery_Template_echoString({'token':'ARBJi7cJuOYPXmFPPLVWsGrXmD4SU3LW'}, 'Hello CAOSDBA!'))"
+python3 -c 'import my_app; print(my_app.IQuery_Template_echoString({"token":"ARBJi7cJuOYPXmFPPLVWsGrXmD4SU3LW"}, "Hello CAOSDBA!"));'
 
 # Node.js
-node -e "const caos = require('my_app');const result = caos.IQuery_Template_echoString({'token':'ARBJi7cJuOYPXmFPPLVWsGrXmD4SU3LW'}, 'Hello CAOSDBA\!');console.log(result);"
+node -e 'const caos = require("my_app");const result = caos.IQuery_Template_echoString({"token":"ARBJi7cJuOYPXmFPPLVWsGrXmD4SU3LW"}, "Hello CAOSDBA!");console.log(result);'
 ```
 
 &nbsp;

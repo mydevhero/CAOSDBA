@@ -10,6 +10,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../" && pwd)"
 BUILD_DIR="$PROJECT_ROOT/build/release"
 DIST_DIR="$PROJECT_ROOT/dist"
 REPO_DIR="$DIST_DIR/repositories/${PROJECT_NAME}/nodejs"
+PACKAGE_NAME_BASE="${PROJECT_NAME_SANITIZED}-nodejs-${DB_BACKEND_LOWER}"
 
 if [ -f "$BUILD_DIR/build_counter.txt" ]; then
     CAOS_BUILD_COUNTER=$(cat "$BUILD_DIR/build_counter.txt")
@@ -406,7 +407,7 @@ Maintainer: CAOSDBA Development Team
 Description: ${PROJECT_NAME} - CAOSDBA extension for Node.js ${node_dir_name} with $DB_BACKEND_LOWER backend
  Native Node.js bindings for CAOSDBA database operations.
  Installs to: $(get_nodejs_target_dir)/${PROJECT_NAME}/${node_dir_name}/
-Depends: nodejs (>= ${node_version}.0.0), ${PROJECT_NAME_SANITIZED}-node-${DB_BACKEND_LOWER}
+Depends: nodejs (>= ${node_version}.0.0), ${PACKAGE_NAME_BASE}
 Conflicts: $conflicts_clause
 Section: javascript
 Priority: optional
@@ -420,7 +421,8 @@ build_single_package() {
     local build_number=$4
 
     local safe_dir_name=$(echo "$node_dir_name" | tr '.' '_' | tr '-' '_')
-    local package_name="${PROJECT_NAME_SANITIZED}-node-${DB_BACKEND_LOWER}-${safe_dir_name}"
+    local package_name="${PACKAGE_NAME_BASE}-${safe_dir_name}"
+
     local deb_dir="$BUILD_DIR/deb-node-${safe_dir_name}"
 
     rm -rf "$deb_dir"
@@ -448,7 +450,7 @@ create_meta_package() {
     local all_versions=""
     shopt -s nullglob
     for pkg_file in "$BUILD_DIR"/*-node-${DB_BACKEND_LOWER}-v*.deb; do
-        if [[ "$(basename "$pkg_file")" =~ ${PROJECT_NAME_SANITIZED}-node-${DB_BACKEND_LOWER}-v([0-9]+)_ ]]; then
+        if [[ "$(basename "$pkg_file")" =~ ${PACKAGE_NAME_BASE}-v([0-9]+)_ ]]; then
             local version="${BASH_REMATCH[1]}"
             if [ -n "$all_versions" ]; then
                 all_versions="$all_versions, "
@@ -459,7 +461,7 @@ create_meta_package() {
     shopt -u nullglob
 
     cat > "$deb_dir/DEBIAN/control" << EOF
-Package: ${PROJECT_NAME_SANITIZED}-node-${DB_BACKEND_LOWER}
+Package: ${PACKAGE_NAME_BASE}
 Version: $VERSION
 Architecture: all
 Maintainer: CAOSDBA Development Team
@@ -468,10 +470,10 @@ Description: ${PROJECT_NAME} - CAOSDBA Node.js extension with $DB_BACKEND_LOWER 
  Available for Node.js versions: ${all_versions}
 Section: javascript
 Priority: optional
-Recommends: ${PROJECT_NAME_SANITIZED}-node-${DB_BACKEND_LOWER}-v18 | \
-            ${PROJECT_NAME_SANITIZED}-node-${DB_BACKEND_LOWER}-v20 | \
-            ${PROJECT_NAME_SANITIZED}-node-${DB_BACKEND_LOWER}-v22
-Conflicts: ${PROJECT_NAME_SANITIZED}-node-mysql, ${PROJECT_NAME_SANITIZED}-node-mariadb, ${PROJECT_NAME_SANITIZED}-node-postgresql
+Recommends: ${PACKAGE_NAME_BASE}-v18 | \
+            ${PACKAGE_NAME_BASE}-v20 | \
+            ${PACKAGE_NAME_BASE}-v22
+Conflicts: ${PROJECT_NAME_SANITIZED}-nodejs-mysql, ${PROJECT_NAME_SANITIZED}-nodejs-mariadb, ${PROJECT_NAME_SANITIZED}-nodejs-postgresql
 EOF
 
     cat > "$deb_dir/DEBIAN/postinst" << 'EOF'
@@ -500,10 +502,10 @@ EOF
     sed -i "s/\${PROJECT_NAME}/${PROJECT_NAME}/g" "$deb_dir/DEBIAN/postinst"
     chmod +x "$deb_dir/DEBIAN/postinst"
 
-    dpkg-deb --build "$deb_dir" "$BUILD_DIR/${PROJECT_NAME_SANITIZED}-node-${DB_BACKEND_LOWER}_${VERSION}_all.deb" >/dev/null 2>&1
+    dpkg-deb --build "$deb_dir" "$BUILD_DIR/${PACKAGE_NAME_BASE}_${VERSION}_all.deb" >/dev/null 2>&1
     rm -rf "$deb_dir"
 
-    echo "Built meta-package: ${PROJECT_NAME_SANITIZED}-node-${DB_BACKEND_LOWER}_${VERSION}_all.deb"
+    echo "Built meta-package: ${PACKAGE_NAME_BASE}_${VERSION}_all.deb"
 }
 
 create_repository_scripts() {
@@ -575,7 +577,7 @@ echo ""
 echo "=== ${PROJECT_NAME} Repository Ready ==="
 echo ""
 echo "Install the meta-package:"
-echo "  sudo apt install ${PROJECT_NAME_SANITIZED}-node-${DB_BACKEND_LOWER}"
+echo "  sudo apt install ${PACKAGE_NAME_BASE}"
 echo ""
 echo "Usage instructions in /usr/lib/x86_64-linux-gnu/nodejs/${PROJECT_NAME}/launcher.js"
 EOF
@@ -636,7 +638,7 @@ main() {
         echo "SUCCESS: Built $built_count Node.js packages"
         echo "Repository: $REPO_DIR"
         echo "Test installation:"
-        echo "  sudo apt install ${PROJECT_NAME_SANITIZED}-node-${DB_BACKEND_LOWER}"
+        echo "  sudo apt install ${PACKAGE_NAME_BASE}"
         echo ""
         echo "After installation, test with:"
         echo "  NODE_PATH=/usr/lib/x86_64-linux-gnu/nodejs node -e \"const m = require('${PROJECT_NAME}'); console.log(m.getBuildInfo())\""

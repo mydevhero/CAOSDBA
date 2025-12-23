@@ -74,7 +74,7 @@ create_temporary_structure() {
 
 create_readme() {
     local readme_file="$DIST_DIR/README.md"
-    local tarball_name="${PROJECT_NAME_SANITIZED}-node-deb-repository-${DB_BACKEND_LOWER}-${VERSION}.tar.gz"
+    local tarball_name="${PROJECT_NAME_SANITIZED}-nodejs-deb-repository-${DB_BACKEND_LOWER}-${VERSION}.tar.gz"
 
     # Count packages
     local deb_count=$(ls "$REPO_DIR"/*.deb 2>/dev/null | wc -l)
@@ -177,16 +177,16 @@ cd ${CAOSDBA_DIR}/repositories/${PROJECT_NAME}/nodejs
 
 \`\`\`bash
 # Install meta-package (auto-selects appropriate version)
-sudo apt install ${PROJECT_NAME_SANITIZED}-node-${DB_BACKEND_LOWER}
+sudo apt install ${PROJECT_NAME_SANITIZED}-nodejs-${DB_BACKEND_LOWER}
 
 # Install specific version (e.g., for Node.js 22)
-sudo apt install ${PROJECT_NAME_SANITIZED}-node-${DB_BACKEND_LOWER}-22
+sudo apt install ${PROJECT_NAME_SANITIZED}-nodejs-${DB_BACKEND_LOWER}-22
 
 # For exact version (e.g., Node.js 18.19.1)
-sudo apt install ${PROJECT_NAME_SANITIZED}-node-${DB_BACKEND_LOWER}-v18_19_1
+sudo apt install ${PROJECT_NAME_SANITIZED}-nodejs-${DB_BACKEND_LOWER}-v18_19_1
 
 # List all available packages
-apt list ${PROJECT_NAME_SANITIZED}-node*
+apt list ${PROJECT_NAME_SANITIZED}-nodejs*
 \`\`\`
 
 ### Testing the Installation
@@ -238,7 +238,7 @@ sudo apt update
 
 \`\`\`bash
 # Check installed packages
-dpkg -l | grep ${PROJECT_NAME_SANITIZED}-node
+dpkg -l | grep ${PROJECT_NAME_SANITIZED}-nodejs
 
 # Check repository status
 ls -la ${CAOSDBA_DIR}/repositories/${PROJECT_NAME}/nodejs/*.deb | wc -l
@@ -267,10 +267,10 @@ sudo apt update
 
 \`\`\`bash
 # Remove all ${PROJECT_NAME} Node.js packages
-sudo apt remove ${PROJECT_NAME_SANITIZED}-node-*
+sudo apt remove ${PROJECT_NAME_SANITIZED}-nodejs-*
 
 # Remove meta-package only (keeps version-specific packages)
-sudo apt remove ${PROJECT_NAME_SANITIZED}-node-${DB_BACKEND_LOWER}
+sudo apt remove ${PROJECT_NAME_SANITIZED}-nodejs-${DB_BACKEND_LOWER}
 \`\`\`
 
 ## Technical Details
@@ -589,7 +589,7 @@ EOF
 }
 
 create_tarball() {
-    local tarball_name="${PROJECT_NAME_SANITIZED}-node-deb-repository-${DB_BACKEND_LOWER}-${VERSION}.tar.gz"
+    local tarball_name="${PROJECT_NAME_SANITIZED}-nodejs-deb-repository-${DB_BACKEND_LOWER}-${VERSION}.tar.gz"
     local tarball_path="$DIST_DIR/$tarball_name"
 
     echo "Creating Node.js tarball: $tarball_name"
@@ -611,7 +611,7 @@ create_tarball() {
 }
 
 create_deployment_readme() {
-    local tarball_name="${PROJECT_NAME_SANITIZED}-node-deb-repository-${DB_BACKEND_LOWER}-${VERSION}.tar.gz"
+    local tarball_name="${PROJECT_NAME_SANITIZED}-nodejs-deb-repository-${DB_BACKEND_LOWER}-${VERSION}.tar.gz"
     local readme_file="$DIST_DIR/${tarball_name}.README.txt"
 
     cat > "$readme_file" << EOF
@@ -633,10 +633,10 @@ Deployment Instructions:
 
 3. Install the extension:
    # Install meta-package (recommended):
-   sudo apt install ${PROJECT_NAME_SANITIZED}-node-${DB_BACKEND_LOWER}
+   sudo apt install ${PROJECT_NAME_SANITIZED}-nodejs-${DB_BACKEND_LOWER}
 
    # Or install specific version:
-   sudo apt install ${PROJECT_NAME_SANITIZED}-node-${DB_BACKEND_LOWER}-<version>
+   sudo apt install ${PROJECT_NAME_SANITIZED}-nodejs-${DB_BACKEND_LOWER}-<version>
 
 4. Test the installation:
    node -e "const m = require('${PROJECT_NAME}'); console.log(m.getBuildInfo())"
