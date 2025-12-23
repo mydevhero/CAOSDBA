@@ -1,6 +1,5 @@
 #include "call_context.hpp"
 #include <libcaos.hpp>
-#include <unordered_map>
 
 namespace {
   // Helper: extract optional string from Python dict
@@ -13,10 +12,11 @@ namespace {
     }
 
     const char* str = PyUnicode_AsUTF8(obj);
-    if (!str || strlen(str) == 0)
+    if (!str)
     {
       return std::nullopt;
     }
+    // Return even empty strings, caosFilter will handle them
     return std::string(str);
   }
 }
@@ -34,109 +34,30 @@ CallContext CallContext::from_python_dict(PyObject* dict, const std::string& que
 
   Data data;
 
-  // TOKEN - Optional field
+  // TOKEN - Optional field (empty string is valid)
   data.token = extract_optional_string(dict, "token");
 
   return CallContext(std::move(data));
 }
 
-// ============================================================================
-// Validator Implementations
-// ============================================================================
-
-bool CallContext::TokenValidator::should_validate(const CallContext& ctx) const
-{
-  // Only validate if token is present in context
-  return ctx.has_token();
-}
-
-bool CallContext::TokenValidator::validate(const CallContext& ctx,
-                                           const std::string& query_name) const
+void CallContext::apply_auth_filters(const std::string& query_name) const
 {
   try
   {
-    // Use existing CAOS authentication system
-    // Token is guaranteed to be present when this is called (checked by should_validate)
-    return caosFilter::Auth::Token(query_name.c_str())
-        .validate(ctx.token().c_str(), ctx.token().size());
+    // Delegate ALL validation to caosFilter.
+    // Pass token_or_empty() (could be empty string). caosFilter knows
+    // QUERY_AUTH_MAP and decides internally if a token is required.
+    bool valid = caosFilter::Auth::Token(query_name.c_str())
+                 .validate(token_or_empty().c_str(), token_or_empty().size());
+
+    if (!valid)
+    {
+      throw AuthError("Authentication failed");
+    }
   }
   catch (const std::exception& e)
   {
-    throw AuthError(std::string("Token validation failed: ") + e.what());
+    // Convert any exception from caosFilter to our AuthError
+    throw AuthError(std::string("Authentication error: ") + e.what());
   }
-}
-
-// ============================================================================
-// Validator Registry (updated validation logic)
-// ============================================================================
-
-CallContext::ValidatorRegistry& CallContext::ValidatorRegistry::instance()
-{
-  static ValidatorRegistry registry;
-  return registry;
-}
-
-void CallContext::validate(const std::string& query_name) const
-{
-  auto& registry = ValidatorRegistry::instance();
-
-  // Collect all validators for this query
-  std::vector<const Validator*> validators;
-
-  // Global validators
-  for (const auto& validator : registry.global_validators)
-  {
-    validators.push_back(validator.get());
-  }
-
-  // Query-specific validators
-  if (auto it = registry.query_validators.find(query_name);
-      it != registry.query_validators.end())
-  {
-    for (const auto& validator : it->second)
-    {
-      validators.push_back(validator.get());
-    }
-  }
-
-  // Sort by priority
-  std::sort(validators.begin(), validators.end(),
-            [](const Validator* a, const Validator* b){
-    return a->priority() < b->priority();
-  });
-
-  // Execute validation in order, but only for validators that should run
-  for (const auto& validator : validators)
-  {
-    if (validator->should_validate(*this))
-    {
-      if (!validator->validate(*this, query_name))
-      {
-        throw ValidationError(
-              std::string("Validation failed by ") + validator->name(),
-              "VALIDATION"
-              );
-      }
-    }
-  }
-}
-
-void CallContext::register_validator(std::unique_ptr<Validator> validator)
-{
-  auto& registry = ValidatorRegistry::instance();
-  registry.global_validators.push_back(std::move(validator));
-}
-
-void CallContext::register_validator(const std::string& query_pattern,
-                                     std::unique_ptr<Validator> validator)
-{
-  auto& registry = ValidatorRegistry::instance();
-  registry.query_validators[query_pattern].push_back(std::move(validator));
-}
-
-void CallContext::clear_validators()
-{
-  auto& registry = ValidatorRegistry::instance();
-  registry.global_validators.clear();
-  registry.query_validators.clear();
 }
