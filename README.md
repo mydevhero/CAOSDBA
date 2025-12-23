@@ -212,7 +212,7 @@ sudo apt-get install php-dev
 sudo apt-get install python3-dev
 
 # Node.js bindings
-sudo apt-get install libnode-dev
+sudo apt-get install libnode-dev node-gyp
 ```
 
 **Clone repository from GitHub with submodules:**
