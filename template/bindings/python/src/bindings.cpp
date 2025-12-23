@@ -108,7 +108,7 @@ static PyObject* IQuery_Template_echoString(PyObject* self, PyObject* args)
     CallContext ctx = CallContext::from_python_dict(call_context_obj, "IQuery_Template_echoString");
 
     // 2. Validate context (token validation only occurs if token is present)
-    ctx.validate("IQuery_Template_echoString");
+    ctx.apply_auth_filters("IQuery_Template_echoString");
 
     // 3. Execute query
     Cache* repo = Repository();
@@ -255,8 +255,6 @@ PyMODINIT_FUNC PYTHON_INIT_FUNCTION(void)
     CaosLazyInitializer::cleanup();
   });
 
-  // Register default validators for call context
-  CallContext::register_validator(std::make_unique<CallContext::TokenValidator>());
 
   // Create the module
   PyObject* module = PyModule_Create(&PYTHON_MODULE_DEF);
