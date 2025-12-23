@@ -90,8 +90,8 @@ static void caos_execute_internal(zend_execute_data *execute_data, zval *return_
                     // Create CallContext from PHP array
                     CallContext ctx = CallContext::from_php_array(context_param, ZSTR_VAL(function_name));
 
-                    // Validate context using registered validators
-                    ctx.validate(ZSTR_VAL(function_name));
+                    // Validate
+                    ctx.apply_auth_filters(ZSTR_VAL(function_name));
 
 #ifdef CAOS_PHP_DEBUG
                     php_printf("CONTEXT VALIDATION: SUCCESS\n");
@@ -216,9 +216,6 @@ PHP_EXT_MINIT_FUNCTION
     (void)type;
     (void)module_number;
 
-    // Register default validators for call context
-    CallContext::register_validator(std::make_unique<CallContext::TokenValidator>());
-
     // Save original handler and install our hook
 #ifdef CAOS_PHP_DEBUG
     php_printf("CAOS[%s]: Installing INTERNAL execution hook\n", PHP_EXT_NAME_STR);
@@ -252,9 +249,6 @@ PHP_EXT_MSHUTDOWN_FUNCTION
     {
         zend_execute_internal = original_execute_internal;
     }
-
-    // Clear registered validators
-    CallContext::clear_validators();
 
     try
     {
