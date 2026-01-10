@@ -3,7 +3,7 @@
 #include <napi.h>
 #include <string>
 #include <optional>
-#include <stdexcept>  // <-- MANCAVA QUESTO! Per std::runtime_error
+#include <stdexcept>
 
 /**
  * CallContext - Call context for CAOS queries
@@ -15,7 +15,7 @@ class CallContext
 {
   public:
     // Exceptions for error handling
-    class ValidationError : public std::runtime_error  // <-- Richiede #include <stdexcept>
+    class ValidationError : public std::runtime_error
     {
       public:
         ValidationError(const std::string& what, const std::string& type = "VALIDATION")

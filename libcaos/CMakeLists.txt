@@ -10,6 +10,20 @@ file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/libcaos")
 
 message(STATUS "Build counter incremented to: ${CAOS_BUILD_COUNT}-${CAOS_ROOT_DIR}")
 
+
+execute_process(
+    COMMAND ${CMAKE_COMMAND}
+        -DCAOS_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+        -DCAOS_BINARY_DIR=${CMAKE_BINARY_DIR}
+        -DPROJECT_NAME=${PROJECT_NAME}
+        -DPROJECT_VERSION=${PROJECT_VERSION}
+        -DPROJECT_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
+        -DPROJECT_VERSION_MINOR=${PROJECT_VERSION_MINOR}
+        -DPROJECT_VERSION_PATCH=${PROJECT_VERSION_PATCH}
+        -P "${CMAKE_SOURCE_DIR}/libcaos/cmake/build_counter_and_version.cmake"
+    RESULT_VARIABLE script_res
+)
+
 add_custom_target(increment_build ALL
   COMMAND ${CMAKE_COMMAND}
     -DCAOS_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
@@ -22,7 +36,12 @@ add_custom_target(increment_build ALL
     -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/build_counter_and_version.cmake
   BYPRODUCTS "${CMAKE_BINARY_DIR}/build_counter.txt"
   COMMENT "Incrementing build counter"
+  RESULT_VARIABLE script_res
 )
+
+if(NOT script_res EQUAL 0)
+    message(FATAL_ERROR "Failed to run build counter script")
+endif()
 
 if(CAOS_DB_BACKEND STREQUAL "POSTGRESQL")
   list(APPEND POSTGRESQL_SOURCES

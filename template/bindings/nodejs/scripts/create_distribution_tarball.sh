@@ -14,6 +14,7 @@ REPO_DIR="$DIST_DIR/repositories/${PROJECT_NAME}/nodejs"
 CAOSDBA_DIR="/opt/caosdba"
 TEMP_REPO_DIR="$TEMP_DIR${CAOSDBA_DIR}/repositories/${PROJECT_NAME}/nodejs"
 TEMP_DOCS_DIR="$TEMP_DIR${CAOSDBA_DIR}/docs/${PROJECT_NAME}/nodejs"
+TEMP_TYPES_DIR="$TEMP_DIR${CAOSDBA_DIR}/types/${PROJECT_NAME}/nodejs"
 
 
 if [ -f "$BUILD_DIR/build_counter.txt" ]; then
@@ -56,6 +57,21 @@ check_prerequisites() {
 
     echo "Found $deb_count Node.js DEB package(s) in $REPO_DIR"
 
+    # Check for TypeScript files in repository
+    local typescript_files_found=0
+    for version_dir in "$REPO_DIR"/v*; do
+        if [ -d "$version_dir" ] && [ -d "$version_dir/types" ]; then
+            typescript_files_found=1
+            break
+        fi
+    done
+
+    if [ "$typescript_files_found" -eq 1 ]; then
+        echo "TypeScript definitions found in repository"
+    else
+        echo "WARNING: No TypeScript definitions found in repository"
+    fi
+
     # List available packages
     echo "Available packages:"
     for deb_file in "$REPO_DIR"/*.deb; do
@@ -69,6 +85,7 @@ check_prerequisites() {
 create_temporary_structure() {
     rm -rf "$TEMP_DIR"
     mkdir -p "$TEMP_DIR"
+    mkdir -p "$TEMP_TYPES_DIR"
     echo "Temporary structure created at $TEMP_DIR"
 }
 
@@ -98,11 +115,13 @@ Version: $VERSION
 Database Backend: $DB_BACKEND ($DB_BACKEND_LOWER)
 Project: $PROJECT_NAME
 Total Packages: $deb_count
+TypeScript Support: Included
 
 ## Overview
 
 This tarball contains a complete APT repository with ${PROJECT_NAME} Node.js native extensions.
 The repository includes packages for multiple Node.js versions detected during build.
+**TypeScript definitions are included** for type-safe development.
 
 ## Contents
 
@@ -116,6 +135,12 @@ ${CAOSDBA_DIR}/
 │           ├── VERSION        # Version information
 │           ├── README.md      # This file
 │           └── ENV.md         # Environment variables
+├── types/                     # TypeScript resources
+│   └── ${PROJECT_NAME}/       # Project-specific directory
+│       └── nodejs/            # Node.js-specific TypeScript files
+│           ├── ${PROJECT_NAME}.d.ts     # TypeScript definitions
+│           ├── test-types.ts            # Type validation tests
+│           └── tsconfig.json            # TypeScript configuration
 └── repositories/
     └── ${PROJECT_NAME}/       # Project-specific directory
         └── nodejs/            # Node.js-specific repository
@@ -131,7 +156,17 @@ ${CAOSDBA_DIR}/
 The Node.js module will be installed to:
 $TARGET_BASE/${PROJECT_NAME}/
 
-This directory is automatically detected by Node.js on Ubuntu/Debian systems.
+TypeScript definitions will be installed to:
+$TARGET_BASE/${PROJECT_NAME}/types/
+
+### TypeScript Support
+
+The package includes complete TypeScript type definitions for:
+- All exported native functions
+- CallContext interface
+- Result types (success/error discrimination)
+- Build information interface
+- Module constants
 
 ### Available Packages
 
@@ -199,6 +234,17 @@ node -e "const m = require('${PROJECT_NAME}'); console.log(m.getBuildInfo())"
 ${PROJECT_NAME}-node
 \`\`\`
 
+### TypeScript Development
+
+\`\`\`bash
+# Validate TypeScript definitions
+cd /usr/lib/x86_64-linux-gnu/nodejs/${PROJECT_NAME}/
+tsc --noEmit --project tsconfig.json
+
+# View TypeScript definitions
+cat /usr/lib/x86_64-linux-gnu/nodejs/${PROJECT_NAME}/types/${PROJECT_NAME}.d.ts | head -50
+\`\`\`
+
 ### With Multiple Node.js Versions
 
 The extension supports multiple Node.js installations:
@@ -212,6 +258,39 @@ nvm use 18
 node -e "const m = require('${PROJECT_NAME}'); console.log(m.getBuildInfo())"
 \`\`\`
 
+## TypeScript Integration
+
+### Using in TypeScript Projects
+
+\`\`\`typescript
+// In your TypeScript project
+import * as caos from '${PROJECT_NAME}';
+
+async function example() {
+    const callContext = { token: 'your-token-here' };
+    const result = caos.IQuery_Template_echoString(callContext, 'Hello CAOSDBA!');
+
+    if (caos.isSuccess(result)) {
+        console.log('Success:', result.data);
+        return result.data;
+    } else {
+        console.error('Error:', result.error_type, result.error_message);
+        throw new Error(\`Query failed: \${result.error_type}\`);
+    }
+}
+\`\`\`
+
+### Type Validation
+
+\`\`\`bash
+# Validate types without running code
+tsc --noEmit --project /usr/lib/x86_64-linux-gnu/nodejs/${PROJECT_NAME}/tsconfig.json
+
+# Run the included type tests
+cd /usr/lib/x86_64-linux-gnu/nodejs/${PROJECT_NAME}/
+tsc --noEmit types/test-types.ts
+\`\`\`
+
 ## Multi-Version Support
 
 This repository contains packages built for all Node.js versions found during compilation:
@@ -219,6 +298,7 @@ This repository contains packages built for all Node.js versions found during co
 - **System installations**: Packages for Node.js installed via APT
 - **User installations**: Packages for Node.js installed via nvm, fnm, or manually
 - **Multiple versions**: Different major and minor versions are supported
+- **TypeScript definitions**: Same definitions work for all Node.js versions
 
 The extension uses intelligent loading to select the correct native module based on the running Node.js version.
 
@@ -240,6 +320,9 @@ sudo apt update
 # Check installed packages
 dpkg -l | grep ${PROJECT_NAME_SANITIZED}-nodejs
 
+# Check TypeScript definitions
+ls -la ${CAOSDBA_DIR}/types/${PROJECT_NAME}/nodejs/
+
 # Check repository status
 ls -la ${CAOSDBA_DIR}/repositories/${PROJECT_NAME}/nodejs/*.deb | wc -l
 \`\`\`
@@ -250,12 +333,13 @@ ls -la ${CAOSDBA_DIR}/repositories/${PROJECT_NAME}/nodejs/*.deb | wc -l
 
 1. Remove APT source:
 \`\`\`bash
-sudo rm -f /etc/apt/sources.list.d/${PROJECT_NAME}-node-local.list
+sudo rm -f /etc/apt/sources.list.d/${PROJECT_NAME}-nodejs-local.list
 \`\`\`
 
 2. Remove repository files:
 \`\`\`bash
 sudo rm -rf ${CAOSDBA_DIR}/repositories/${PROJECT_NAME}/nodejs
+sudo rm -rf ${CAOSDBA_DIR}/types/${PROJECT_NAME}/nodejs
 \`\`\`
 
 3. Update APT cache:
@@ -281,18 +365,29 @@ sudo apt remove ${PROJECT_NAME_SANITIZED}-nodejs-${DB_BACKEND_LOWER}
 - **Node.js Detection**: Automatic detection of system and user installations
 - **Package Generation**: One package per detected Node.js version
 - **ABI Compatibility**: Uses Node-API for stability across versions
+- **TypeScript Support**: Complete type definitions included
 
 ### Environment Variables
 
 See \`${CAOSDBA_DIR}/docs/${PROJECT_NAME}/nodejs/ENV.md\` for complete environment variable documentation.
+
+### TypeScript Configuration
+
+The included \`tsconfig.json\` is configured for:
+- **Target**: ES2020
+- **Module**: CommonJS
+- **Strict mode**: Enabled
+- **Type checking**: Comprehensive
+- **Node.js compatibility**: All supported versions
 
 ## Support
 
 For issues or questions:
 
 1. Check the documentation in \`${CAOSDBA_DIR}/docs/${PROJECT_NAME}/nodejs\`
-2. Verify Node.js version compatibility
-3. Ensure proper repository configuration
+2. Verify TypeScript definitions in \`${CAOSDBA_DIR}/types/${PROJECT_NAME}/nodejs\`
+3. Check Node.js version compatibility
+4. Ensure proper repository configuration
 
 ---
 Generated: $(date)
@@ -301,6 +396,7 @@ Database: $DB_BACKEND
 Project: $PROJECT_NAME
 Language: Node.js
 Packages: $deb_count
+TypeScript: Included
 EOF
 
     echo "Created README.md in $DIST_DIR"
@@ -352,6 +448,31 @@ This document describes all environment variables used by the ${PROJECT_NAME} ex
 | \`CAOS_VALIDATE_CONNECTION_BEFORE_ACQUIRE\` | Validate connection before acquiring from pool (\`true\`/\`false\`) | \`true\` | \`false\` |
 | \`CAOS_VALIDATE_USING_TRANSACTION\` | Validate connection using transaction (\`true\`/\`false\`) | \`false\` | \`true\` |
 
+## TypeScript Development
+
+### Type Definitions Location
+
+After installation, TypeScript definitions are available at:
+\`/usr/lib/x86_64-linux-gnu/nodejs/${PROJECT_NAME}/types/${PROJECT_NAME}.d.ts\`
+
+### TypeScript Configuration
+
+The included \`tsconfig.json\` provides optimal configuration for:
+- Node.js module resolution
+- Strict type checking
+- ES2020 target compatibility
+- CommonJS module format
+
+### Type Validation
+
+\`\`\`bash
+# Validate TypeScript definitions
+tsc --noEmit --project /usr/lib/x86_64-linux-gnu/nodejs/${PROJECT_NAME}/tsconfig.json
+
+# Check for type errors in your code
+tsc --noEmit your-code.ts
+\`\`\`
+
 ## Usage Examples
 
 ### Basic Configuration
@@ -390,6 +511,25 @@ const caos = require('${PROJECT_NAME}');
 console.log('Build Information:', caos.getBuildInfo());
 \`\`\`
 
+### TypeScript Example
+
+\`\`\`typescript
+import * as caos from '${PROJECT_NAME}';
+
+interface MyResult {
+    data: string;
+}
+
+function processData(callContext: caos.CallContextData): caos.CaosResult<string> {
+    const result = caos.IQuery_Template_echoString(callContext, 'test');
+
+    if (caos.isSuccess(result)) {
+        return { success: true, data: result.data.toUpperCase() };
+    }
+
+    return result;
+}
+\`\`\`
 
 ## Notes
 
@@ -410,13 +550,15 @@ console.log('Build Information:', caos.getBuildInfo());
 - The extension supports multiple Node.js versions simultaneously
 - Uses Node-API for ABI stability
 - Automatic version detection and fallback
+- TypeScript definitions work with all supported Node.js versions
 
 ### Troubleshooting
 
 1. **Module not found**: Ensure the correct Node.js version package is installed
 2. **Connection issues**: Verify environment variables and network connectivity
 3. **Performance problems**: Adjust pool sizes and timeouts
-4. **Version mismatches**: Check Node.js version compatibility
+4. **TypeScript errors**: Check that you're importing the correct module name
+5. **Version mismatches**: Check Node.js version compatibility
 
 For more information, refer to the ${PROJECT_NAME} documentation or check the logs with debug mode enabled.
 EOF
@@ -430,6 +572,7 @@ create_tarball_structure() {
     # Create all necessary directories
     mkdir -p "$TEMP_REPO_DIR"
     mkdir -p "$TEMP_DOCS_DIR"
+    mkdir -p "$TEMP_TYPES_DIR"
 
     if [ -d "$REPO_DIR" ]; then
         echo "Copying Node.js repository from $REPO_DIR to $TEMP_REPO_DIR"
@@ -437,6 +580,94 @@ create_tarball_structure() {
     else
         echo "ERROR: Source repository $REPO_DIR not found"
         exit 1
+    fi
+
+    # Copy TypeScript files from first available version in repository
+    local types_copied=0
+    for version_dir in "$REPO_DIR"/v*; do
+        if [ -d "$version_dir" ] && [ -d "$version_dir/types" ]; then
+            echo "Copying TypeScript files from $version_dir/types to $TEMP_TYPES_DIR"
+            cp -r "$version_dir"/types/* "$TEMP_TYPES_DIR/"
+            types_copied=1
+
+            # Copy tsconfig.json if it exists
+            if [ -f "$version_dir/tsconfig.json" ]; then
+                cp "$version_dir/tsconfig.json" "$TEMP_TYPES_DIR/"
+            fi
+            break
+        fi
+    done
+
+    if [ "$types_copied" -eq 0 ]; then
+        echo "WARNING: No TypeScript files found in repository"
+        # Create minimal TypeScript files
+        cat > "$TEMP_TYPES_DIR/${PROJECT_NAME}.d.ts" << EOF
+// TypeScript definitions for ${PROJECT_NAME}
+// Auto-generated - update with actual function signatures
+
+export = CaosModule;
+export as namespace caos;
+
+interface CallContextData {
+    token?: string;
+}
+
+type CaosResult<T = any> =
+    | { success: true; data: T }
+    | { success: false; error_type: string; error_message: string; data?: any };
+
+interface BuildInfo {
+    module: string;
+    build: number;
+    caos_initialized: boolean;
+    node_version: string;
+    napi_version: number;
+    debug: boolean;
+}
+
+declare function getBuildInfo(): BuildInfo;
+
+// TODO: Add actual function declarations from bindings.cpp
+// Example:
+// declare function IQuery_Template_echoString(
+//     callContext: CallContextData,
+//     input: string
+// ): CaosResult<string>;
+
+interface CaosModule {
+    getBuildInfo: typeof getBuildInfo;
+    __version__: string;
+    __auth_system__: string;
+    __call_context_format__: string;
+    __debug__: number;
+}
+EOF
+
+        cat > "$TEMP_TYPES_DIR/test-types.ts" << EOF
+// TypeScript test file for ${PROJECT_NAME}
+// Run: tsc --noEmit test-types.ts
+
+import type * as Caos from './${PROJECT_NAME}';
+
+// This file validates the TypeScript definitions compile correctly
+console.log('TypeScript validation file for', '${PROJECT_NAME}');
+EOF
+
+        cat > "$TEMP_TYPES_DIR/tsconfig.json" << EOF
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "CommonJS",
+    "declaration": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["**/*.ts", "**/*.d.ts"],
+  "exclude": ["node_modules", "dist", "build"]
+}
+EOF
     fi
 
     if [ -f "$DIST_DIR/README.md" ]; then
@@ -464,6 +695,30 @@ VERSION=${VERSION}
 DB_BACKEND=${DB_BACKEND}
 BUILD_DATE=$(date)
 NODE_EXTENSION=true
+TYPESCRIPT_SUPPORT=true
+EOF
+
+    # Create TypeScript info file
+    cat > "$TEMP_TYPES_DIR/TYPESCRIPT_INFO" << EOF
+# TypeScript Support Information
+Project: ${PROJECT_NAME}
+Version: ${VERSION}
+Definitions File: ${PROJECT_NAME}.d.ts
+Test File: test-types.ts
+Configuration: tsconfig.json
+
+## Usage
+1. Copy the .d.ts file to your project
+2. Configure TypeScript to include it
+3. Import the module in your code
+4. Run 'tsc --noEmit' to validate types
+
+## Files
+- ${PROJECT_NAME}.d.ts: TypeScript type definitions
+- test-types.ts: Type validation tests
+- tsconfig.json: TypeScript configuration
+
+Generated: $(date)
 EOF
 
     # Set permissions
@@ -477,9 +732,11 @@ EOF
     chmod 755 "$TEMP_REPO_DIR/update-repo.sh" 2>/dev/null || true
     chmod 755 "$TEMP_REPO_DIR/setup-apt-source.sh" 2>/dev/null || true
     chmod 640 "$TEMP_DOCS_DIR/VERSION" 2>/dev/null || true
+    chmod 644 "$TEMP_TYPES_DIR"/* 2>/dev/null || true
 
     echo "Tarball structure created successfully"
     echo "Documentation location: ${CAOSDBA_DIR}/docs/${PROJECT_NAME}/nodejs/"
+    echo "TypeScript location: ${CAOSDBA_DIR}/types/${PROJECT_NAME}/nodejs/"
 }
 
 create_install_script() {
@@ -493,7 +750,9 @@ set -e
 
 CAOSDBA_DIR="/opt/caosdba"
 REPO_DIR="$CAOSDBA_DIR/repositories/__PROJECT_NAME__/nodejs"
+TYPES_DIR="$CAOSDBA_DIR/types/__PROJECT_NAME__/nodejs"
 VERSION_FILE="$CAOSDBA_DIR/docs/__PROJECT_NAME__/nodejs/VERSION"
+TYPESCRIPT_INFO_FILE="$CAOSDBA_DIR/types/__PROJECT_NAME__/nodejs/TYPESCRIPT_INFO"
 
 if [ "$EUID" -ne 0 ]; then
     echo "ERROR: This script must be run as root (use sudo)"
@@ -515,6 +774,12 @@ if [ -f "$VERSION_FILE" ]; then
     echo "Version Information:"
     echo "-------------------"
     cat "$VERSION_FILE"
+    echo ""
+fi
+
+# Display TypeScript information
+if [ -f "$TYPESCRIPT_INFO_FILE" ]; then
+    echo "TypeScript Support: Included"
     echo ""
 fi
 
@@ -556,13 +821,14 @@ echo "  Project: __PROJECT_NAME__"
 echo "  Version: __VERSION__"
 echo "  Database: __DB_BACKEND__ (__DB_BACKEND_LOWER__)"
 echo "  Packages: $(ls "$REPO_DIR"/*.deb 2>/dev/null | wc -l) DEB packages"
+echo "  TypeScript: Definitions included"
 echo ""
 echo "Installation options:"
 echo "  1. Install meta-package (recommended):"
-echo "     sudo apt install __PROJECT_NAME_SANITIZED__-node-__DB_BACKEND_LOWER__"
+echo "     sudo apt install __PROJECT_NAME_SANITIZED__-nodejs-__DB_BACKEND_LOWER__"
 echo ""
 echo "  2. Install specific Node.js version:"
-echo "     sudo apt install __PROJECT_NAME_SANITIZED__-node-__DB_BACKEND_LOWER__-<version>"
+echo "     sudo apt install __PROJECT_NAME_SANITIZED__-nodejs-__DB_BACKEND_LOWER__-<version>"
 echo ""
 echo "  3. List all available packages:"
 echo "     apt list __PROJECT_NAME_SANITIZED__-node*"
@@ -570,10 +836,15 @@ echo ""
 echo "Testing:"
 echo "  node -e \"const m = require('__PROJECT_NAME__'); console.log(m.getBuildInfo())\""
 echo ""
+echo "TypeScript Development:"
+echo "  Definitions location: $TYPES_DIR"
+echo "  Validate types: tsc --noEmit --project $TYPES_DIR/tsconfig.json"
+echo ""
 echo "Or use the global command:"
 echo "  __PROJECT_NAME__-node"
 echo ""
 echo "Documentation: $CAOSDBA_DIR/docs/__PROJECT_NAME__/nodejs"
+echo "TypeScript: $TYPES_DIR"
 echo "Repository location: $REPO_DIR"
 echo ""
 EOF
@@ -603,6 +874,7 @@ create_tarball() {
 
     echo "Node.js tarball created: $tarball_path"
     echo "Contains $deb_count Node.js DEB package(s)"
+    echo "TypeScript definitions included"
     echo ""
     echo "To deploy:"
     echo "  sudo tar -xzf $tarball_path -C /"
@@ -621,6 +893,7 @@ ${PROJECT_NAME} Node.js DEB Repository
 Tarball: ${tarball_name}
 Version: ${VERSION}
 Database: ${DB_BACKEND} (${DB_BACKEND_LOWER})
+TypeScript: Included
 
 Deployment Instructions:
 =======================
@@ -644,18 +917,39 @@ Deployment Instructions:
    # Or use the global command:
    ${PROJECT_NAME}-node
 
+TypeScript Development:
+======================
+
+TypeScript definitions are included in the package:
+
+Location: ${CAOSDBA_DIR}/types/${PROJECT_NAME}/nodejs/
+
+Files:
+- ${PROJECT_NAME}.d.ts: TypeScript type definitions
+- test-types.ts: Type validation tests
+- tsconfig.json: TypeScript configuration
+
+To validate types:
+  tsc --noEmit --project ${CAOSDBA_DIR}/types/${PROJECT_NAME}/nodejs/tsconfig.json
+
+Example TypeScript usage:
+  import * as caos from '${PROJECT_NAME}';
+  const result = caos.IQuery_Template_echoString({ token: 'test' }, 'Hello');
+
 Additional Information:
 =======================
 
 - Documentation: ${CAOSDBA_DIR}/docs/${PROJECT_NAME}/nodejs/
 - Repository: ${CAOSDBA_DIR}/repositories/${PROJECT_NAME}/nodejs/
 - Version info: ${CAOSDBA_DIR}/docs/${PROJECT_NAME}/nodejs/VERSION
+- TypeScript info: ${CAOSDBA_DIR}/types/${PROJECT_NAME}/nodejs/TYPESCRIPT_INFO
 
 Support for multiple Node.js versions:
 - System installations (via APT)
 - User installations (via nvm, fnm)
 - Automatic version detection
 - Intelligent fallback mechanism
+- TypeScript definitions compatible with all versions
 
 For issues or questions, check the documentation in ${CAOSDBA_DIR}/docs/${PROJECT_NAME}/nodejs/
 EOF

@@ -4,7 +4,7 @@ endif()
 
 # Select CAOS_ENV ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE "release" CACHE STRING "CAOS Environment." )
+  set(CMAKE_BUILD_TYPE "release")
 endif()
 # Select CAOS_ENV ----------------------------------------------------------------------------------
 
@@ -164,7 +164,7 @@ endif()
 message(STATUS "Initializing project structure...")
 
 execute_process(
-  COMMAND ${CMAKE_SOURCE_DIR}/bin/caosdba.sh --init
+  COMMAND ${CMAKE_SOURCE_DIR}/bin/caosdba.sh --init ${PROJECT_NAME}
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
   OUTPUT_VARIABLE SETUP_OUTPUT
   ERROR_VARIABLE SETUP_ERROR
