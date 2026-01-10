@@ -362,15 +362,36 @@ export CAOS_API_TOKEN=ARBJi7cJuOYPXmFPPLVWsGrXmD4SU3LW
 
 NOTE: library is called "my_app", like the PROJECT_NAME in CMakeLists.txt
 
+## PHP
+
 ```bash
-# PHP
 php -d extension=./my_app.so -r 'print_r(IQuery_Template_echoString(["token" => "ARBJi7cJuOYPXmFPPLVWsGrXmD4SU3LW"], "Hello CAOSDBA!"));'
+```
 
-# Python
+
+## Python
+
+```bash
 python3 -c 'import my_app; print(my_app.IQuery_Template_echoString({"token":"ARBJi7cJuOYPXmFPPLVWsGrXmD4SU3LW"}, "Hello CAOSDBA!"));'
+```
 
-# Node.js
+
+## Node.js
+
+```bash
 node -e 'const caos = require("./node_${VERSION}/my_app");const result = caos.IQuery_Template_echoString({"token":"ARBJi7cJuOYPXmFPPLVWsGrXmD4SU3LW"}, "Hello CAOSDBA\!");console.log(result);'
+```
+
+### Test with Typescript
+
+```bash
+npm install -g typescript
+
+cd typescript/test
+
+tsc
+
+node test.js
 ```
 
 &nbsp;
