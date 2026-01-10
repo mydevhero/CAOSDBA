@@ -82,7 +82,6 @@ if(PHP_CONFIG)
     set(CAOS_BUILD_COUNT 1)
   endif()
 
-  file(WRITE "${BUILD_COUNTER_FILE}" "${CAOS_BUILD_COUNT}")
   string(TOLOWER "${CAOS_DB_BACKEND}" CAOS_DB_BACKEND_LOWER)
 
   # Organized package directory
