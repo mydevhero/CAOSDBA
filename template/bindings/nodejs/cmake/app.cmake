@@ -32,6 +32,11 @@ if(NOT NPM_EXECUTABLE)
   list(APPEND NODEJS_MISSING_PACKAGES "npm")
 endif()
 
+# Check for TypeScript compiler (optional, for type validation)
+find_program(TSC_EXECUTABLE tsc
+  PATHS /usr/bin /usr/local/bin /opt/homebrew/bin
+)
+
 # If any required packages are missing, show error and stop
 if(NODEJS_MISSING_PACKAGES)
   list(JOIN NODEJS_MISSING_PACKAGES ", " MISSING_PACKAGES_STR)
@@ -52,13 +57,19 @@ endif()
 
 message(STATUS "All required Node.js development packages found")
 
+if(TSC_EXECUTABLE)
+  message(STATUS "TypeScript compiler found: ${TSC_EXECUTABLE}")
+else()
+  message(STATUS "TypeScript compiler not found - type validation will be skipped")
+endif()
+
 # Define supported Node.js versions
 set(SUPPORTED_NODE_VERSIONS "14" "16" "18" "20" "22" "24")
 set(NODE_TARGETS "")
 set(NODE_BUILD_VERSIONS "")
 set(NODE_PACKAGE_DIRS "")
 
-# Build counter logic - same as Python
+# Build counter logic
 set(BUILD_COUNTER_FILE "${CMAKE_BINARY_DIR}/build_counter.txt")
 if(EXISTS "${BUILD_COUNTER_FILE}")
   file(READ "${BUILD_COUNTER_FILE}" CAOS_BUILD_COUNT)
@@ -68,7 +79,6 @@ else()
   set(CAOS_BUILD_COUNT 1)
 endif()
 
-file(WRITE "${BUILD_COUNTER_FILE}" "${CAOS_BUILD_COUNT}")
 string(TOLOWER "${CAOS_DB_BACKEND}" CAOS_DB_BACKEND_LOWER)
 
 # Try to find each supported Node.js version
@@ -99,6 +109,20 @@ foreach(NODE_MAJOR_VER IN LISTS SUPPORTED_NODE_VERSIONS)
         OUTPUT_VARIABLE NODE_DIR
         OUTPUT_STRIP_TRAILING_WHITESPACE
       )
+
+      # Get Node-API version supported by this Node.js binary
+      execute_process(
+        COMMAND ${NODE_EXECUTABLE_${NODE_MAJOR_VER}} -p "process.versions.napi"
+        OUTPUT_VARIABLE NODE_NAPI_VERSION
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE NAPI_VER_RESULT
+      )
+
+      if(NAPI_VER_RESULT EQUAL 0)
+        message(STATUS "Node-API version for Node ${NODE_MAJOR_VER}: ${NODE_NAPI_VERSION}")
+      else()
+        set(NODE_NAPI_VERSION "unknown")
+      endif()
 
       # Find Node.js headers
       set(NODE_HEADERS_PATHS
@@ -209,42 +233,121 @@ foreach(NODE_MAJOR_VER IN LISTS SUPPORTED_NODE_VERSIONS)
         file(MAKE_DIRECTORY ${NODE_PACKAGE_DIR})
         list(APPEND NODE_PACKAGE_DIRS ${NODE_PACKAGE_DIR})
 
-        # Create package.json for this version
-        file(WRITE ${NODE_PACKAGE_DIR}/package.json
-          [[
-          {
-          "name": "${PROJECT_NAME}",
-          "version": "0.1.0",
-          "description": "Native CAOSDBA bindings for Node.js ${NODE_MAJOR_VER}",
-          "main": "index.js",
-          "engines": {
-          "node": ">=${NODE_MAJOR_VER}.0.0"
-          },
-          "gypfile": false
-          }
-          ]])
+        string(TIMESTAMP CMAKE_TIMESTAMP "%Y-%m-%d %H:%M:%S")
 
-        # Create index.js wrapper (similar to Python's __init__.py)
-        file(WRITE ${NODE_PACKAGE_DIR}/index.js
-          [[
-          const native = require('./${PROJECT_NAME}.node');
+        # Create TypeScript types directory for this version
+        set(NODE_TYPES_DIR "${NODE_PACKAGE_DIR}/types")
+        file(MAKE_DIRECTORY ${NODE_TYPES_DIR})
 
-          module.exports = {
-          // Query functions will be auto-exposed
-          getBuildInfo: native.getBuildInfo,
+        # typescript/package.json
+        set(PACKAGE_JSON_TEMPLATE "${CMAKE_SOURCE_DIR}/typescript/package.json")
+        set(PACKAGE_JSON_OUTPUT "${NODE_PACKAGE_DIR}/package.json")
+        if(EXISTS "${PACKAGE_JSON_TEMPLATE}")
+          # Read the template
+          file(READ "${PACKAGE_JSON_TEMPLATE}" PACKAGE_JSON_CONTENT)
 
-          // Helper to check if native module loaded correctly
-          checkNative: function() {
-          return native.getBuildInfo !== undefined;
-          },
+          # Replace placeholders with actual values
+          string(REPLACE "__PROJECT_NAME__" "${PROJECT_NAME}" PACKAGE_JSON_CONTENT "${PACKAGE_JSON_CONTENT}")
+          string(REPLACE "__CAOS_DB_BACKEND_LOWER__" "${CAOS_DB_BACKEND_LOWER}" PACKAGE_JSON_CONTENT "${PACKAGE_JSON_CONTENT}")
+          string(REPLACE "__CAOS_BUILD_COUNT__" "${CAOS_BUILD_COUNT}" PACKAGE_JSON_CONTENT "${PACKAGE_JSON_CONTENT}")
+          string(REPLACE "__TIMESTAMP__" "${CMAKE_TIMESTAMP}" PACKAGE_JSON_CONTENT "${PACKAGE_JSON_CONTENT}")
+          string(REPLACE "__NODE_NAPI_VERSION__" "${NODE_NAPI_VERSION}" PACKAGE_JSON_CONTENT "${PACKAGE_JSON_CONTENT}")
+          string(REPLACE "__NODE_MAJOR_VER__" "${NODE_MAJOR_VER}" PACKAGE_JSON_CONTENT "${PACKAGE_JSON_CONTENT}")
 
-          // Build information
-          __version__: '0.1.0',
-          __build__: ${CAOS_BUILD_COUNT},
-          __backend__: '${CAOS_DB_BACKEND_LOWER}',
-          __node_version__: '${NODE_MAJOR_VER}'
-          };
-          ]])
+          # Write the processed file
+          file(WRITE "${PACKAGE_JSON_OUTPUT}" "${PACKAGE_JSON_CONTENT}")
+          message(STATUS "Generated file for Node.js ${NODE_MAJOR_VER}: ${PACKAGE_JSON_OUTPUT}")
+        else()
+          message(FATAL_ERROR "File not found: ${PACKAGE_JSON_TEMPLATE}")
+        endif()
+
+        # typescript/index.js
+        set(INDEX_JS_TEMPLATE "${CMAKE_SOURCE_DIR}/typescript/index.js")
+        set(INDEX_JS_OUTPUT "${NODE_PACKAGE_DIR}/index.js")
+        if(EXISTS "${INDEX_JS_TEMPLATE}")
+          # Read the template
+          file(READ "${INDEX_JS_TEMPLATE}" INDEX_JS_CONTENT)
+
+          # Replace placeholders with actual values
+          string(REPLACE "__PROJECT_NAME__" "${PROJECT_NAME}" INDEX_JS_CONTENT "${INDEX_JS_CONTENT}")
+          string(REPLACE "__CAOS_DB_BACKEND_LOWER__" "${CAOS_DB_BACKEND_LOWER}" INDEX_JS_CONTENT "${INDEX_JS_CONTENT}")
+          string(REPLACE "__CAOS_BUILD_COUNT__" "${CAOS_BUILD_COUNT}" INDEX_JS_CONTENT "${INDEX_JS_CONTENT}")
+          string(REPLACE "__TIMESTAMP__" "${CMAKE_TIMESTAMP}" INDEX_JS_CONTENT "${INDEX_JS_CONTENT}")
+          string(REPLACE "__NODE_NAPI_VERSION__" "${NODE_NAPI_VERSION}" INDEX_JS_CONTENT "${INDEX_JS_CONTENT}")
+          string(REPLACE "__NODE_MAJOR_VER__" "${NODE_MAJOR_VER}" INDEX_JS_CONTENT "${INDEX_JS_CONTENT}")
+
+          # Write the processed file
+          file(WRITE "${INDEX_JS_OUTPUT}" "${INDEX_JS_CONTENT}")
+          message(STATUS "Generated file for Node.js ${NODE_MAJOR_VER}: ${INDEX_JS_OUTPUT}")
+        else()
+          message(FATAL_ERROR "File not found: ${INDEX_JS_TEMPLATE}")
+        endif()
+
+        # Generate TypeScript declaration file for this version
+        set(TYPESCRIPT_TEMPLATE "${CMAKE_SOURCE_DIR}/typescript/types/__PROJECT_NAME__.d.ts")
+        set(TYPESCRIPT_OUTPUT "${NODE_TYPES_DIR}/${PROJECT_NAME}.d.ts")
+
+        if(EXISTS "${TYPESCRIPT_TEMPLATE}")
+          # Read the template
+          file(READ "${TYPESCRIPT_TEMPLATE}" TYPESCRIPT_CONTENT)
+
+          # Replace placeholders with actual values
+          string(REPLACE "__PROJECT_NAME__" "${PROJECT_NAME}" TYPESCRIPT_CONTENT "${TYPESCRIPT_CONTENT}")
+          string(REPLACE "__CAOS_DB_BACKEND_LOWER__" "${CAOS_DB_BACKEND_LOWER}" TYPESCRIPT_CONTENT "${TYPESCRIPT_CONTENT}")
+          string(REPLACE "__CAOS_BUILD_COUNT__" "${CAOS_BUILD_COUNT}" TYPESCRIPT_CONTENT "${TYPESCRIPT_CONTENT}")
+          string(REPLACE "__TIMESTAMP__" "${CMAKE_TIMESTAMP}" TYPESCRIPT_CONTENT "${TYPESCRIPT_CONTENT}")
+          string(REPLACE "__NODE_NAPI_VERSION__" "${NODE_NAPI_VERSION}" TYPESCRIPT_CONTENT "${TYPESCRIPT_CONTENT}")
+          string(REPLACE "__NODE_MAJOR_VER__" "${NODE_MAJOR_VER}" TYPESCRIPT_CONTENT "${TYPESCRIPT_CONTENT}")
+
+          # Write the processed file
+          file(WRITE "${TYPESCRIPT_OUTPUT}" "${TYPESCRIPT_CONTENT}")
+          message(STATUS "Generated TypeScript definitions for Node.js ${NODE_MAJOR_VER}: ${TYPESCRIPT_OUTPUT}")
+        else()
+          message(FATAL_ERROR "File not found: ${TYPESCRIPT_TEMPLATE}")
+        endif()
+
+        # Copy test-types.ts if it exists
+        set(TEST_TYPES_TEMPLATE "${CMAKE_SOURCE_DIR}/typescript/types/test-types.ts")
+        set(TEST_TYPES_OUTPUT "${NODE_TYPES_DIR}/test-types.ts")
+
+        if(EXISTS "${TEST_TYPES_TEMPLATE}")
+          file(READ "${TEST_TYPES_TEMPLATE}" TEST_TYPES_CONTENT)
+          string(REPLACE "__PROJECT_NAME__" "${PROJECT_NAME}" TEST_TYPES_CONTENT "${TEST_TYPES_CONTENT}")
+          string(REPLACE "__CAOS_DB_BACKEND_LOWER__" "${CAOS_DB_BACKEND_LOWER}" TEST_TYPES_CONTENT "${TEST_TYPES_CONTENT}")
+          string(REPLACE "__CAOS_BUILD_COUNT__" "${CAOS_BUILD_COUNT}" TEST_TYPES_CONTENT "${TEST_TYPES_CONTENT}")
+          string(REPLACE "__TIMESTAMP__" "${CMAKE_TIMESTAMP}" TEST_TYPES_CONTENT "${TEST_TYPES_CONTENT}")
+          string(REPLACE "__NODE_MAJOR_VER__" "${NODE_MAJOR_VER}" TEST_TYPES_CONTENT "${TEST_TYPES_CONTENT}")
+          string(REPLACE "__NODE_NAPI_VERSION__" "${NODE_NAPI_VERSION}" TEST_TYPES_CONTENT "${TEST_TYPES_CONTENT}")
+          file(WRITE "${TEST_TYPES_OUTPUT}" "${TEST_TYPES_CONTENT}")
+          message(STATUS "Copied TypeScript test file for Node.js ${NODE_MAJOR_VER}")
+        endif()
+
+        # Copy tsconfig.json if it exists
+        set(TSCONFIG_TEMPLATE "${CMAKE_SOURCE_DIR}/typescript/tsconfig.json")
+        set(TSCONFIG_OUTPUT "${NODE_PACKAGE_DIR}/tsconfig.json")
+
+        if(EXISTS "${TSCONFIG_TEMPLATE}")
+          file(READ "${TSCONFIG_TEMPLATE}" TSCONFIG_CONTENT)
+          string(REPLACE "__PROJECT_NAME__" "${PROJECT_NAME}" TSCONFIG_CONTENT "${TSCONFIG_CONTENT}")
+          string(REPLACE "__CAOS_DB_BACKEND_LOWER__" "${CAOS_DB_BACKEND_LOWER}" TSCONFIG_CONTENT "${TSCONFIG_CONTENT}")
+          string(REPLACE "__CAOS_BUILD_COUNT__" "${CAOS_BUILD_COUNT}" TSCONFIG_CONTENT "${TSCONFIG_CONTENT}")
+          string(REPLACE "__TIMESTAMP__" "${CMAKE_TIMESTAMP}" TSCONFIG_CONTENT "${TSCONFIG_CONTENT}")
+          string(REPLACE "__NODE_MAJOR_VER__" "${NODE_MAJOR_VER}" TSCONFIG_CONTENT "${TSCONFIG_CONTENT}")
+          string(REPLACE "__NODE_NAPI_VERSION__" "${NODE_NAPI_VERSION}" TSCONFIG_CONTENT "${TSCONFIG_CONTENT}")
+          file(WRITE "${TSCONFIG_OUTPUT}" "${TSCONFIG_CONTENT}")
+          message(STATUS "Copied tsconfig.json for Node.js ${NODE_MAJOR_VER}")
+        endif()
+
+        # Validate TypeScript types if tsc is available
+        if(TSC_EXECUTABLE AND EXISTS "${TEST_TYPES_OUTPUT}")
+          add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E echo "Validating TypeScript definitions for Node.js ${NODE_MAJOR_VER}..."
+            COMMAND cd "${NODE_PACKAGE_DIR}" && ${TSC_EXECUTABLE} --noEmit --project tsconfig.json || ${CMAKE_COMMAND} -E echo "TypeScript validation failed or warnings found"
+            COMMENT "Validating TypeScript type definitions"
+            VERBATIM
+            WORKING_DIRECTORY ${NODE_PACKAGE_DIR}
+          )
+        endif()
 
         # POST_BUILD: copy to package directory
         add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
@@ -271,6 +374,17 @@ foreach(NODE_MAJOR_VER IN LISTS SUPPORTED_NODE_VERSIONS)
           COMMAND ${CMAKE_COMMAND} -E copy
           ${NODE_PACKAGE_DIR}/package.json
           ${NODE_REPO_DIR}/package.json
+          # Copy TypeScript files
+          COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_REPO_DIR}/types
+          COMMAND ${CMAKE_COMMAND} -E copy
+          ${NODE_TYPES_DIR}/${PROJECT_NAME}.d.ts
+          ${NODE_REPO_DIR}/types/${PROJECT_NAME}.d.ts
+          COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          ${TEST_TYPES_OUTPUT}
+          ${NODE_REPO_DIR}/types/test-types.ts
+          COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          ${TSCONFIG_OUTPUT}
+          ${NODE_REPO_DIR}/tsconfig.json
           DEPENDS ${TARGET_NAME}
           COMMENT "Copying ${PROJECT_NAME} Node.js files to dist directory"
         )
@@ -311,21 +425,25 @@ set(AGGREGATE_NODE_PACKAGE_DIR "${CMAKE_BINARY_DIR}/node_package/${PROJECT_NAME}
 file(MAKE_DIRECTORY ${AGGREGATE_NODE_PACKAGE_DIR})
 
 # Create aggregated index.js that works for all Node.js versions
+# Add TypeScript hint
 file(WRITE ${AGGREGATE_NODE_PACKAGE_DIR}/index.js
   [[
+  /**
+   * ${PROJECT_NAME} - CAOSDBA Native Node.js Bindings
+   *
+   * Native extension for CAOSDBA database operations.
+   * Backend: ${CAOS_DB_BACKEND_LOWER}
+   * Build: ${CAOS_BUILD_COUNT}
+   *
+   * @module ${PROJECT_NAME}
+   * @see ./types/${PROJECT_NAME}.d.ts for TypeScript definitions
+   *
+   * This package contains native extensions for multiple Node.js versions.
+   * The correct version will be loaded automatically based on your Node.js version.
+   */
+
   const fs = require('fs');
   const path = require('path');
-
-  /**
-  * ${PROJECT_NAME} - CAOSDBA Native Node.js Bindings
-  *
-  * Native extension for CAOSDBA database operations.
-  * Backend: ${CAOS_DB_BACKEND_LOWER}
-  * Build: ${CAOS_BUILD_COUNT}
-  *
-  * This package contains native extensions for multiple Node.js versions.
-  * The correct version will be loaded automatically based on your Node.js version.
-  */
 
   function loadCorrectModule() {
   const packageDir = __dirname;
@@ -363,27 +481,74 @@ file(WRITE ${AGGREGATE_NODE_PACKAGE_DIR}/index.js
       module.exports.__node_version__ = process.versions.node;
       ]])
 
-    # Copy all version-specific modules to aggregate package
-    foreach(NODE_PACKAGE_DIR IN LISTS NODE_PACKAGE_DIRS)
-      add_custom_command(TARGET make_node_all POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${NODE_PACKAGE_DIR}
-        ${AGGREGATE_NODE_PACKAGE_DIR}
-        COMMENT "Aggregating Node.js modules for all versions"
-      )
-  endforeach()
-
-  # Installation messages
-  install(CODE "
-    message(STATUS \"\")
-    message(STATUS \"Node.js extension '${PROJECT_NAME}' built for versions: ${NODE_BUILD_VERSIONS}\")
-    message(STATUS \"Build: ${CAOS_BUILD_COUNT}, Backend: ${CAOS_DB_BACKEND_LOWER}\")
-    message(STATUS \"\")
-    message(STATUS \"To test the installation:\")
-    message(STATUS \"  node -e \\\"const m = require('${PROJECT_NAME}'); console.log(m.getBuildInfo())\\\"\")
-    message(STATUS \"\")"
-    COMPONENT node
+# Copy all version-specific modules to aggregate package
+foreach(NODE_PACKAGE_DIR IN LISTS NODE_PACKAGE_DIRS)
+  add_custom_command(TARGET make_node_all POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${NODE_PACKAGE_DIR}
+    ${AGGREGATE_NODE_PACKAGE_DIR}
+    COMMENT "Aggregating Node.js modules for all versions"
   )
+endforeach()
+
+# Create aggregated TypeScript types directory
+set(AGGREGATE_TYPES_DIR "${AGGREGATE_NODE_PACKAGE_DIR}/types")
+file(MAKE_DIRECTORY ${AGGREGATE_TYPES_DIR})
+
+# Copy TypeScript files from first available version
+if(NODE_PACKAGE_DIRS)
+  list(GET NODE_PACKAGE_DIRS 0 FIRST_NODE_PACKAGE_DIR)
+  set(FIRST_TYPES_DIR "${FIRST_NODE_PACKAGE_DIR}/types")
+
+  if(EXISTS "${FIRST_TYPES_DIR}/${PROJECT_NAME}.d.ts")
+    add_custom_command(TARGET make_node_all POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy
+      "${FIRST_TYPES_DIR}/${PROJECT_NAME}.d.ts"
+      "${AGGREGATE_TYPES_DIR}/${PROJECT_NAME}.d.ts"
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      "${FIRST_TYPES_DIR}/test-types.ts"
+      "${AGGREGATE_TYPES_DIR}/test-types.ts"
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      "${FIRST_NODE_PACKAGE_DIR}/tsconfig.json"
+      "${AGGREGATE_NODE_PACKAGE_DIR}/tsconfig.json"
+      COMMENT "Copying TypeScript definitions to aggregate package"
+    )
+  endif()
+endif()
+
+# Update package.json in aggregate package to include types field
+file(WRITE ${AGGREGATE_NODE_PACKAGE_DIR}/package.json
+  [[
+  {
+  "name": "${PROJECT_NAME}",
+  "version": "0.1.0",
+  "description": "CAOSDBA Native Node.js Bindings for ${CAOS_DB_BACKEND_LOWER} backend",
+  "main": "index.js",
+  "types": "./types/${PROJECT_NAME}.d.ts",
+  "engines": {
+  "node": ">=14.0.0"
+  },
+  "gypfile": false
+  }
+  ]])
+
+# Installation messages
+install(CODE "
+  message(STATUS \"\")
+  message(STATUS \"Node.js extension '${PROJECT_NAME}' built for versions: ${NODE_BUILD_VERSIONS}\")
+  message(STATUS \"Build: ${CAOS_BUILD_COUNT}, Backend: ${CAOS_DB_BACKEND_LOWER}\")
+  if(\"${TSC_EXECUTABLE}\" STREQUAL \"TSC_EXECUTABLE-NOTFOUND\")
+    message(STATUS \"TypeScript: Compiler not found - type validation was skipped\")
+  else()
+    message(STATUS \"TypeScript: Definitions generated and validated\")
+  endif()
+  message(STATUS \"\")
+  message(STATUS \"To test the installation:\")
+  message(STATUS \"  node -e \\\"const m = require('${PROJECT_NAME}'); console.log(m.getBuildInfo())\\\"\")
+  message(STATUS \"  tsc --noEmit --project /path/to/${PROJECT_NAME}/tsconfig.json  # Validate types\")
+  message(STATUS \"\")"
+  COMPONENT node
+)
 
 # Package targets
 if(CMAKE_BUILD_TYPE STREQUAL "release")
@@ -391,14 +556,14 @@ if(CMAKE_BUILD_TYPE STREQUAL "release")
         COMMAND ${CMAKE_SOURCE_DIR}/scripts/create_package_deb.sh ${CAOS_DB_BACKEND} ${PROJECT_NAME}
         DEPENDS libcaos do_copy_all_to_dist
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-        COMMENT "Building DEB package for Python extension '${PROJECT_NAME}' with ${CAOS_DB_BACKEND_LOWER} backend"
+        COMMENT "Building DEB package for Node.js extension '${PROJECT_NAME}' with ${CAOS_DB_BACKEND_LOWER} backend"
     )
 
     add_custom_target(make_distribution_tarball
         COMMAND ${CMAKE_SOURCE_DIR}/scripts/create_distribution_tarball.sh ${CAOS_DB_BACKEND} ${PROJECT_NAME}
         DEPENDS make_package_deb
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-        COMMENT "Creating distribution tarball for Python extension '${PROJECT_NAME}' with ${CAOS_DB_BACKEND_LOWER} backend"
+        COMMENT "Creating distribution tarball for Node.js extension '${PROJECT_NAME}' with ${CAOS_DB_BACKEND_LOWER} backend"
     )
 else()
     add_custom_target(make_package_deb

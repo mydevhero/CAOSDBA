@@ -2,5 +2,4 @@
 
 #define MODULE_NAME_STR      "@PROJECT_NAME@"
 #define MODULE_DESCRIPTION   "CAOSDBA Node.js binding for " MODULE_NAME_STR
-#define MODULE_INIT_FUNCTION PyInit_@PROJECT_NAME@
 

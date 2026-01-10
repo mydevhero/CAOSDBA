@@ -4,10 +4,12 @@
 usage() {
     echo "Usage: $0 --init"
     echo "       $0 --purge"
+    echo "       $1 PROJECT_NAME"
     echo ""
     echo "Options:"
-    echo "  --init     Initialize project from CMake configuration files"
-    echo "  --purge    Remove all generated project files"
+    echo "  --init         Initialize project from CMake configuration files"
+    echo "  --purge        Remove all generated project files"
+    echo "  PROJECT_NAME   CMAKE PROJECT_NAME var"
     echo ""
     echo "Configuration is read from:"
     echo "  - cmake/db_backend.cmake (DB_BACKEND)"
@@ -24,6 +26,7 @@ purge_project() {
     echo "  - $CMAKE_SOURCE_DIR/build/release (entire directory)"
     echo "  - $CMAKE_SOURCE_DIR/src/ (entire directory)"
     echo "  - $CMAKE_SOURCE_DIR/scripts/ (entire directory)"
+    echo "  - $CMAKE_SOURCE_DIR/typescript/ (entire directory)"
     echo "  - Files in $CMAKE_SOURCE_DIR/cmake/"
     echo ""
     read -p "Are you sure you want to continue? (y/N): " confirm
@@ -35,7 +38,7 @@ purge_project() {
             # Remove build/release directory
             if [ -d "$CMAKE_SOURCE_DIR/build/release" ]; then
                 rm -rf "$CMAKE_SOURCE_DIR/build/release"
-                echo "Removed $CMAKE_SOURCE_DIR/src"
+                echo "Removed $CMAKE_SOURCE_DIR/build/release"
             else
                 echo "build/release directory not found, skipping"
             fi
@@ -54,6 +57,14 @@ purge_project() {
                 echo "Removed $CMAKE_SOURCE_DIR/scripts"
             else
                 echo "scripts directory not found, skipping"
+            fi
+
+            # Remove typescript directory (new for Node.js TypeScript support)
+            if [ -d "$CMAKE_SOURCE_DIR/typescript" ]; then
+                rm -rf "$CMAKE_SOURCE_DIR/typescript"
+                echo "Removed $CMAKE_SOURCE_DIR/typescript"
+            else
+                echo "typescript directory not found, skipping"
             fi
 
             # Remove cmake files created by this script
@@ -216,6 +227,9 @@ init_project() {
     echo "  Project type: $PROJECT_TYPE"
     if [ "$PROJECT_TYPE" = "BINDING" ]; then
         echo "  Language: $BINDING_LANGUAGE"
+        if [ "$BINDING_LANGUAGE" = "NODEJS" ]; then
+            echo "  TypeScript support: Included"
+        fi
     elif [ "$PROJECT_TYPE" = "CROWCPP" ]; then
         echo "  CrowCpp type: $CROWCPP_TYPE"
     fi
@@ -309,6 +323,71 @@ init_project() {
                     fi
                 fi
             fi
+
+            # Special handling for Node.js TypeScript support
+            if [ "$BINDING_LANGUAGE" = "NODEJS" ] && [ -d "$TEMPLATE_SUBDIR/typescript" ]; then
+                echo "Copying TypeScript template files..."
+                cp -r "$TEMPLATE_SUBDIR/typescript" "$CMAKE_SOURCE_DIR/"
+                echo "Copied TypeScript template files"
+
+# Let the app.cmake do this job
+#                # Replace __PROJECT_NAME__ placeholder in TypeScript files
+#                if [ -d "$CMAKE_SOURCE_DIR/typescript" ]; then
+#                    echo "Configuring TypeScript files for project: $PROJECT_NAME"
+
+#                    # First, rename files that contain __PROJECT_NAME__ in their names
+#                    echo "Renaming TypeScript files..."
+#                    find "$CMAKE_SOURCE_DIR/typescript" -type f -name "*__PROJECT_NAME__*" | while read -r old_file; do
+#                        # Get the directory and base name
+#                        dir_name=$(dirname "$old_file")
+#                        base_name=$(basename "$old_file")
+
+#                        # Replace __PROJECT_NAME__ with actual project name in filename
+#                        new_name=$(echo "$base_name" | sed "s/__PROJECT_NAME__/${PROJECT_NAME}/g")
+#                        new_file="$dir_name/$new_name"
+
+#                        if [ "$old_file" != "$new_file" ]; then
+#                            mv "$old_file" "$new_file"
+#                            echo "  Renamed: $base_name -> $new_name"
+#                        fi
+#                    done
+
+#                    # Second, replace __PROJECT_NAME__ in file contents
+#                    echo "Updating TypeScript file contents..."
+#                    find "$CMAKE_SOURCE_DIR/typescript" -type f \( -name "*.ts" -o -name "*.d.ts" -o -name "*.json" -o -name "*.md" \) | while read -r file; do
+#                        if grep -q "__PROJECT_NAME__" "$file"; then
+#                            sed -i "s/__PROJECT_NAME__/${PROJECT_NAME}/g" "$file"
+#                            echo "  Updated content: $(basename "$file")"
+#                        fi
+#                    done
+
+#                    # Also update tsconfig.json path mapping (if it still exists with old name)
+#                    TSCONFIG_FILE="$CMAKE_SOURCE_DIR/typescript/tsconfig.json"
+#                    if [ -f "$TSCONFIG_FILE" ]; then
+#                        if grep -q "__PROJECT_NAME__" "$TSCONFIG_FILE"; then
+#                            sed -i "s/\"__PROJECT_NAME__\"/\"${PROJECT_NAME}\"/g" "$TSCONFIG_FILE"
+#                            echo "  Updated tsconfig.json path mapping"
+#                        fi
+#                    fi
+
+#                    # Also check for other placeholders that might need replacement
+#                    echo "Checking for other placeholders..."
+#                    find "$CMAKE_SOURCE_DIR/typescript" -type f \( -name "*.ts" -o -name "*.d.ts" -o -name "*.json" -o -name "*.md" \) | while read -r file; do
+#                        # Check for DB_BACKEND placeholder
+#                        if grep -q "__DB_BACKEND__" "$file"; then
+#                            sed -i "s/__DB_BACKEND__/${DB_BACKEND}/g" "$file"
+#                            echo "  Updated __DB_BACKEND__ in: $(basename "$file")"
+#                        fi
+
+#                        # Check for DB_BACKEND_LOWER placeholder
+#                        DB_BACKEND_LOWER=$(echo "$DB_BACKEND" | tr '[:upper:]' '[:lower:]')
+#                        if grep -q "__DB_BACKEND_LOWER__" "$file"; then
+#                            sed -i "s/__DB_BACKEND_LOWER__/${DB_BACKEND_LOWER}/g" "$file"
+#                            echo "  Updated __DB_BACKEND_LOWER__ in: $(basename "$file")"
+#                        fi
+#                    done
+#                fi
+            fi
             ;;
 
         CROWCPP)
@@ -366,6 +445,11 @@ init_project() {
     echo ""
     echo "Project initialization completed successfully!"
     echo "  Source directory: $CMAKE_SOURCE_DIR"
+    if [ "$PROJECT_TYPE" = "BINDING" ] && [ "$BINDING_LANGUAGE" = "NODEJS" ]; then
+        echo "  TypeScript definitions: $CMAKE_SOURCE_DIR/typescript/types/${PROJECT_NAME}.d.ts"
+        echo "  TypeScript test file: $CMAKE_SOURCE_DIR/typescript/types/test-types.ts"
+        echo "  TypeScript config: $CMAKE_SOURCE_DIR/typescript/tsconfig.json"
+    fi
 }
 
 # Variables
@@ -374,27 +458,25 @@ PURGE_FLAG=false
 CMAKE_SOURCE_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 TEMPLATE_DIR="$CMAKE_SOURCE_DIR/template"
 
-# Parse arguments
-if [ $# -eq 0 ]; then
-    usage
-fi
+# At least 1 argument required
+[ $# -lt 1 ] && usage
+PROJECT_NAME="${2:-""}"
 
-for arg in "$@"; do
-    case $arg in
-        --init)
-            INIT_FLAG=true
-            shift
-            ;;
-        --purge)
-            PURGE_FLAG=true
-            shift
-            ;;
-        *)
-            echo "Error: Unknown option '$arg'"
-            usage
-            ;;
-    esac
-done
+case "$1" in
+    --init)
+        INIT_FLAG=true
+        ;;
+    --purge)
+        PURGE_FLAG=true
+        ;;
+    *)
+        echo "Error: unknown option '$1'"
+        usage
+        ;;
+esac
+
+
+
 
 # Check for mutually exclusive flags
 if [ "$INIT_FLAG" = true ] && [ "$PURGE_FLAG" = true ]; then
