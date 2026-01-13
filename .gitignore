@@ -7,3 +7,5 @@ libcaos/vendor/libpqxx
 libcaos/vendor/mariadb-connector-cpp
 libcaos/vendor/postgres
 libcaos/vendor/redis-plus-plus
+
+**/__pycache__
