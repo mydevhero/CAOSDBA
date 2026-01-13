@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mydevhero/CAOSDBA/schemas/query-schema.json",
   "title": "CAOSDBA Query Definition",
   "description": "Schema for defining CAOSDBA queries with authentication and filters",
   "type": "object",
@@ -141,9 +141,9 @@
         "validation": {
           "type": "object",
           "properties": {
-            "min_length": { "type": "integer" },
-            "max_length": { "type": "integer" },
-            "pattern": { "type": "string" }
+            "min_length": {"type": "integer"},
+            "max_length": {"type": "integer"},
+            "pattern": {"type": "string"}
           }
         }
       },

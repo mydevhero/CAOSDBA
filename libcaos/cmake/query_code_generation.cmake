@@ -14,7 +14,7 @@ find_package(Python3 REQUIRED)
 
 # set(QUERY_DEFINITIONS_FILE "${CMAKE_SOURCE_DIR}/query_definitions.txt")
 set(QUERY_DEFINITIONS_FILE "${CMAKE_SOURCE_DIR}/queries.yaml")
-set(QUERY_GENERATOR_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/generate_queries.py")
+set(QUERY_GENERATOR_SCRIPT "${CMAKE_SOURCE_DIR}/bin/generate_queries.py")
 set(GENERATED_QUERIES_DIR "${CMAKE_BINARY_DIR}/generated_queries")
 
 if(NOT EXISTS "${QUERY_DEFINITIONS_FILE}")
