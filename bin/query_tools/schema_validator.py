@@ -34,7 +34,7 @@ class QueryValidator:
         if schema_path is None:
             # Default schema location relative to this module
             script_dir = Path(__file__).parent.parent.parent
-            self.schema_path = script_dir / "schemas" / "query-schema.json"
+            self.schema_path = script_dir / "schemas/CAOSDBA/queries.json"
         else:
             self.schema_path = Path(schema_path)
 

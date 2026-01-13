@@ -18,7 +18,7 @@ from query_tools import QueryValidator, YAMLLoaderError, load_yaml_file
 
 # Configuration flags
 USE_SCHEMA_VALIDATION = True  # Set to False to disable JSON schema validation
-SCHEMA_PATH = Path(__file__).parent / "schemas" / "query-schema.json"
+SCHEMA_PATH = Path(__file__).parent / "schemas/CAOSDBA/queries.json"
 
 # Configure logging
 logging.basicConfig(
@@ -37,11 +37,11 @@ class QueryDefinitionError(Exception):
 
 class QueryDefinitionParser:
     """Parses and validates query definitions from YAML files."""
-    
+
     def __init__(self, schema_path: Optional[Path] = None):
         self.schema_path = schema_path or SCHEMA_PATH
         self.validator = None
-        
+
         if USE_SCHEMA_VALIDATION:
             try:
                 self.validator = QueryValidator(self.schema_path)
@@ -49,55 +49,55 @@ class QueryDefinitionParser:
             except Exception as e:
                 logger.warning(f"Failed to load JSON schema validator: {e}")
                 self.validator = None
-    
+
     def _validate_schema(self, data: Dict) -> None:
         """Validate data against JSON schema using shared validator."""
         if not USE_SCHEMA_VALIDATION or not self.validator:
             return
-        
+
         # Use shared validator for consistent validation
         if not self.validator.validate_data(data, "query definitions"):
             raise QueryDefinitionError("Schema validation failed")
-    
+
     def _parse_parameters(self, parameters: List[Dict]) -> Tuple[str, str]:
         """Convert YAML parameters to legacy format strings."""
         if not parameters:
             return "", ""
-        
+
         param_strings = []
         param_names = []
-        
+
         for param in parameters:
             param_type = param.get("type", "").strip()
             param_name = param.get("name", "").strip()
-            
+
             if not param_type or not param_name:
                 raise QueryDefinitionError(
                     f"Parameter missing type or name: {param}"
                 )
-            
+
             param_strings.append(f"{param_type} {param_name}")
             param_names.append(param_name)
-        
+
         return ", ".join(param_strings), ", ".join(param_names)
-    
+
     def _parse_authentication(
         self, auth_config: Optional[Dict]
     ) -> Tuple[str, str, str]:
         """Convert YAML authentication to legacy format."""
         if not auth_config:
             return "", "", ""
-        
+
         auth_type = auth_config.get("type", "").strip().upper()
         env_var = auth_config.get("env_var", "").strip()
         required = auth_config.get("required", True)
-        
+
         if not auth_type or auth_type == "NONE":
             return "", "", ""
-        
+
         key_behavior = "REQUIRED" if required else "OPTIONAL"
         return auth_type, env_var, key_behavior
-    
+
     def _infer_category_from_name(self, name: str) -> str:
         """Infer category from method name for backward compatibility."""
         if name.startswith("IQuery_Example_"):
@@ -105,41 +105,41 @@ class QueryDefinitionParser:
         elif name.startswith("IQuery_Template_"):
             return "template"
         return "standard"
-    
+
     def _parse_single_query(self, query_data: Dict) -> Dict[str, Any]:
         """Parse a single query definition from YAML to legacy format."""
         try:
             name = query_data.get("name", "").strip()
             if not name:
                 raise QueryDefinitionError("Query missing 'name' field")
-            
+
             # Determine category
             metadata = query_data.get("metadata", {})
             category = metadata.get("category", "").strip().lower()
-            
+
             if not category:
                 category = self._infer_category_from_name(name)
-            
+
             # Validate category
             if category not in ["standard", "example", "template"]:
                 raise QueryDefinitionError(
                     f"Invalid category '{category}' for query '{name}'. "
                     "Must be 'standard', 'example', or 'template'."
                 )
-            
+
             # Get enabled flag (default: true)
             enabled = query_data.get("enabled", True)
-            
+
             # Parse parameters
             parameters = query_data.get("parameters", [])
             full_params, call_params = self._parse_parameters(parameters)
-            
+
             # Parse authentication
             auth_config = query_data.get("authentication")
             auth_type, env_var_name, key_behavior = self._parse_authentication(
                 auth_config
             )
-            
+
             return {
                 "name": name,
                 "return_type": query_data.get("return_type", "").strip(),
@@ -152,31 +152,31 @@ class QueryDefinitionParser:
                 "category": category,
                 "original_data": query_data,  # Keep for error reporting
             }
-        
+
         except KeyError as e:
             raise QueryDefinitionError(f"Missing required field in query: {e}")
-    
+
     def parse_file(self, file_path: Path) -> List[Dict[str, Any]]:
         """Parse and validate query definitions from YAML file."""
         logger.info(f"Parsing definitions from: {file_path}")
-        
+
         # Load YAML using shared loader
         try:
             data = load_yaml_file(file_path)
         except YAMLLoaderError as e:
             raise QueryDefinitionError(f"Failed to load YAML file: {e}")
-        
+
         if not isinstance(data, dict):
             raise QueryDefinitionError("YAML root must be a dictionary")
-        
+
         # Validate against schema using shared validator
         self._validate_schema(data)
-        
+
         # Extract queries
         queries_data = data.get("queries", [])
         if not isinstance(queries_data, list):
             raise QueryDefinitionError("'queries' must be a list")
-        
+
         parsed_queries = []
         for idx, query_data in enumerate(queries_data):
             try:
@@ -187,7 +187,7 @@ class QueryDefinitionParser:
                 raise QueryDefinitionError(
                     f"Error in query at index {idx}: {e}"
                 )
-        
+
         logger.info(f"Successfully parsed {len(parsed_queries)} queries")
         return parsed_queries
 
@@ -197,14 +197,14 @@ def validate_query_enablement(
 ) -> Tuple[bool, str]:
     """
     Determine if a query should be enabled based on its configuration and CLI flags.
-    
+
     Returns:
         Tuple[bool, str]: (enabled, reason)
     """
     enabled = query.get("enabled", True)
     category = query.get("category", "standard")
     name = query["name"]
-    
+
     # Check for disabled queries with CLI flags present
     if not enabled:
         if category == "example" and args.caos_example_query:
@@ -220,21 +220,21 @@ def validate_query_enablement(
                 "Either remove the flag or enable the query."
             )
         return False, "query disabled"
-    
+
     # Evaluate based on category
     if category == "example":
         if args.caos_example_query:
             return True, "example query enabled via flag"
         return False, "example query requires --caos-example-query"
-    
+
     elif category == "template":
         if args.caos_template_query:
             return True, "template query enabled via flag"
         return False, "template query requires --caos-template-query"
-    
+
     elif category == "standard":
         return True, "standard query always enabled"
-    
+
     else:
         # This should not happen due to schema validation
         return False, f"unknown category '{category}'"
@@ -243,7 +243,7 @@ def validate_query_enablement(
 def convert_to_legacy_format(queries: List[Dict[str, Any]]) -> List[Dict[str, str]]:
     """Convert enriched query format to legacy 7-field format for generators."""
     legacy_queries = []
-    
+
     for query in queries:
         legacy_queries.append({
             "return_type": query["return_type"],
@@ -254,7 +254,7 @@ def convert_to_legacy_format(queries: List[Dict[str, Any]]) -> List[Dict[str, st
             "env_var_name": query["env_var_name"],
             "key_behavior": query["key_behavior"],
         })
-    
+
     return legacy_queries
 
 
@@ -266,7 +266,7 @@ def generate_query_definition(queries):
     lines.append("#ifndef QUERY_DEFINITION_HPP")
     lines.append("#define QUERY_DEFINITION_HPP")
     lines.append("")
-    
+
     if queries:
         lines.append("#define QUERY_DEFINITION() \\")
         for i, query in enumerate(queries):
@@ -277,7 +277,7 @@ def generate_query_definition(queries):
     else:
         lines.append("// No queries defined")
         lines.append("#define QUERY_DEFINITION()")
-    
+
     lines.append("")
     lines.append("#endif // QUERY_DEFINITION_HPP")
     return "\n".join(lines)
@@ -291,7 +291,7 @@ def generate_query_override(queries):
     lines.append("#ifndef QUERY_OVERRIDE_HPP")
     lines.append("#define QUERY_OVERRIDE_HPP")
     lines.append("")
-    
+
     if queries:
         lines.append("#define QUERY_OVERRIDE() \\")
         for i, query in enumerate(queries):
@@ -302,7 +302,7 @@ def generate_query_override(queries):
     else:
         lines.append("// No queries defined")
         lines.append("#define QUERY_OVERRIDE()")
-    
+
     lines.append("")
     lines.append("#endif // QUERY_OVERRIDE_HPP")
     return "\n".join(lines)
@@ -316,14 +316,14 @@ def generate_cache_forwarding(queries):
     lines.append("#ifndef CACHE_QUERY_FORWARDING_HPP")
     lines.append("#define CACHE_QUERY_FORWARDING_HPP")
     lines.append("")
-    
+
     if queries:
         lines.append("#define QUERY_FORWARDING_CACHE() \\")
         for i, query in enumerate(queries):
             method_line = f"    {query['return_type']} Cache::{query['method_name']}({query['full_params']}) {{"
             return_line = f"        return this->cache->{query['method_name']}({query['call_params']});"
             end_line = "    }"
-            
+
             full_line = method_line + " \\\n" + return_line + " \\\n" + end_line
             if i < len(queries) - 1:
                 full_line += " \\"
@@ -331,7 +331,7 @@ def generate_cache_forwarding(queries):
     else:
         lines.append("// No queries defined")
         lines.append("#define QUERY_FORWARDING_CACHE()")
-    
+
     lines.append("")
     lines.append("#endif // CACHE_QUERY_FORWARDING_HPP")
     return "\n".join(lines)
@@ -345,14 +345,14 @@ def generate_database_forwarding(queries):
     lines.append("#ifndef DATABASE_QUERY_FORWARDING_HPP")
     lines.append("#define DATABASE_QUERY_FORWARDING_HPP")
     lines.append("")
-    
+
     if queries:
         lines.append("#define QUERY_FORWARDING_DATABASE() \\")
         for i, query in enumerate(queries):
             method_line = f"    {query['return_type']} Database::{query['method_name']}({query['full_params']}) {{"
             return_line = f"        return this->database->{query['method_name']}({query['call_params']});"
             end_line = "    }"
-            
+
             full_line = method_line + " \\\n" + return_line + " \\\n" + end_line
             if i < len(queries) - 1:
                 full_line += " \\"
@@ -360,7 +360,7 @@ def generate_database_forwarding(queries):
     else:
         lines.append("// No queries defined")
         lines.append("#define QUERY_FORWARDING_DATABASE()")
-    
+
     lines.append("")
     lines.append("#endif // DATABASE_QUERY_FORWARDING_HPP")
     return "\n".join(lines)
@@ -385,14 +385,14 @@ def generate_auth_config(queries):
     lines.append("    std::string envVar;")
     lines.append("};")
     lines.append("")
-    
+
     if queries:
         # Generate AutoToken array
         auto_token_vars = []
         for query in queries:
             if query["auth_type"] == "TOKEN" and query["key_behavior"] == "AUTO":
                 auto_token_vars.append(query["env_var_name"])
-        
+
         if auto_token_vars:
             lines.append(f"static constexpr std::array<const char*, {len(auto_token_vars)}> AutoToken = {{")
             for i, env_var in enumerate(auto_token_vars):
@@ -402,7 +402,7 @@ def generate_auth_config(queries):
                 lines.append(line)
             lines.append("};")
             lines.append("")
-        
+
         # Generate QUERY_AUTH_MAP
         lines.append("static std::unordered_map<std::string, AuthConfig> QUERY_AUTH_MAP = {")
         for i, query in enumerate(queries):
@@ -418,7 +418,7 @@ def generate_auth_config(queries):
         lines.append("// No queries defined")
         lines.append("static constexpr std::array<const char*, 0> AutoToken = {};")
         lines.append("static std::unordered_map<std::string, AuthConfig> QUERY_AUTH_MAP = {};")
-    
+
     lines.append("")
     lines.append("#endif // AUTH_CONFIG_HPP")
     return "\n".join(lines)
@@ -430,7 +430,7 @@ def generate_cmake_config(queries):
     lines = []
     lines.append("# Auto-generated CMake configuration - DO NOT EDIT MANUALLY")
     lines.append("")
-    
+
     if queries:
         lines.append("# Query definitions found")
         lines.append("add_compile_definitions(")
@@ -445,7 +445,7 @@ def generate_cmake_config(queries):
         lines.append("# No query definitions found")
         lines.append("# target_compile_definitions will be empty")
         lines.append("# No individual query flags to set")
-    
+
     lines.append("")
     return "\n".join(lines)
 
@@ -484,31 +484,31 @@ def main() -> int:
         action="store_true",
         help="Disable JSON schema validation",
     )
-    
+
     args = parser.parse_args()
-    
+
     # Configure logging
     if args.verbose:
         logger.setLevel(logging.DEBUG)
         logger.debug("Verbose logging enabled")
-    
+
     # Override schema validation if requested
     global USE_SCHEMA_VALIDATION
     if args.no_schema_validation:
         USE_SCHEMA_VALIDATION = False
         logger.info("JSON schema validation disabled")
-    
+
     logger.info("=== CAOS Query Generator (YAML Edition) ===")
-    
+
     try:
         # Parse query definitions
         parser = QueryDefinitionParser()
         all_queries = parser.parse_file(Path(args.definitions))
-        
+
         # Filter queries based on enablement rules
         enabled_queries_data = []
         enabled_legacy_queries = []
-        
+
         for query in all_queries:
             try:
                 enabled, reason = validate_query_enablement(query, args)
@@ -520,13 +520,13 @@ def main() -> int:
             except QueryDefinitionError as e:
                 logger.error(f"🚨 Error validating query {query['name']}: {e}")
                 return 1
-        
+
         # Convert to legacy format for existing generators
         enabled_legacy_queries = convert_to_legacy_format(enabled_queries_data)
-        
+
         logger.info(f"Total queries found: {len(all_queries)}")
         logger.info(f"Queries enabled: {len(enabled_legacy_queries)}")
-        
+
         # Count auto tokens
         auto_tokens = [
             q
@@ -534,48 +534,48 @@ def main() -> int:
             if q["auth_type"] == "TOKEN" and q["key_behavior"] == "AUTO"
         ]
         logger.info(f"Found {len(auto_tokens)} auto-generated tokens")
-        
+
         # Create output directory
         output_dir = Path(args.output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
         logger.info(f"Output directory: {output_dir.absolute()}")
-        
+
         # Generate all files
         logger.info("Generating files...")
-        
+
         (output_dir / "Query_Definition.hpp").write_text(
             generate_query_definition(enabled_legacy_queries)
         )
         logger.info("✓ Generated: Query_Definition.hpp")
-        
+
         (output_dir / "Query_Override.hpp").write_text(
             generate_query_override(enabled_legacy_queries)
         )
         logger.info("✓ Generated: Query_Override.hpp")
-        
+
         (output_dir / "Cache_Query_Forwarding.hpp").write_text(
             generate_cache_forwarding(enabled_legacy_queries)
         )
         logger.info("✓ Generated: Cache_Query_Forwarding.hpp")
-        
+
         (output_dir / "Database_Query_Forwarding.hpp").write_text(
             generate_database_forwarding(enabled_legacy_queries)
         )
         logger.info("✓ Generated: Database_Query_Forwarding.hpp")
-        
+
         (output_dir / "AuthConfig.hpp").write_text(
             generate_auth_config(enabled_legacy_queries)
         )
         logger.info("✓ Generated: AuthConfig.hpp")
-        
+
         (output_dir / "Query_Config.cmake").write_text(
             generate_cmake_config(enabled_legacy_queries)
         )
         logger.info("✓ Generated: Query_Config.cmake")
-        
+
         logger.info("✅ Code generation completed successfully")
         return 0
-    
+
     except FileNotFoundError as e:
         logger.error(f"File error: {e}")
         return 1

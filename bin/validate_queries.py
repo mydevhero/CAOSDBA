@@ -17,64 +17,64 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Validate CAOSDBA query definitions against JSON Schema"
     )
-    
+
     parser.add_argument(
         "yaml_file",
         nargs="?",
-        help="Path to YAML query definitions file (default: queries.yaml in current directory)"
+        help="Path to YAML query definitions file (default: queries/CAOSDBA/queries.yaml in current directory)"
     )
-    
+
     parser.add_argument(
         "--schema",
         "-s",
-        help="Path to JSON Schema file (default: schemas/query-schema.json in project root)"
+        help="Path to JSON Schema file (default: schemas/CAOSDBA/queries.json in project root)"
     )
-    
+
     parser.add_argument(
         "--strict",
         action="store_true",
         help="Exit with error code on validation failure"
     )
-    
+
     parser.add_argument(
         "--verbose",
         "-v",
         action="store_true",
         help="Show detailed validation information"
     )
-    
+
     parser.add_argument(
         "--diagnose",
         "-d",
         action="store_true",
         help="Diagnose YAML structure issues"
     )
-    
+
     args = parser.parse_args()
-    
+
     # Determine YAML file path
     if args.yaml_file:
         yaml_path = Path(args.yaml_file)
     else:
-        yaml_path = Path.cwd() / "queries.yaml"
-    
+        yaml_path = Path.cwd() / "queries/CAOSDBA/queries.yaml"
+
     # Determine schema path
     schema_path = Path(args.schema) if args.schema else None
-    
+
     # Diagnose mode
     if args.diagnose:
         validate_yaml_structure(yaml_path)
         return 0
-    
+
     try:
         # Initialize validator using shared module
         validator = QueryValidator(schema_path)
-        
+
         if args.verbose:
             print(f"📋 Schema: {validator.schema_path}")
             print(f"📄 YAML file: {yaml_path}")
             print("─" * 50)
-        
+
         # Validate file using shared module
         if validator.validate_file(yaml_path):
             print("✅ Validation passed")
@@ -83,7 +83,7 @@ def main() -> int:
             if args.strict:
                 return 1
             return 0  # Non-strict mode returns 0 even on failure
-    
+
     except FileNotFoundError as e:
         print(f"❌ File error: {e}", file=sys.stderr)
         return 1
