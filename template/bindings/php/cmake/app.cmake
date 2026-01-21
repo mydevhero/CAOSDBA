@@ -3,6 +3,8 @@ message(STATUS "Building CAOS as PHP extension")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+set(PROJECT_DIR ${CMAKE_SOURCE_DIR}/..)
+
 find_program(PHP_CONFIG php-config)
 
 if(PHP_CONFIG)
@@ -34,20 +36,20 @@ if(PHP_CONFIG)
 
   # Add call_context.cpp to source files
   add_library(${PROJECT_NAME} MODULE
-    src/bindings.cpp
-    src/call_context.cpp
+    ${PROJECT_DIR}/src/bindings.cpp
+    ${PROJECT_DIR}/src/call_context.cpp
   )
 
   configure_file(
-    ${CMAKE_SOURCE_DIR}/src/include/extension_config.h.in
+    ${PROJECT_DIR}/src/include/extension_config.h.in
     ${CMAKE_BINARY_DIR}/extension_config.h
     @ONLY
   )
 
   target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_BINARY_DIR}
-    ${CMAKE_SOURCE_DIR}/src
-    ${CMAKE_SOURCE_DIR}/src/include
+    ${PROJECT_DIR}/src
+    ${PROJECT_DIR}/src/include
   )
 
   set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -89,7 +91,7 @@ if(PHP_CONFIG)
   file(MAKE_DIRECTORY ${PHP_PACKAGE_DIR})
 
   # Create nested repository directory structure: repositories/${PROJECT_NAME}/php/
-  set(PHP_REPO_DIR "${CMAKE_SOURCE_DIR}/dist/repositories/${PROJECT_NAME}/php")
+  set(PHP_REPO_DIR "${PROJECT_DIR}/dist/repositories/${PROJECT_NAME}/php")
   file(MAKE_DIRECTORY ${PHP_REPO_DIR})
 
   add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
@@ -147,14 +149,14 @@ if(PHP_CONFIG)
 
   if(CMAKE_BUILD_TYPE STREQUAL "release")
       add_custom_target(make_package_deb
-          COMMAND ${CMAKE_SOURCE_DIR}/scripts/create_package_deb.sh ${CAOS_DB_BACKEND} ${PROJECT_NAME}
+          COMMAND ${PROJECT_DIR}/scripts/create_package_deb.sh ${CAOS_DB_BACKEND} ${PROJECT_NAME}
           DEPENDS libcaos do_copy_to_dist
           WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
           COMMENT "Building DEB package for PHP extension '${PROJECT_NAME}' with ${CAOS_DB_BACKEND} backend"
       )
 
       add_custom_target(make_distribution_tarball
-          COMMAND ${CMAKE_SOURCE_DIR}/scripts/create_distribution_tarball.sh ${CAOS_DB_BACKEND} ${PROJECT_NAME}
+          COMMAND ${PROJECT_DIR}/scripts/create_distribution_tarball.sh ${CAOS_DB_BACKEND} ${PROJECT_NAME}
           DEPENDS make_package_deb
           WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
           COMMENT "Creating distribution tarball for PHP extension '${PROJECT_NAME}' with ${CAOS_DB_BACKEND} backend"

@@ -1,5 +1,5 @@
-if(NOT EXISTS ${CMAKE_SOURCE_DIR}/dist)
-  file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/dist)
+if(NOT EXISTS ${CMAKE_SOURCE_DIR}/../dist)
+  file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/../dist)
 endif()
 
 # Select CAOS_ENV ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -23,9 +23,10 @@ endif()
 
 # Select CAOS_DB_BACKEND +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 set(VALID_DB_BACKENDS "POSTGRESQL" "MYSQL" "MARIADB")
-
-if(EXISTS ${CMAKE_SOURCE_DIR}/cmake/db_backend.cmake)
-  include(${CMAKE_SOURCE_DIR}/cmake/db_backend.cmake)
+set(CAOS_DB_BACKEND_PATH "${CMAKE_SOURCE_DIR}/../cmake")
+set(CAOS_DB_BACKEND_FILE "${CAOS_DB_BACKEND_PATH}/db_backend.cmake")
+if(EXISTS ${CAOS_DB_BACKEND_FILE})
+  include(${CAOS_DB_BACKEND_FILE})
 
   set(CAOS_DB_BACKEND "${DB_BACKEND}" CACHE STRING "Database backend, got default from cmake/db_backend.cmake")
   message(STATUS "Using CAOS_DB_BACKEND from db_backend.cmake: ${CAOS_DB_BACKEND}")
@@ -42,7 +43,8 @@ elseif(DEFINED CAOS_DB_BACKEND)
   message(STATUS "Using CAOS_DB_BACKEND from command line: ${CAOS_DB_BACKEND}")
 
   # Save
-  file(WRITE ${CMAKE_SOURCE_DIR}/cmake/db_backend.cmake
+  file(MAKE_DIRECTORY "${CAOS_DB_BACKEND_PATH}")
+  file(WRITE ${CAOS_DB_BACKEND_FILE}
     "# Database backend configuration\n"
     "set(DB_BACKEND ${CAOS_DB_BACKEND})\n"
   )
@@ -61,8 +63,11 @@ set_property(CACHE CAOS_DB_BACKEND PROPERTY STRINGS
 # Select CAOS_DB_BACKEND ---------------------------------------------------------------------------
 
 # Select CAOS_PROJECT_TYPE +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-if(EXISTS ${CMAKE_SOURCE_DIR}/cmake/project_type.cmake)
-  include(${CMAKE_SOURCE_DIR}/cmake/project_type.cmake)
+set(CAOS_PROJECT_TYPE_PATH "${CMAKE_SOURCE_DIR}/../cmake")
+set(CAOS_PROJECT_TYPE_FILE "${CAOS_PROJECT_TYPE_PATH}/project_type.cmake")
+if(EXISTS ${CAOS_PROJECT_TYPE_FILE})
+  include(${CAOS_PROJECT_TYPE_FILE})
+
   set(CAOS_PROJECT_TYPE "${PROJECT_TYPE}" CACHE STRING "Project Type, got default from cmake/project_type.cmake")
   message(STATUS "Using CAOS_PROJECT_TYPE from project_type.cmake: ${CAOS_PROJECT_TYPE}")
 
@@ -70,7 +75,8 @@ elseif(DEFINED CAOS_PROJECT_TYPE)
   message(STATUS "Using CAOS_PROJECT_TYPE from command line: ${CAOS_PROJECT_TYPE}")
 
   # Save
-  file(WRITE ${CMAKE_SOURCE_DIR}/cmake/project_type.cmake
+  file(MAKE_DIRECTORY "${CAOS_PROJECT_TYPE_PATH}")
+  file(WRITE ${CAOS_PROJECT_TYPE_FILE}
     "# Project Type configuration\n"
     "set(PROJECT_TYPE ${CAOS_PROJECT_TYPE})\n"
   )
@@ -92,9 +98,10 @@ set_property(CACHE CAOS_PROJECT_TYPE PROPERTY STRINGS
 if(DEFINED CAOS_PROJECT_TYPE AND CAOS_PROJECT_TYPE STREQUAL "BINDING")
   # Definisci i linguaggi validi (solo maiuscoli)
   set(VALID_BINDING_LANGUAGES "PHP" "NODEJS" "PYTHON")
-
-  if(EXISTS ${CMAKE_SOURCE_DIR}/cmake/binding_language.cmake)
-    include(${CMAKE_SOURCE_DIR}/cmake/binding_language.cmake)
+  set(CAOS_BINDING_LANGUAGE_PATH "${CMAKE_SOURCE_DIR}/../cmake")
+  set(CAOS_BINDING_LANGUAGE_FILE "${CAOS_BINDING_LANGUAGE_PATH}/binding_language.cmake")
+  if(EXISTS ${CAOS_BINDING_LANGUAGE_FILE})
+    include(${CAOS_BINDING_LANGUAGE_FILE})
 
     set(CAOS_BINDING_LANGUAGE "${BINDING_LANGUAGE}" CACHE STRING "Binding language, got default from cmake/binding_language.cmake")
     message(STATUS "Using CAOS_BINDING_LANGUAGE from binding_language.cmake: ${CAOS_BINDING_LANGUAGE}")
@@ -111,7 +118,8 @@ if(DEFINED CAOS_PROJECT_TYPE AND CAOS_PROJECT_TYPE STREQUAL "BINDING")
     message(STATUS "Using CAOS_BINDING_LANGUAGE from command line: ${CAOS_BINDING_LANGUAGE}")
 
     # Save
-    file(WRITE ${CMAKE_SOURCE_DIR}/cmake/binding_language.cmake
+    file(MAKE_DIRECTORY ${CAOS_BINDING_LANGUAGE_PATH})
+    file(WRITE ${CAOS_BINDING_LANGUAGE_FILE}
       "# Binding language configuration\n"
       "set(BINDING_LANGUAGE ${CAOS_BINDING_LANGUAGE})\n"
     )
@@ -132,8 +140,11 @@ endif()
 
 # Select CAOS_CROWCPP_TYPE +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 if(DEFINED CAOS_PROJECT_TYPE AND CAOS_PROJECT_TYPE STREQUAL "CROWCPP")
-  if(EXISTS ${CMAKE_SOURCE_DIR}/cmake/crowcpp_type.cmake)
-    include(${CMAKE_SOURCE_DIR}/cmake/crowcpp_type.cmake)
+  set(CAOS_CROWCPP_TYPE_PATH "${CMAKE_SOURCE_DIR}/../cmake")
+  set(CAOS_CROWCPP_TYPE_FILE "${CAOS_CROWCPP_TYPE_PATH}/crowcpp_type.cmake")
+
+  if(EXISTS ${CAOS_CROWCPP_TYPE_FILE})
+    include(${CAOS_CROWCPP_TYPE_FILE})
     set(CAOS_CROWCPP_TYPE "${CROWCPP_TYPE}" CACHE STRING "CROWCPP type, got default from cmake/crowcpp_type.cmake")
     message(STATUS "Using CAOS_CROWCPP_TYPE from crowcpp_type.cmake: ${CAOS_CROWCPP_TYPE}")
 
@@ -141,7 +152,8 @@ if(DEFINED CAOS_PROJECT_TYPE AND CAOS_PROJECT_TYPE STREQUAL "CROWCPP")
     message(STATUS "Using CAOS_CROWCPP_TYPE from command line: ${CAOS_CROWCPP_TYPE}")
 
     # Save
-    file(WRITE ${CMAKE_SOURCE_DIR}/cmake/crowcpp_type.cmake
+    file(MAKE_DIRECTORY ${CAOS_CROWCPP_TYPE_PATH})
+    file(WRITE ${CAOS_CROWCPP_TYPE_FILE}
       "# CROWCPP type configuration\n"
       "set(CROWCPP_TYPE ${CAOS_CROWCPP_TYPE})\n"
     )
@@ -173,8 +185,10 @@ execute_process(
   ERROR_STRIP_TRAILING_WHITESPACE
 )
 
-if(EXISTS ${CMAKE_SOURCE_DIR}/cmake/type_code.cmake)
-  include(${CMAKE_SOURCE_DIR}/cmake/type_code.cmake)
+set(CAOS_TEMPLATE_CODE_PATH "${CMAKE_SOURCE_DIR}/../cmake")
+set(CAOS_TEMPLATE_CODE_FILE "${CAOS_TEMPLATE_CODE_PATH}/type_code.cmake")
+if(EXISTS ${CAOS_TEMPLATE_CODE_FILE})
+  include(${CAOS_TEMPLATE_CODE_FILE})
 endif()
 
 # Display setup output
