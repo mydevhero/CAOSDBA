@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/mydevhero/CAOSDBA/schemas/query-schema.json",
+  "$id": "https://github.com/mydevhero/CAOSDBA/schemas/CAOSDBA/queries.json",
   "title": "CAOSDBA Query Definition",
   "description": "Schema for defining CAOSDBA queries with authentication and filters",
   "type": "object",
