@@ -7,7 +7,7 @@ DB_BACKEND_LOWER=$(echo "$DB_BACKEND" | tr '[:upper:]' '[:lower:]')
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../" && pwd)"
-BUILD_DIR="$PROJECT_ROOT/build/release"
+BUILD_DIR="$PROJECT_ROOT/CAOSDBA/build/release"
 DIST_DIR="$PROJECT_ROOT/dist"
 REPO_DIR="$DIST_DIR/repositories/${PROJECT_NAME}/nodejs"
 PACKAGE_NAME_BASE="${PROJECT_NAME_SANITIZED}-nodejs-${DB_BACKEND_LOWER}"
@@ -124,9 +124,7 @@ copy_files() {
     if [ -d "$types_dir" ]; then
         echo "  Copying TypeScript files from $types_dir"
         cp -r "$types_dir"/* "$VERSION_DIR/types/"
-        echo "+++++++++++++++++++++++++++++++++++++++++++++++++"
     else
-        echo "-------------------------------------------------"
         echo "  WARNING: TypeScript directory not found at $types_dir"
         # Create minimal TypeScript definitions
         cat > "$VERSION_DIR/types/${PROJECT_NAME}.d.ts" << 'EOF'

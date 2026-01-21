@@ -4,7 +4,7 @@ version: "1.0.0"
 
 queries:
   # Echo
-  - name: IQuery_Template_echoString
+  - name: IQuery_Template_echoString_custom
     enabled: true
     metadata:
       category: template

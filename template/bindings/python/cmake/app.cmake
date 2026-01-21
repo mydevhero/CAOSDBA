@@ -3,6 +3,8 @@ message(STATUS "Building CAOS as Python extension")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+set(PROJECT_DIR ${CMAKE_SOURCE_DIR}/..)
+
 # Define supported Python versions
 set(SUPPORTED_PYTHON_VERSIONS "3.8" "3.9" "3.10" "3.11" "3.12")
 set(PYTHON_TARGETS "")
@@ -65,21 +67,21 @@ foreach(PYTHON_VER IN LISTS SUPPORTED_PYTHON_VERSIONS)
 
         # Configure file for this Python version
         configure_file(
-            ${CMAKE_SOURCE_DIR}/src/include/extension_config.h.in
+            ${PROJECT_DIR}/src/include/extension_config.h.in
             ${CMAKE_BINARY_DIR}/extension_config.h
             @ONLY
         )
 
         # Create library target for this Python version
         add_library(${TARGET_NAME} MODULE
-            src/bindings.cpp
-            src/call_context.cpp
+            ${PROJECT_DIR}/src/bindings.cpp
+            ${PROJECT_DIR}/src/call_context.cpp
         )
 
         target_include_directories(${TARGET_NAME} PRIVATE
             ${CMAKE_BINARY_DIR}
-            ${CMAKE_SOURCE_DIR}/src
-            ${CMAKE_SOURCE_DIR}/src/include
+            ${PROJECT_DIR}/src
+            ${PROJECT_DIR}/src/include
             ${Python3_INCLUDE_DIRS}
         )
 
@@ -171,7 +173,7 @@ def get_build_info():
 ]])
 
         # Create nested repository directory structure: repositories/${PROJECT_NAME}/python/
-        set(PYTHON_REPO_DIR "${CMAKE_SOURCE_DIR}/dist/repositories/${PROJECT_NAME}/python")
+        set(PYTHON_REPO_DIR "${PROJECT_DIR}/dist/repositories/${PROJECT_NAME}/python")
         file(MAKE_DIRECTORY ${PYTHON_REPO_DIR})
 
         # POST_BUILD: copy to both structured directory AND direct location
@@ -193,15 +195,15 @@ def get_build_info():
         # Create a separate target for copying to dist/ (only executed when explicitly requested)
         add_custom_target(${TARGET_NAME}_copy_to_dist
             # Create dist directory if needed
-            COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_SOURCE_DIR}/dist/repositories/${PROJECT_NAME}/python
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_DIR}/dist/repositories/${PROJECT_NAME}/python
             # Copy .so file from build directory to dist directory
             COMMAND ${CMAKE_COMMAND} -E copy
                 ${PYTHON_PACKAGE_DIR}/${PROJECT_NAME}${PYTHON_MODULE_SUFFIX}
-                ${CMAKE_SOURCE_DIR}/dist/repositories/${PROJECT_NAME}/python/${PROJECT_NAME}${PYTHON_MODULE_SUFFIX}
+                ${PROJECT_DIR}/dist/repositories/${PROJECT_NAME}/python/${PROJECT_NAME}${PYTHON_MODULE_SUFFIX}
             # Copy __init__.py from build directory to dist directory
             COMMAND ${CMAKE_COMMAND} -E copy
                 ${PYTHON_PACKAGE_DIR}/__init__.py
-                ${CMAKE_SOURCE_DIR}/dist/repositories/${PROJECT_NAME}/python/__init__.py
+                ${PROJECT_DIR}/dist/repositories/${PROJECT_NAME}/python/__init__.py
             DEPENDS ${TARGET_NAME}
             COMMENT "Copying ${PROJECT_NAME} Python files to dist directory for packaging"
         )
@@ -404,14 +406,14 @@ install(CODE "
 # Package targets
 if(CMAKE_BUILD_TYPE STREQUAL "release")
     add_custom_target(make_package_deb
-        COMMAND ${CMAKE_SOURCE_DIR}/scripts/create_package_deb.sh ${CAOS_DB_BACKEND} ${PROJECT_NAME}
+        COMMAND ${PROJECT_DIR}/scripts/create_package_deb.sh ${CAOS_DB_BACKEND} ${PROJECT_NAME}
         DEPENDS libcaos do_copy_all_to_dist
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
         COMMENT "Building DEB package for Python extension '${PROJECT_NAME}' with ${CAOS_DB_BACKEND} backend"
     )
 
     add_custom_target(make_distribution_tarball
-        COMMAND ${CMAKE_SOURCE_DIR}/scripts/create_distribution_tarball.sh ${CAOS_DB_BACKEND} ${PROJECT_NAME}
+        COMMAND ${PROJECT_DIR}/scripts/create_distribution_tarball.sh ${CAOS_DB_BACKEND} ${PROJECT_NAME}
         DEPENDS make_package_deb
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
         COMMENT "Creating distribution tarball for Python extension '${PROJECT_NAME}' with ${CAOS_DB_BACKEND} backend"

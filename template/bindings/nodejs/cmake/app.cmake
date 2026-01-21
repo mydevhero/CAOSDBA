@@ -6,6 +6,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Check for required Node.js development packages
 set(NODEJS_MISSING_PACKAGES "")
 
+set(PROJECT_DIR ${CMAKE_SOURCE_DIR}/..)
+
 # Check for libnode-dev
 find_path(LIBNODE_DEV_INCLUDE node.h
   PATHS
@@ -194,21 +196,21 @@ foreach(NODE_MAJOR_VER IN LISTS SUPPORTED_NODE_VERSIONS)
 
         # Configure file
         configure_file(
-          ${CMAKE_SOURCE_DIR}/src/include/extension_config.h.in
+          ${PROJECT_DIR}/src/include/extension_config.h.in
           ${CMAKE_BINARY_DIR}/extension_config.h
           @ONLY
         )
 
         # Create library target for this Node.js version
         add_library(${TARGET_NAME} MODULE
-          src/bindings.cpp
-          src/call_context.cpp
+          ${PROJECT_DIR}/src/bindings.cpp
+          ${PROJECT_DIR}/src/call_context.cpp
         )
 
         target_include_directories(${TARGET_NAME} PRIVATE
           ${CMAKE_BINARY_DIR}
-          ${CMAKE_SOURCE_DIR}/src
-          ${CMAKE_SOURCE_DIR}/src/include
+          ${PROJECT_DIR}/src
+          ${PROJECT_DIR}/src/include
           ${NODE_HEADERS_DIR}
           ${NAPI_INCLUDE_DIR}
         )
@@ -240,7 +242,7 @@ foreach(NODE_MAJOR_VER IN LISTS SUPPORTED_NODE_VERSIONS)
         file(MAKE_DIRECTORY ${NODE_TYPES_DIR})
 
         # typescript/package.json
-        set(PACKAGE_JSON_TEMPLATE "${CMAKE_SOURCE_DIR}/typescript/package.json")
+        set(PACKAGE_JSON_TEMPLATE "${PROJECT_DIR}/typescript/package.json")
         set(PACKAGE_JSON_OUTPUT "${NODE_PACKAGE_DIR}/package.json")
         if(EXISTS "${PACKAGE_JSON_TEMPLATE}")
           # Read the template
@@ -262,7 +264,7 @@ foreach(NODE_MAJOR_VER IN LISTS SUPPORTED_NODE_VERSIONS)
         endif()
 
         # typescript/index.js
-        set(INDEX_JS_TEMPLATE "${CMAKE_SOURCE_DIR}/typescript/index.js")
+        set(INDEX_JS_TEMPLATE "${PROJECT_DIR}/typescript/index.js")
         set(INDEX_JS_OUTPUT "${NODE_PACKAGE_DIR}/index.js")
         if(EXISTS "${INDEX_JS_TEMPLATE}")
           # Read the template
@@ -284,7 +286,7 @@ foreach(NODE_MAJOR_VER IN LISTS SUPPORTED_NODE_VERSIONS)
         endif()
 
         # Generate TypeScript declaration file for this version
-        set(TYPESCRIPT_TEMPLATE "${CMAKE_SOURCE_DIR}/typescript/types/__PROJECT_NAME__.d.ts")
+        set(TYPESCRIPT_TEMPLATE "${PROJECT_DIR}/typescript/types/__PROJECT_NAME__.d.ts")
         set(TYPESCRIPT_OUTPUT "${NODE_TYPES_DIR}/${PROJECT_NAME}.d.ts")
 
         if(EXISTS "${TYPESCRIPT_TEMPLATE}")
@@ -307,7 +309,7 @@ foreach(NODE_MAJOR_VER IN LISTS SUPPORTED_NODE_VERSIONS)
         endif()
 
         # Copy test-types.ts if it exists
-        set(TEST_TYPES_TEMPLATE "${CMAKE_SOURCE_DIR}/typescript/types/test-types.ts")
+        set(TEST_TYPES_TEMPLATE "${PROJECT_DIR}/typescript/types/test-types.ts")
         set(TEST_TYPES_OUTPUT "${NODE_TYPES_DIR}/test-types.ts")
 
         if(EXISTS "${TEST_TYPES_TEMPLATE}")
@@ -323,7 +325,7 @@ foreach(NODE_MAJOR_VER IN LISTS SUPPORTED_NODE_VERSIONS)
         endif()
 
         # Copy tsconfig.json if it exists
-        set(TSCONFIG_TEMPLATE "${CMAKE_SOURCE_DIR}/typescript/tsconfig.json")
+        set(TSCONFIG_TEMPLATE "${PROJECT_DIR}/typescript/tsconfig.json")
         set(TSCONFIG_OUTPUT "${NODE_PACKAGE_DIR}/tsconfig.json")
 
         if(EXISTS "${TSCONFIG_TEMPLATE}")
@@ -359,7 +361,7 @@ foreach(NODE_MAJOR_VER IN LISTS SUPPORTED_NODE_VERSIONS)
         )
 
         # Create directory in dist structure
-        set(NODE_REPO_DIR "${CMAKE_SOURCE_DIR}/dist/repositories/${PROJECT_NAME}/nodejs/v${NODE_MAJOR_VER}")
+        set(NODE_REPO_DIR "${PROJECT_DIR}/dist/repositories/${PROJECT_NAME}/nodejs/v${NODE_MAJOR_VER}")
         file(MAKE_DIRECTORY ${NODE_REPO_DIR})
 
         # Target for copying to dist
@@ -553,14 +555,14 @@ install(CODE "
 # Package targets
 if(CMAKE_BUILD_TYPE STREQUAL "release")
     add_custom_target(make_package_deb
-        COMMAND ${CMAKE_SOURCE_DIR}/scripts/create_package_deb.sh ${CAOS_DB_BACKEND} ${PROJECT_NAME}
+        COMMAND ${PROJECT_DIR}/scripts/create_package_deb.sh ${CAOS_DB_BACKEND} ${PROJECT_NAME}
         DEPENDS libcaos do_copy_all_to_dist
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
         COMMENT "Building DEB package for Node.js extension '${PROJECT_NAME}' with ${CAOS_DB_BACKEND_LOWER} backend"
     )
 
     add_custom_target(make_distribution_tarball
-        COMMAND ${CMAKE_SOURCE_DIR}/scripts/create_distribution_tarball.sh ${CAOS_DB_BACKEND} ${PROJECT_NAME}
+        COMMAND ${PROJECT_DIR}/scripts/create_distribution_tarball.sh ${CAOS_DB_BACKEND} ${PROJECT_NAME}
         DEPENDS make_package_deb
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
         COMMENT "Creating distribution tarball for Node.js extension '${PROJECT_NAME}' with ${CAOS_DB_BACKEND_LOWER} backend"
