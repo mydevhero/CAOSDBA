@@ -153,7 +153,14 @@ static void caos_execute_internal(zend_execute_data *execute_data, zval *return_
 // =================================================================================================
 // FUNCTION DECLARATIONS
 // =================================================================================================
+#ifdef QUERY_EXISTS_IQuery_Template_echoString
 PHP_FUNCTION(IQuery_Template_echoString);
+#endif
+
+#ifdef QUERY_EXISTS_IQuery_Template_echoString_custom
+PHP_FUNCTION(IQuery_Template_echoString_custom);
+#endif
+
 PHP_FUNCTION(info);
 
 // =================================================================================================
@@ -169,6 +176,20 @@ PHP_FUNCTION(info);
  */
 #ifdef QUERY_EXISTS_IQuery_Template_echoString
 ZEND_BEGIN_ARG_INFO(arginfolibIQuery_Template_echoString, 0)
+ZEND_ARG_TYPE_INFO(0, call_context, IS_ARRAY, 0)
+ZEND_ARG_INFO(0, str)
+ZEND_END_ARG_INFO()
+#endif
+
+/**
+ * Argument information for IQuery_Template_echoString_custom()
+ *
+ * Parameters:
+ * 1. call_context (array) - Call context array (with optional token)
+ * 2. str (string)         - String to echo
+ */
+#ifdef QUERY_EXISTS_IQuery_Template_echoString_custom
+ZEND_BEGIN_ARG_INFO(arginfolibIQuery_Template_echoString_custom, 0)
 ZEND_ARG_TYPE_INFO(0, call_context, IS_ARRAY, 0)
 ZEND_ARG_INFO(0, str)
 ZEND_END_ARG_INFO()
@@ -193,6 +214,10 @@ static const zend_function_entry PHP_EXT_FUNCTIONS[] =
 {
 #ifdef QUERY_EXISTS_IQuery_Template_echoString
     PHP_FE(IQuery_Template_echoString, arginfolibIQuery_Template_echoString)
+#endif
+
+#ifdef QUERY_EXISTS_IQuery_Template_echoString_custom
+    PHP_FE(IQuery_Template_echoString_custom, arginfolibIQuery_Template_echoString_custom)
 #endif
     PHP_FE(info, arginfo_info)
     PHP_FE_END
@@ -379,6 +404,97 @@ PHP_FUNCTION(IQuery_Template_echoString)
 
         // Call repository method
         auto repo_result = repo->IQuery_Template_echoString(str);
+        if (!repo_result.has_value())
+        {
+            // Repository returned no value - return success with null data
+            create_success_object(return_value, nullptr);
+            return;
+        }
+
+        // Build final result string
+        std::string final_result = repo_result.value() + " through PHP!\n";
+
+        // Create result string zval
+        zval result_data;
+        ZVAL_STRINGL(&result_data, final_result.c_str(), final_result.length());
+
+        // Return success with data
+        create_success_object(return_value, &result_data);
+
+        // Clean up the temporary zval
+        zval_ptr_dtor(&result_data);
+    }
+    catch (const std::exception& e)
+    {
+        // Exception during execution - return system error
+        create_system_error(return_value, e.what());
+    }
+}
+#endif
+
+/**
+ * IQuery_Template_echoString_custom() - Echo string through CAOS repository
+ *
+ * This function demonstrates:
+ * 1. Context-based authentication (via hook)
+ * 2. Parameter validation
+ * 3. Repository interaction
+ * 4. Structured error handling
+ *
+ * The authentication hook intercepts this call and validates the context
+ * BEFORE this function body executes. If context validation fails, this
+ * function is never called.
+ *
+ * Usage: IQuery_Template_echoString_custom(['token' => '...'], $string)
+ *
+ * @param array $call_context Call context array (validated by hook)
+ * @param string $str   String to echo through repository
+ *
+ * @return object Standardized result object:
+ *   - success (bool): Operation success status
+ *   - data (mixed): Result data on success, null on failure
+ *   - error_type (string): Error category (only on failure)
+ *   - error_message (string): Human-readable error (only on failure)
+ *
+ * Error types:
+ * - PARAMETER: Invalid or missing parameters
+ * - SYSTEM: Repository or system-level errors
+ * - AUTH: Authentication failure (set by hook, not by this function)
+ * - VALIDATION: Context validation failure (set by hook)
+ */
+#ifdef QUERY_EXISTS_IQuery_Template_echoString_custom
+PHP_FUNCTION(IQuery_Template_echoString_custom)
+{
+    (void)execute_data;
+
+    zval *context_zval;
+    char *str;
+    size_t str_length;
+
+    // Parse parameters: call_context (validated by hook) and string
+    if (zend_parse_parameters(ZEND_NUM_ARGS(), "as", &context_zval, &str, &str_length) == FAILURE)
+    {
+        // Parameter parsing failed - return structured error
+        create_parameter_error(return_value, "Missing parameters (call_context array, string expected)");
+        return;
+    }
+
+    // NOTE: CallContext has already been validated by the authentication hook
+    // If we reach this point, context validation was successful
+
+    try
+    {
+        // Get repository instance
+        Cache* repo = Repository();
+        if (!repo)
+        {
+            // Repository not available - system error
+            create_system_error(return_value, "CAOS repository not available");
+            return;
+        }
+
+        // Call repository method
+        auto repo_result = repo->IQuery_Template_echoString_custom(str);
         if (!repo_result.has_value())
         {
             // Repository returned no value - return success with null data

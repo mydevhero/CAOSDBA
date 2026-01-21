@@ -52,7 +52,7 @@ bool CaosLazyInitializer::initialized_ = false;
 // =================================================================================================
 // QUERY IMPLEMENTATION - IQuery_Template_echoString (N-API version)
 // =================================================================================================
-
+#ifdef QUERY_EXISTS_IQuery_Template_echoString
 Napi::Value IQuery_Template_echoString(const Napi::CallbackInfo& info)
 {
   Napi::Env env = info.Env();
@@ -64,7 +64,7 @@ Napi::Value IQuery_Template_echoString(const Napi::CallbackInfo& info)
 
   if (!info[0].IsObject())
   {
-    return CreateParameterError(env, "First argument must be a call_context object");
+    return CreateParameterError(env, "First argument must be a call_context object_custom");
   }
 
   if (!info[1].IsString())
@@ -119,7 +119,79 @@ Napi::Value IQuery_Template_echoString(const Napi::CallbackInfo& info)
                              std::string("System error in IQuery_Template_echoString: ") + e.what());
   }
 }
+#endif
 
+// =================================================================================================
+// QUERY IMPLEMENTATION - IQuery_Template_echoString_custom (N-API version)
+// =================================================================================================
+#ifdef QUERY_EXISTS_IQuery_Template_echoString_custom
+Napi::Value IQuery_Template_echoString_custom(const Napi::CallbackInfo& info)
+{
+  Napi::Env env = info.Env();
+
+  if (info.Length() < 2)
+  {
+    return CreateParameterError(env, "Invalid parameters for IQuery_Template_echoString_custom");
+  }
+
+  if (!info[0].IsObject())
+  {
+    return CreateParameterError(env, "First argument must be a call_context object_custom");
+  }
+
+  if (!info[1].IsString())
+  {
+    return CreateParameterError(env, "Second argument must be a string");
+  }
+
+  try
+  {
+    // Initialize CAOS only when needed
+    CaosLazyInitializer::ensure_initialized();
+
+    // 1. Create call_context from JavaScript object
+    Napi::Object call_context_obj = info[0].As<Napi::Object>();
+    CallContext ctx = CallContext::from_napi_object(call_context_obj, "IQuery_Template_echoString_custom");
+
+    // 2. Apply auth filters (delegates to caosFilter)
+    ctx.apply_auth_filters("IQuery_Template_echoString_custom");
+
+    // 3. Get input string
+    std::string input_str = info[1].As<Napi::String>().Utf8Value();
+
+    // 4. Execute query
+    Cache* repo = Repository();
+    if (!repo)
+    {
+      throw std::runtime_error("Repository not available");
+    }
+
+    auto result = repo->IQuery_Template_echoString_custom(input_str);
+
+    // 5. Convert result to Napi::Value
+    if (!result.has_value())
+    {
+      return CreateSuccessObject(env, env.Null());
+    }
+
+    Napi::String result_str = Napi::String::New(env, result.value());
+    return CreateSuccessObject(env, result_str);
+  }
+  catch (const CallContext::AuthError& e)
+  {
+    return CreateErrorObject(env, "AUTH", e.what());
+  }
+  catch (const CallContext::ValidationError& e)
+  {
+    return CreateErrorObject(env, e.error_type(), e.what());
+  }
+  catch (const std::exception& e)
+  {
+    return CreateErrorObject(env, "SYSTEM",
+                             std::string("System error in IQuery_Template_echoString_custom: ") + e.what());
+  }
+}
+#endif
 // =================================================================================================
 // HELPER FUNCTIONS (N-API version)
 // =================================================================================================
@@ -164,8 +236,15 @@ Napi::Object Init(Napi::Env env, Napi::Object exports)
   }, nullptr);
 
   // Export query functions
+  #ifdef QUERY_EXISTS_IQuery_Template_echoString
   exports.Set("IQuery_Template_echoString",
               Napi::Function::New(env, IQuery_Template_echoString));
+  #endif
+
+  #ifdef QUERY_EXISTS_IQuery_Template_echoString_custom
+  exports.Set("IQuery_Template_echoString_custom",
+              Napi::Function::New(env, IQuery_Template_echoString_custom));
+  #endif
 
   // Export helper functions
   exports.Set("getBuildInfo",

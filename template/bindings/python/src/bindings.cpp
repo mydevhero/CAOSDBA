@@ -82,6 +82,7 @@ bool CaosLazyInitializer::initialized_ = false;
  * IQuery_Template_echoString - Echo string through CAOS repository
  * Requires call_context with optional token validation
  */
+#ifdef QUERY_EXISTS_IQuery_Template_echoString
 static PyObject* IQuery_Template_echoString(PyObject* self, PyObject* args)
 {
   PyObject* call_context_obj;
@@ -149,6 +150,85 @@ static PyObject* IQuery_Template_echoString(PyObject* self, PyObject* args)
     return create_error_object("SYSTEM", std::string("System error in IQuery_Template_echoString: ") + e.what());
   }
 }
+#endif
+
+// =================================================================================================
+// QUERY IMPLEMENTATION - IQuery_Template_echoString_custom
+// =================================================================================================
+
+/**
+ * IQuery_Template_echoString_custom - Echo string through CAOS repository
+ * Requires call_context with optional token validation
+ */
+#ifdef QUERY_EXISTS_IQuery_Template_echoString_custom
+static PyObject* IQuery_Template_echoString_custom(PyObject* self, PyObject* args)
+{
+  PyObject* call_context_obj;
+  char* input_str;
+
+  // Parse arguments: call_context (O) + string (s)
+  if (!PyArg_ParseTuple(args, "Os", &call_context_obj, &input_str))
+  {
+    return create_parameter_error("Invalid parameters for IQuery_Template_echoString_custom");
+  }
+
+  // Verify call_context is a dictionary
+  if (!PyDict_Check(call_context_obj))
+  {
+    return create_parameter_error("First argument must be a call_context dictionary");
+  }
+
+  try
+  {
+    // Initialize CAOS only when needed (lazy initialization)
+    CaosLazyInitializer::ensure_initialized();
+
+    // 1. Create call_context (token is optional)
+    CallContext ctx = CallContext::from_python_dict(call_context_obj, "IQuery_Template_echoString_custom");
+
+    // 2. Validate context (token validation only occurs if token is present)
+    ctx.apply_auth_filters("IQuery_Template_echoString_custom");
+
+    // 3. Execute query
+    Cache* repo = Repository();
+    if (!repo)
+    {
+      throw std::runtime_error("Repository not available");
+    }
+
+    auto result = repo->IQuery_Template_echoString_custom(input_str);
+
+    // 4. Convert result to Python object
+    if (!result.has_value())
+    {
+      return create_success_object(nullptr);
+    }
+
+    PyObject* py_result = PyUnicode_FromString(result.value().c_str());
+    if (!py_result)
+    {
+      return create_system_error("Failed to convert result to Python string");
+    }
+
+    PyObject* success_obj = create_success_object(py_result);
+    Py_DECREF(py_result);
+    return success_obj;
+
+  }
+  catch (const CallContext::AuthError& e)
+  {
+    return create_error_object("AUTH", e.what());
+  }
+  catch (const CallContext::ValidationError& e)
+  {
+    return create_error_object(e.error_type(), e.what());
+  }
+  catch (const std::exception& e)
+  {
+    return create_error_object("SYSTEM", std::string("System error in IQuery_Template_echoString_custom: ") + e.what());
+  }
+}
+#endif
 
 // =================================================================================================
 // HELPER FUNCTIONS
@@ -197,6 +277,7 @@ static PyObject* get_build_info(PyObject* self, PyObject* args)
  */
 static PyMethodDef PYTHON_METHODS_TABLE[] = {
   // Query function - requires CAOS initialization
+#ifdef QUERY_EXISTS_IQuery_Template_echoString
   {
     "IQuery_Template_echoString",
     IQuery_Template_echoString,
@@ -211,6 +292,24 @@ static PyMethodDef PYTHON_METHODS_TABLE[] = {
     "    dict: {'success': bool, 'data': str or None}\n"
     "           On error: {'success': False, 'error_type': str, 'error_message': str}\n"
   },
+#endif
+
+  #ifdef QUERY_EXISTS_IQuery_Template_echoString_custom
+    {
+      "IQuery_Template_echoString_custom",
+      IQuery_Template_echoString_custom,
+      METH_VARARGS,
+      "Echo a string through CAOS repository\n"
+      "\n"
+      "Args:\n"
+      "    call_context (dict): Context dictionary. Token is mandatory.\n"
+      "    str (str): String to echo\n"
+      "\n"
+      "Returns:\n"
+      "    dict: {'success': bool, 'data': str or None}\n"
+      "           On error: {'success': False, 'error_type': str, 'error_message': str}\n"
+    },
+  #endif
 
   // Helper functions - does not require CAOS initialization
   {

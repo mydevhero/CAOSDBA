@@ -5,7 +5,7 @@
 #endif
 
 #if (defined(CAOS_STANDALONE_CODE)||defined(CAOS_TEMPLATE_CODE)||(defined CAOS_CROWCPP_CODE))
-#include "../src/include/Database/MySQL/Query.hpp"
+#include "../../src/include/Database/MySQL/Query.hpp"
 #endif
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
