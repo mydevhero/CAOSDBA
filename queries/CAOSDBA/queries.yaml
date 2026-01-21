@@ -3,7 +3,7 @@
 version: "1.0.0"
 
 queries:
-  # Echo
+  # Example
   - name: IQuery_Template_echoString
     enabled: true
     metadata:
